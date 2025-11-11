@@ -3,10 +3,19 @@ import { createPinia } from 'pinia'
 import router from './router'
 import './assets/css/main.css'
 import App from './App.vue'
+import { useSessionStore } from './stores/sessionStore'
+import { useThemeStore } from './stores/themeStore'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+
+const sessionStore = useSessionStore()
+const themeStore = useThemeStore()
+
+sessionStore.loadFromLocalStorage()
+themeStore.loadFromLocalStorage()
+
 app.mount('#app')

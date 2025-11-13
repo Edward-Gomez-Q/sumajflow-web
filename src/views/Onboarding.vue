@@ -171,7 +171,7 @@ const handleNext = async () => {
         onboardingStore.nextStep()
         return
       }
-      
+      alert('Registro completado con éxito. Por favor, inicia sesión.')
       router.push('/login')
     } else {
       alert('Error al registrar: ' + result.error)

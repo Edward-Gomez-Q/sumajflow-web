@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import rutaApi  from '../assets/rutaApi.js'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
   const currentStep = ref(1)
@@ -490,7 +491,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // Método principal para enviar al backend
   const submitOnboarding = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL
+      const API_URL = rutaApi
 
       // Construir el payload según el rol
       const payload = {

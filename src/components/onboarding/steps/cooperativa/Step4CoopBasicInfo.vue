@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useOnboardingStore } from '@/stores/onboardingStore'
-import { Users, FileText, Phone, Mail, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-vue-next'
+import { Users, FileText, Phone, Mail, ChevronDown, CheckCircle2 } from 'lucide-vue-next'
 import AddressForm from '../../shared/AddressForm.vue'
 import { Building2 } from 'lucide-vue-next'
+
 const onboardingStore = useOnboardingStore()
 
 const phoneCode = ref('+591')
@@ -214,7 +215,7 @@ const isFormValid = computed(() => {
             </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <div class="input-group">
               <label for="telefono-fijo" class="input-label">
                 Teléfono Fijo
@@ -234,7 +235,8 @@ const isFormValid = computed(() => {
                 Teléfono de oficina (opcional)
               </p>
             </div>
-
+          </div>
+          <div class="grid grid-cols-1 gap-4">
             <div class="input-group">
               <label for="telefono-movil" class="input-label">
                 Teléfono Móvil
@@ -273,45 +275,34 @@ const isFormValid = computed(() => {
       <div class="divider"></div>
 
       <!-- Sección: Sede Operativa Principal -->
-      <div class="space-y-4">
+      <AddressForm
+        :model-value="cooperativaData"
+        @update:model-value="updateAddress"
+        label="Sede Operativa Principal"
+        helper-text="Dirección principal donde opera la cooperativa"
+        :show-map="true"
+      />
+    </div>
 
-        <AddressForm
-          :model-value="{
-            departamento: cooperativaData.departamento,
-            provincia: cooperativaData.provincia,
-            municipio: cooperativaData.municipio,
-            direccion: cooperativaData.direccion,
-            latitud: cooperativaData.latitud,
-            longitud: cooperativaData.longitud
-          }"
-          @update:model-value="updateAddress"
-          label="Sede Operativa Principal"
-          :show-map="true"
-        />
+    <!-- Estado de validación -->
+    <div
+      v-if="isFormValid"
+      class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
+    >
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-green-200/50 dark:bg-green-800/50 center">
+          <CheckCircle2 class="w-5 h-5 text-green-700 dark:text-green-300" />
+        </div>
+        <div class="text-sm">
+          <p class="font-medium text-neutral mb-1">
+            Información básica completa
+          </p>
+          <p class="text-secondary leading-relaxed">
+            {{ cooperativaData.razon_social }} – NIT: {{ cooperativaData.nit }}
+          </p>
+        </div>
       </div>
     </div>
-
-<!-- Estado de validación -->
-<div
-  v-if="isFormValid"
-  class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
->
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-full bg-green-200/50 dark:bg-green-800/50 center">
-      <CheckCircle2 class="w-5 h-5 text-green-700 dark:text-green-300" />
-    </div>
-    <div class="text-sm">
-      <p class="font-medium text-neutral mb-1">
-        Información básica completa
-      </p>
-      <p class="text-secondary leading-relaxed">
-        {{ cooperativaData.razon_social }} – NIT: {{ cooperativaData.nit }}
-      </p>
-    </div>
-  </div>
-</div>
-
-
   </div>
 </template>
 

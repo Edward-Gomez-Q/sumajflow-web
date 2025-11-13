@@ -1,8 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Plus, Edit2, Trash2, Mountain, X, Save, MapPin } from 'lucide-vue-next'
-import CoordinatesList from './CoordinatesList.vue'
-import MapPicker from './MapPicker.vue'
+import { Plus, Edit2, Trash2, Mountain, X, Save, MapPin, AlertTriangle, Info } from 'lucide-vue-next'
+import PolygonMapPicker from './PolygonMapPicker.vue'
 
 const props = defineProps({
   modelValue: {
@@ -22,13 +21,19 @@ const sectors = computed({
 const showModal = ref(false)
 const isEditing = ref(false)
 const editingIndex = ref(-1)
-const showMapPicker = ref(false)
 
 // Formulario del sector
 const sectorForm = ref({
   nombre: '',
   color: '#1E3A8A',
   coordenadas: []
+})
+
+// Errores de validación
+const validationErrors = ref({
+  nombre: '',
+  color: '',
+  overlap: ''
 })
 
 // Colores predefinidos
@@ -45,7 +50,6 @@ const availableColors = [
 
 const openModal = (sector = null, index = -1) => {
   if (sector) {
-    // Editar
     isEditing.value = true
     editingIndex.value = index
     sectorForm.value = {
@@ -54,7 +58,6 @@ const openModal = (sector = null, index = -1) => {
       coordenadas: [...(sector.coordenadas || [])]
     }
   } else {
-    // Nuevo
     isEditing.value = false
     editingIndex.value = -1
     sectorForm.value = {
@@ -63,22 +66,155 @@ const openModal = (sector = null, index = -1) => {
       coordenadas: []
     }
   }
+  
+  validationErrors.value = {
+    nombre: '',
+    color: '',
+    overlap: ''
+  }
+  
   showModal.value = true
 }
 
 const closeModal = () => {
   showModal.value = false
-  showMapPicker.value = false
   sectorForm.value = {
     nombre: '',
     color: '#1E3A8A',
     coordenadas: []
   }
+  validationErrors.value = {
+    nombre: '',
+    color: '',
+    overlap: ''
+  }
+}
+
+// Validar nombre duplicado
+const validateName = () => {
+  const nombreTrimmed = sectorForm.value.nombre.trim()
+  
+  if (!nombreTrimmed) {
+    validationErrors.value.nombre = 'El nombre es requerido'
+    return false
+  }
+  
+  const isDuplicate = sectors.value.some((sector, index) => {
+    if (isEditing.value && index === editingIndex.value) return false
+    return sector.nombre.trim().toLowerCase() === nombreTrimmed.toLowerCase()
+  })
+  
+  if (isDuplicate) {
+    validationErrors.value.nombre = 'Ya existe un sector con este nombre'
+    return false
+  }
+  
+  validationErrors.value.nombre = ''
+  return true
+}
+
+// Validar color duplicado
+const validateColor = () => {
+  const isDuplicate = sectors.value.some((sector, index) => {
+    if (isEditing.value && index === editingIndex.value) return false
+    return sector.color === sectorForm.value.color
+  })
+  
+  if (isDuplicate) {
+    validationErrors.value.color = 'Este color ya está en uso por otro sector'
+    return false
+  }
+  
+  validationErrors.value.color = ''
+  return true
+}
+
+// Verificar si dos polígonos se solapan
+const checkPolygonOverlap = (poly1Coords, poly2Coords) => {
+  if (poly1Coords.length < 3 || poly2Coords.length < 3) return false
+  
+  // Función auxiliar para verificar si un punto está dentro de un polígono
+  const pointInPolygon = (point, polygon) => {
+    let inside = false
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].longitud, yi = polygon[i].latitud
+      const xj = polygon[j].longitud, yj = polygon[j].latitud
+      
+      const intersect = ((yi > point.latitud) !== (yj > point.latitud))
+        && (point.longitud < (xj - xi) * (point.latitud - yi) / (yj - yi) + xi)
+      if (intersect) inside = !inside
+    }
+    return inside
+  }
+  
+  // Verificar si algún vértice de poly1 está dentro de poly2
+  for (const point of poly1Coords) {
+    if (pointInPolygon(point, poly2Coords)) return true
+  }
+  
+  // Verificar si algún vértice de poly2 está dentro de poly1
+  for (const point of poly2Coords) {
+    if (pointInPolygon(point, poly1Coords)) return true
+  }
+  
+  // Verificar intersección de bordes (simplificado)
+  const linesIntersect = (p1, p2, p3, p4) => {
+    const det = (p2.longitud - p1.longitud) * (p4.latitud - p3.latitud) - 
+                (p4.longitud - p3.longitud) * (p2.latitud - p1.latitud)
+    if (det === 0) return false
+    
+    const lambda = ((p4.latitud - p3.latitud) * (p4.longitud - p1.longitud) + 
+                    (p3.longitud - p4.longitud) * (p4.latitud - p1.latitud)) / det
+    const gamma = ((p1.latitud - p2.latitud) * (p4.longitud - p1.longitud) + 
+                   (p2.longitud - p1.longitud) * (p4.latitud - p1.latitud)) / det
+    
+    return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1)
+  }
+  
+  for (let i = 0; i < poly1Coords.length; i++) {
+    const p1 = poly1Coords[i]
+    const p2 = poly1Coords[(i + 1) % poly1Coords.length]
+    
+    for (let j = 0; j < poly2Coords.length; j++) {
+      const p3 = poly2Coords[j]
+      const p4 = poly2Coords[(j + 1) % poly2Coords.length]
+      
+      if (linesIntersect(p1, p2, p3, p4)) return true
+    }
+  }
+  
+  return false
+}
+
+// Validar solapamiento con otros sectores
+const validateOverlap = () => {
+  if (sectorForm.value.coordenadas.length < 3) {
+    validationErrors.value.overlap = ''
+    return true
+  }
+  
+  for (let i = 0; i < sectors.value.length; i++) {
+    if (isEditing.value && i === editingIndex.value) continue
+    
+    const otherSector = sectors.value[i]
+    if (otherSector.coordenadas && otherSector.coordenadas.length >= 3) {
+      if (checkPolygonOverlap(sectorForm.value.coordenadas, otherSector.coordenadas)) {
+        validationErrors.value.overlap = `Este sector se solapa con "${otherSector.nombre}"`
+        return false
+      }
+    }
+  }
+  
+  validationErrors.value.overlap = ''
+  return true
 }
 
 const saveSector = () => {
-  if (!sectorForm.value.nombre.trim()) {
-    alert('Por favor ingresa un nombre para el sector')
+  // Validaciones
+  const nameValid = validateName()
+  const colorValid = validateColor()
+  
+  if (!nameValid || !colorValid) {
     return
   }
 
@@ -86,16 +222,23 @@ const saveSector = () => {
     alert('El sector debe tener al menos 3 coordenadas')
     return
   }
+  
+  const overlapValid = validateOverlap()
+  if (!overlapValid) {
+    // Mostrar el error pero permitir continuar si el usuario lo confirma
+    const confirmed = confirm(
+      `${validationErrors.value.overlap}\n\n¿Deseas guardar el sector de todas formas?`
+    )
+    if (!confirmed) return
+  }
 
   const sectorData = { ...sectorForm.value }
 
   if (isEditing.value) {
-    // Actualizar sector existente
     const updated = [...sectors.value]
     updated[editingIndex.value] = sectorData
     sectors.value = updated
   } else {
-    // Agregar nuevo sector
     sectors.value = [...sectors.value, sectorData]
   }
 
@@ -103,23 +246,35 @@ const saveSector = () => {
 }
 
 const deleteSector = (index) => {
-  if (confirm('¿Estás seguro de eliminar este sector?')) {
+  const sector = sectors.value[index]
+  if (confirm(`¿Estás seguro de eliminar el sector "${sector.nombre}"?`)) {
     sectors.value = sectors.value.filter((_, i) => i !== index)
   }
 }
 
-const openMapForSector = () => {
-  showMapPicker.value = true
-}
-
-const handleMapUpdate = (coordinates) => {
+const handleCoordinatesUpdate = (coordinates) => {
   sectorForm.value.coordenadas = coordinates
-  showMapPicker.value = false
+  // Validar solapamiento en tiempo real si hay suficientes coordenadas
+  if (coordinates.length >= 3) {
+    validateOverlap()
+  }
 }
 
 const isFormValid = computed(() => {
   return sectorForm.value.nombre.trim() !== '' &&
-         sectorForm.value.coordenadas.length >= 3
+         sectorForm.value.coordenadas.length >= 3 &&
+         !validationErrors.value.nombre &&
+         !validationErrors.value.color
+})
+
+// Computed para sector activo en el mapa
+const activeSectorForMap = computed(() => {
+  if (!showModal.value) return null
+  return {
+    nombre: sectorForm.value.nombre || 'Nuevo Sector',
+    color: sectorForm.value.color,
+    coordenadas: sectorForm.value.coordenadas
+  }
 })
 </script>
 
@@ -127,9 +282,9 @@ const isFormValid = computed(() => {
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-sm font-semibold text-neutral mb-1">Sectores de Operación</h3>
+        <h3 class="text-sm font-semibold text-neutral mb-1">Gestión de Sectores</h3>
         <p class="text-sm text-secondary">
-          Define las zonas geográficas donde opera tu cooperativa
+          Agrega y configura los sectores mineros de tu cooperativa
         </p>
       </div>
       <button
@@ -173,7 +328,7 @@ const isFormValid = computed(() => {
                 :key="idx"
                 class="text-xs bg-hover px-2 py-1 rounded font-mono"
               >
-                {{ coord.orden }}: {{ coord.latitud?.toFixed(4) }}, {{ coord.longitud?.toFixed(4) }}
+                P{{ coord.orden }}: {{ coord.latitud?.toFixed(4) }}, {{ coord.longitud?.toFixed(4) }}
               </span>
               <span
                 v-if="sector.coordenadas.length > 3"
@@ -233,9 +388,9 @@ const isFormValid = computed(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         @click.self="closeModal"
       >
-        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-border">
+        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border">
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-border">
+          <div class="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-primary/10 center">
                 <Mountain class="w-5 h-5 text-primary" />
@@ -258,93 +413,149 @@ const isFormValid = computed(() => {
             </button>
           </div>
 
-          <!-- Contenido -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-6">
-            <!-- Nombre -->
-            <div class="input-group">
-              <label for="sector-nombre" class="input-label">
-                Nombre del Sector <span class="text-error">*</span>
-              </label>
-              <input
-                id="sector-nombre"
-                v-model="sectorForm.nombre"
-                type="text"
-                placeholder="Ej: Sector Norte, Cerro Rico, Zona Central"
-                class="w-full"
-                required
-              />
-              <p class="input-helper">
-                Nombre descriptivo que identifique esta zona de operación
-              </p>
-            </div>
+          <!-- Contenido dividido -->
+          <div class="flex-1 flex min-h-0">
+            <!-- Panel izquierdo: Formulario -->
+            <div class="w-96 border-r border-border overflow-y-auto flex-shrink-0">
+              <div class="p-6 space-y-6">
+                <!-- Nombre -->
+                <div class="input-group">
+                  <label for="sector-nombre" class="input-label">
+                    Nombre del Sector <span class="text-error">*</span>
+                  </label>
+                  <input
+                    id="sector-nombre"
+                    v-model="sectorForm.nombre"
+                    @blur="validateName"
+                    @input="validationErrors.nombre = ''"
+                    type="text"
+                    placeholder="Ej: Sector Norte, Cerro Rico"
+                    class="w-full"
+                    :class="{ 'border-error': validationErrors.nombre }"
+                    required
+                  />
+                  <p v-if="validationErrors.nombre" class="text-error text-xs mt-1 flex items-center gap-1">
+                    <AlertTriangle class="w-3 h-3" />
+                    {{ validationErrors.nombre }}
+                  </p>
+                  <p v-else class="input-helper">
+                    Nombre único que identifique esta zona
+                  </p>
+                </div>
 
-            <!-- Color -->
-            <div class="input-group">
-              <label class="input-label">
-                Color Identificador <span class="text-error">*</span>
-              </label>
-              <div class="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                <button
-                  v-for="color in availableColors"
-                  :key="color.value"
-                  @click="sectorForm.color = color.value"
-                  type="button"
-                  class="w-12 h-12 rounded-lg transition-all hover:scale-110 focus:scale-110 border-2"
-                  :class="{ 
-                    'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 border-primary': sectorForm.color === color.value,
-                    'border-slate-200 dark:border-slate-700': sectorForm.color !== color.value
-                  }"
-                  :style="{ backgroundColor: color.value }"
-                  :title="color.name"
-                ></button>
+                <!-- Color -->
+                <div class="input-group">
+                  <label class="input-label">
+                    Color Identificador <span class="text-error">*</span>
+                  </label>
+                  <div class="grid grid-cols-4 gap-3">
+                    <button
+                      v-for="color in availableColors"
+                      :key="color.value"
+                      @click="sectorForm.color = color.value; validateColor()"
+                      type="button"
+                      class="w-12 h-12 rounded-lg transition-all hover:scale-110 focus:scale-110 border-2"
+                      :class="{ 
+                        'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 border-primary': sectorForm.color === color.value,
+                        'border-slate-200 dark:border-slate-700': sectorForm.color !== color.value
+                      }"
+                      :style="{ backgroundColor: color.value }"
+                      :title="color.name"
+                    ></button>
+                  </div>
+                  <p v-if="validationErrors.color" class="text-error text-xs mt-1 flex items-center gap-1">
+                    <AlertTriangle class="w-3 h-3" />
+                    {{ validationErrors.color }}
+                  </p>
+                  <p v-else class="input-helper">
+                    Color único para este sector
+                  </p>
+                </div>
+
+                <!-- Alerta de solapamiento -->
+                <div v-if="validationErrors.overlap" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 rounded-lg p-3">
+                  <div class="flex items-start gap-2">
+                    <AlertTriangle class="w-4 h-4 text-yellow-700 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div class="text-xs text-yellow-900 dark:text-yellow-200">
+                      <p class="font-semibold mb-1">Advertencia de solapamiento</p>
+                      <p>{{ validationErrors.overlap }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Información -->
+                <div class="bg-info/10 border border-info/30 rounded-lg p-4">
+                  <div class="flex gap-3">
+                    <div class="text-info text-xl flex-shrink-0">
+                      <Info class="w-5 h-5" />
+                    </div>
+                    <div class="text-sm">
+                      <p class="font-medium text-neutral mb-1">Instrucciones para el mapa</p>
+                      <p class="text-secondary leading-relaxed">
+                        1. Haz clic en el mapa para agregar puntos<br>
+                        2. Necesitas al menos <strong>3 puntos</strong> para definir un área<br>
+                        3. Arrastra los marcadores para ajustar la posición<br>
+                        4. Usa el buscador para encontrar ubicaciones específicas
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p class="input-helper">
-                Color para identificar este sector en mapas y reportes
-              </p>
             </div>
 
-            <!-- Coordenadas -->
-            <div>
-              <CoordinatesList
-                v-model="sectorForm.coordenadas"
-                @open-map="openMapForSector"
-                :show-map="true"
+            <!-- Panel derecho: Mapa -->
+            <div class="flex-1 min-w-0">
+              <PolygonMapPicker
+                :sectors="[]"
+                :edit-mode="true"
+                :active-sector="activeSectorForMap"
+                :show-search="true"
+                @update:coordinates="handleCoordinatesUpdate"
               />
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between p-6 border-t border-border bg-hover">
-            <button
-              @click="closeModal"
-              type="button"
-              class="btn-secondary px-6"
-            >
-              Cancelar
-            </button>
-            <button
-              @click="saveSector"
-              :disabled="!isFormValid"
-              type="button"
-              class="btn px-6 flex items-center gap-2"
-            >
-              <Save v-if="isEditing" class="w-4 h-4" />
-              <Plus v-else class="w-4 h-4" />
-              {{ isEditing ? 'Guardar Cambios' : 'Crear Sector' }}
-            </button>
+          <div class="flex items-center justify-between p-4 border-t border-border bg-hover flex-shrink-0">
+            <div class="text-sm">
+              <span v-if="sectorForm.coordenadas.length >= 3" class="text-success">
+                ✓ {{ sectorForm.coordenadas.length }} puntos definidos
+              </span>
+              <span v-else-if="sectorForm.coordenadas.length > 0" class="text-warning">
+                ⚠️ Faltan {{ 3 - sectorForm.coordenadas.length }} puntos
+              </span>
+              <span v-else class="text-tertiary">
+                Sin puntos agregados
+              </span>
+            </div>
+            <div class="flex gap-3">
+              <button
+                @click="closeModal"
+                type="button"
+                class="btn-secondary px-6"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="saveSector"
+                :disabled="!isFormValid"
+                type="button"
+                class="btn px-6 flex items-center gap-2"
+              >
+                <Save v-if="isEditing" class="w-4 h-4" />
+                <Plus v-else class="w-4 h-4" />
+                {{ isEditing ? 'Guardar Cambios' : 'Crear Sector' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Map Picker -->
-      <MapPicker
-        v-if="showMapPicker"
-        :coordinates="sectorForm.coordenadas"
-        :allow-multiple="true"
-        title="Definir Polígono del Sector"
-        @update:coordinates="handleMapUpdate"
-        @close="showMapPicker = false"
-      />
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.center {
+  @apply flex justify-center items-center;
+}
+</style>

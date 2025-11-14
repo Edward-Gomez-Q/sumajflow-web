@@ -1,17 +1,34 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useOnboardingStore } from '@/stores/onboardingStore'
-import { Users, FileText, Calendar } from 'lucide-vue-next'
+import { usePublicDataStore } from '@/stores/publicDataStore'
+import { Users, FileText, Loader2, AlertCircle } from 'lucide-vue-next'
 import FileUpload from '@/components/common/FileUpload.vue'
 
 const onboardingStore = useOnboardingStore()
+const publicDataStore = usePublicDataStore()
+
 const socioData = computed(() => onboardingStore.socioData)
+const cooperativas = computed(() => publicDataStore.cooperativas)
+const isLoadingCooperativas = computed(() => publicDataStore.isLoading)
+const cooperativasError = computed(() => publicDataStore.error)
+
+// Cargar cooperativas si no están cargadas
+onMounted(() => {
+  if (cooperativas.value.length === 0 && !isLoadingCooperativas.value) {
+    publicDataStore.fetchCooperativas()
+  }
+})
 
 const updateField = (field, value) => {
   onboardingStore.socioData = {
     ...socioData.value,
     [field]: value
   }
+}
+
+const retryLoadCooperativas = () => {
+  publicDataStore.fetchCooperativas(true)
 }
 </script>
 
@@ -46,15 +63,50 @@ const updateField = (field, value) => {
           <label for="cooperativa_id" class="input-label">
             Cooperativa <span class="text-error">*</span>
           </label>
+          
+          <!-- Estado de carga -->
+          <div v-if="isLoadingCooperativas" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+            <Loader2 class="w-4 h-4 animate-spin text-primary" />
+            <span class="text-sm text-secondary">Cargando cooperativas...</span>
+          </div>
+
+          <!-- Error al cargar -->
+          <div v-else-if="cooperativasError" class="space-y-2">
+            <div class="flex items-center gap-2 p-3 bg-error/10 border border-error/30 rounded-lg">
+              <AlertCircle class="w-4 h-4 text-error flex-shrink-0" />
+              <span class="text-sm text-error">{{ cooperativasError }}</span>
+            </div>
+            <button 
+              @click="retryLoadCooperativas"
+              class="btn btn-sm btn-outline"
+              type="button"
+            >
+              Reintentar
+            </button>
+          </div>
+
+          <!-- Select con cooperativas -->
           <select 
+            v-else
             id="cooperativa_id"
-            v-model="socioData.cooperativa_id" 
+            :value="socioData.cooperativa_id" 
+            @change="updateField('cooperativa_id', parseInt($event.target.value))"
             class="w-full" 
             required
+            :disabled="cooperativas.length === 0"
           >
-            <option value="">Seleccionar cooperativa</option>
-            <option value="1">Cooperativa Minera Ejemplo</option>
+            <option value="" disabled>
+              {{ cooperativas.length === 0 ? 'No hay cooperativas disponibles' : 'Seleccionar cooperativa' }}
+            </option>
+            <option 
+              v-for="cooperativa in cooperativas" 
+              :key="cooperativa.id" 
+              :value="cooperativa.id"
+            >
+              {{ cooperativa.razonSocial }}
+            </option>
           </select>
+          
           <p class="input-helper">
             Si tu cooperativa no aparece en la lista, contacta con soporte
           </p>
@@ -76,7 +128,7 @@ const updateField = (field, value) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="input-group">
             <label for="numero_socio" class="input-label">
-              Número de Socio/Matrícula
+              Número de Socio/Matrícula <span class="text-error">*</span>
             </label>
             <input 
               id="numero_socio"
@@ -85,6 +137,7 @@ const updateField = (field, value) => {
               @input="updateField('numero_socio', $event.target.value)" 
               class="w-full" 
               placeholder="Ej: SOC-2024-001"
+              required
             />
             <p class="input-helper">
               Número que aparece en tu carnet de socio
@@ -147,7 +200,6 @@ const updateField = (field, value) => {
       <div class="divider"></div>
 
       <!-- Info Notice -->
-      <!-- Información contextual -->
       <div class="bg-info/10 border border-info/30 rounded-lg p-4">
         <div class="flex gap-3">
           <div class="text-info text-xl flex-shrink-0">
@@ -163,8 +215,6 @@ const updateField = (field, value) => {
           </div>
         </div>
       </div>
-
-
     </div>
   </div>
 </template>

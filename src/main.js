@@ -5,6 +5,7 @@ import './assets/css/main.css'
 import App from './App.vue'
 import { useSessionStore } from './stores/sessionStore'
 import { useThemeStore } from './stores/themeStore'
+import { usePublicDataStore } from './stores/publicDataStore'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -14,8 +15,11 @@ app.use(router)
 
 const sessionStore = useSessionStore()
 const themeStore = useThemeStore()
+const publicDataStore = usePublicDataStore()
 
 sessionStore.loadFromLocalStorage()
 themeStore.loadFromLocalStorage()
+
+publicDataStore.fetchCooperativas()
 
 app.mount('#app')

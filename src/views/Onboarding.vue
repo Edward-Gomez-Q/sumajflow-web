@@ -31,8 +31,7 @@ import Step6ComerBalance from '@/components/onboarding/steps/comercializadora/St
 const router = useRouter()
 const onboardingStore = useOnboardingStore()
 
-const rightSidePanel = ref<HTMLElement | null>(null)
-
+const rightSidePanel = ref(null)
 const currentComponent = computed(() => {
   const step = onboardingStore.currentStep
   const role = onboardingStore.selectedRole
@@ -167,10 +166,7 @@ const handleNext = async () => {
     const result = await onboardingStore.submitOnboarding()
     
     if (result.success) {
-      if (onboardingStore.selectedRole === 'socio') {
-        onboardingStore.nextStep()
-        return
-      }
+      onboardingStore.resetOnboarding(false)
       alert('Registro completado con éxito. Por favor, inicia sesión.')
       router.push('/login')
     } else {

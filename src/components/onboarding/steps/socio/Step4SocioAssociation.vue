@@ -129,6 +129,7 @@ const updateField = (field, value) => {
             label="Carnet de Afiliación" 
             :required="true"
             helper-text="Documento que acredita tu afiliación a la cooperativa"
+            folder="documentos-socios"
           />
           
           <FileUpload 
@@ -137,6 +138,7 @@ const updateField = (field, value) => {
             label="Carnet de Identidad" 
             :required="true"
             helper-text="Documento de identidad vigente (anverso y reverso)"
+            folder="documentos-socios"
           />
         </div>
       </div>

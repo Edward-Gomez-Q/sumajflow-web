@@ -79,8 +79,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     cooperativa_id: 1,
     numero_socio: 'S-001234',
     fecha_afiliacion: '2020-01-15',
-    carnet_afiliacion_url: 'data:application/pdf;base64,JVBERi0xLjQK...',
-    carnet_identidad_url: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...',
+    carnet_afiliacion_url: '',
+    carnet_identidad_url: '',
     estado: 'pendiente'
   })
 
@@ -314,7 +314,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         totalSteps.value = 6 // Personal, User, Role, BasicInfo, Sectors, Balance
         break
       case 'socio':
-        totalSteps.value = 5 // Personal, User, Role, Association, Pending
+        totalSteps.value = 4 // Personal, User, Role, Association
         break
       case 'ingenio':
         totalSteps.value = 7 // Personal, User, Role, BasicInfo, Plant, Balance, Warehouses

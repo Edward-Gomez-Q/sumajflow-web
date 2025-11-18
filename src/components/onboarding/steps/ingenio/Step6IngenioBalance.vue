@@ -85,7 +85,7 @@ const getNextCalibrationStatus = computed(() => {
     <!-- Información contextual -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">
+        <div class="text-info text-xl shrink-0">
           <Info class="w-5 h-5" />
         </div>
         <div class="text-sm">
@@ -167,19 +167,19 @@ const getNextCalibrationStatus = computed(() => {
       </div>
       <ul class="space-y-2 text-sm text-secondary">
         <li class="flex items-start gap-2">
-          <ArrowRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ArrowRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>La calibración garantiza la precisión de las mediciones</span>
         </li>
         <li class="flex items-start gap-2">
-          <ArrowRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ArrowRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Es un requisito legal para operaciones mineras formales</span>
         </li>
         <li class="flex items-start gap-2">
-          <ArrowRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ArrowRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Debe realizarse periódicamente según normativa vigente</span>
         </li>
         <li class="flex items-start gap-2">
-          <ArrowRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ArrowRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Mantén actualizada la fecha de la próxima calibración</span>
         </li>
       </ul>
@@ -189,8 +189,4 @@ const getNextCalibrationStatus = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>
+

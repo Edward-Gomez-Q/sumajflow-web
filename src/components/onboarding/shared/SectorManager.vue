@@ -307,7 +307,7 @@ const activeSectorForMap = computed(() => {
         <div class="flex items-start gap-4">
           <!-- Color badge -->
           <div 
-            class="w-12 h-12 rounded-lg flex-shrink-0 shadow-md border-2 border-white dark:border-slate-800"
+            class="w-12 h-12 rounded-lg shrink-0 shadow-md border-2 border-white dark:border-slate-800"
             :style="{ backgroundColor: sector.color }"
           ></div>
 
@@ -390,7 +390,7 @@ const activeSectorForMap = computed(() => {
       >
         <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border">
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
+          <div class="flex items-center justify-between p-6 border-b border-border shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-primary/10 center">
                 <Mountain class="w-5 h-5 text-primary" />
@@ -416,7 +416,7 @@ const activeSectorForMap = computed(() => {
           <!-- Contenido dividido -->
           <div class="flex-1 flex min-h-0">
             <!-- Panel izquierdo: Formulario -->
-            <div class="w-96 border-r border-border overflow-y-auto flex-shrink-0">
+            <div class="w-96 border-r border-border overflow-y-auto shrink-0">
               <div class="p-6 space-y-6">
                 <!-- Nombre -->
                 <div class="input-group">
@@ -475,7 +475,7 @@ const activeSectorForMap = computed(() => {
                 <!-- Alerta de solapamiento -->
                 <div v-if="validationErrors.overlap" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 rounded-lg p-3">
                   <div class="flex items-start gap-2">
-                    <AlertTriangle class="w-4 h-4 text-yellow-700 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle class="w-4 h-4 text-yellow-700 dark:text-yellow-400 shrink-0 mt-0.5" />
                     <div class="text-xs text-yellow-900 dark:text-yellow-200">
                       <p class="font-semibold mb-1">Advertencia de solapamiento</p>
                       <p>{{ validationErrors.overlap }}</p>
@@ -486,7 +486,7 @@ const activeSectorForMap = computed(() => {
                 <!-- Información -->
                 <div class="bg-info/10 border border-info/30 rounded-lg p-4">
                   <div class="flex gap-3">
-                    <div class="text-info text-xl flex-shrink-0">
+                    <div class="text-info text-xl shrink-0">
                       <Info class="w-5 h-5" />
                     </div>
                     <div class="text-sm">
@@ -516,7 +516,7 @@ const activeSectorForMap = computed(() => {
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between p-4 border-t border-border bg-hover flex-shrink-0">
+          <div class="flex items-center justify-between p-4 border-t border-border bg-hover shrink-0">
             <div class="text-sm">
               <span v-if="sectorForm.coordenadas.length >= 3" class="text-success">
                 ✓ {{ sectorForm.coordenadas.length }} puntos definidos
@@ -553,9 +553,3 @@ const activeSectorForMap = computed(() => {
     </Teleport>
   </div>
 </template>
-
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

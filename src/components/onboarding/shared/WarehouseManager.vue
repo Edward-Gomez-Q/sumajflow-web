@@ -203,7 +203,7 @@ const getTypeConfig = (type) => {
       >
         <div class="flex items-start gap-4">
           <!-- Icono sin fondo de color -->
-          <div class="w-12 h-12 rounded-lg border-2 center flex-shrink-0"
+          <div class="w-12 h-12 rounded-lg border-2 center shrink-0"
             :class="{
               '': warehouse.tipo === 'concentrado',
               '': warehouse.tipo === 'complejo',
@@ -241,7 +241,7 @@ const getTypeConfig = (type) => {
               <!-- Capacidad y Área -->
               <div class="flex flex-wrap gap-4 text-sm">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/20 center flex-shrink-0">
+                  <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/20 center shrink-0">
                     <Package class="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
@@ -251,7 +251,7 @@ const getTypeConfig = (type) => {
                 </div>
                 
                 <div v-if="warehouse.area" class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/20 center flex-shrink-0">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/20 center shrink-0">
                     <Maximize2 class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
@@ -277,7 +277,7 @@ const getTypeConfig = (type) => {
 
               <!-- Ubicación -->
               <div v-if="warehouse.direccion" class="flex items-start gap-2 pt-1 text-sm text-secondary">
-                <MapPin class="w-4 h-4 flex-shrink-0 mt-0.5 text-tertiary" />
+                <MapPin class="w-4 h-4 shrink-0 mt-0.5 text-tertiary" />
                 <span class="leading-relaxed">{{ warehouse.direccion }}, {{ warehouse.municipio }}</span>
               </div>
             </div>
@@ -514,9 +514,3 @@ const getTypeConfig = (type) => {
     </Teleport>
   </div>
 </template>
-
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

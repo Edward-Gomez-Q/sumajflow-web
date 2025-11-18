@@ -321,7 +321,7 @@ const previewFile = () => {
       <div class="p-4">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 flex-1 min-w-0">
-            <div class="w-10 h-10 rounded-lg bg-green-200/50 dark:bg-green-800/50 center flex-shrink-0">
+            <div class="w-10 h-10 rounded-lg bg-green-200/50 dark:bg-green-800/50 center shrink-0">
               <ImageIcon v-if="isImage" class="w-5 h-5 text-green-700 dark:text-green-300" />
               <FileText v-else-if="isPdf" class="w-5 h-5 text-green-700 dark:text-green-300" />
               <CheckCircle2 v-else class="w-5 h-5 text-green-700 dark:text-green-300" />
@@ -333,7 +333,7 @@ const previewFile = () => {
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-2 shrink-0">
             <button
               v-if="!isImage"
               type="button"
@@ -364,15 +364,10 @@ const previewFile = () => {
     <!-- Error message -->
     <div v-if="error" class="bg-error/10 border border-error/30 rounded-lg p-3 mt-2">
       <div class="flex items-start gap-2">
-        <AlertCircle class="w-4 h-4 text-error flex-shrink-0 mt-0.5" />
+        <AlertCircle class="w-4 h-4 text-error shrink-0 mt-0.5" />
         <p class="text-xs text-error">{{ error }}</p>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

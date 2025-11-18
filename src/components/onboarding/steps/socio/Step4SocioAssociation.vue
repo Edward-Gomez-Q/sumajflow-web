@@ -73,7 +73,7 @@ const retryLoadCooperativas = () => {
           <!-- Error al cargar -->
           <div v-else-if="cooperativasError" class="space-y-2">
             <div class="flex items-center gap-2 p-3 bg-error/10 border border-error/30 rounded-lg">
-              <AlertCircle class="w-4 h-4 text-error flex-shrink-0" />
+              <AlertCircle class="w-4 h-4 text-error shrink-0" />
               <span class="text-sm text-error">{{ cooperativasError }}</span>
             </div>
             <button 
@@ -202,7 +202,7 @@ const retryLoadCooperativas = () => {
       <!-- Info Notice -->
       <div class="bg-info/10 border border-info/30 rounded-lg p-4">
         <div class="flex gap-3">
-          <div class="text-info text-xl flex-shrink-0">
+          <div class="text-info text-xl shrink-0">
             <FileText class="w-5 h-5" />
           </div>
           <div class="text-sm">
@@ -219,8 +219,3 @@ const retryLoadCooperativas = () => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

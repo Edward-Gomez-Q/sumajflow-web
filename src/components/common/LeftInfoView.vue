@@ -98,7 +98,7 @@ const iconComponents = {
             :key="index"
             class="flex items-start gap-3 group"
           >
-            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm center border border-white/20 group-hover:bg-white/15 transition-all duration-200">
+            <div class="shrink-0 w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm center border border-white/20 group-hover:bg-white/15 transition-all duration-200">
               <component 
                 :is="iconComponents[feature.icon]"
                 class="w-5 h-5 text-white"
@@ -122,7 +122,7 @@ const iconComponents = {
           :href="link.href" 
           class="hover:text-white transition-colors"
         >
-          {{ link.text }}
+        
         </a>
       </div>
 
@@ -131,9 +131,3 @@ const iconComponents = {
     </div>
   </div>
 </template>
-
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

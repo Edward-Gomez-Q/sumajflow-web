@@ -69,7 +69,7 @@ const estimatedValue = computed(() => {
     <!-- Información contextual -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">💡</div>
+        <div class="text-info text-xl shrink-0">💡</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">Importancia de los almacenes en comercializadoras</p>
           <p class="text-secondary">
@@ -248,7 +248,7 @@ const estimatedValue = computed(() => {
     <!-- Separación por tipo de mineral -->
     <div class="bg-warning/10 border border-warning/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-warning text-xl flex-shrink-0">⚠️</div>
+        <div class="text-warning text-xl shrink-0">⚠️</div>
         <div class="text-sm">
           <p class="font-medium text-warning mb-1">Separación Obligatoria</p>
           <p class="text-warning">
@@ -301,7 +301,7 @@ const estimatedValue = computed(() => {
     <!-- Capacidades recomendadas -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">📊</div>
+        <div class="text-info text-xl shrink-0">📊</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">Capacidades Recomendadas</p>
           <p class="text-secondary mb-2">
@@ -336,7 +336,7 @@ const estimatedValue = computed(() => {
     <!-- Información adicional -->
     <div class="bg-accent/5 border border-accent/20 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-accent text-xl flex-shrink-0">🎯</div>
+        <div class="text-accent text-xl shrink-0">🎯</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">¿Planeas expandir tus almacenes?</p>
           <p class="text-secondary">

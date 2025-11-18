@@ -379,7 +379,7 @@ const centerOnCurrentLocation = () => {
               <!-- Botón para centrar en ubicación actual -->
               <button
                 @click="centerOnCurrentLocation"
-                class="absolute top-4 right-4 z-[1000] bg-surface border border-border rounded-lg px-4 py-2 shadow-elevated hover:bg-hover transition-all flex items-center gap-2"
+                class="absolute top-4 right-4 z-1000 bg-surface border border-border rounded-lg px-4 py-2 shadow-elevated hover:bg-hover transition-all flex items-center gap-2"
               >
                 <MapPin class="w-4 h-4" />
                 <span class="text-sm font-medium">Mi ubicación</span>
@@ -388,7 +388,7 @@ const centerOnCurrentLocation = () => {
               <!-- Info de coordenadas actuales -->
               <div
                 v-if="localValue.latitud && localValue.longitud"
-                class="absolute bottom-4 left-4 z-[1000] bg-surface border border-border rounded-lg px-4 py-2 shadow-elevated"
+                class="absolute bottom-4 left-4 z-1000 bg-surface border border-border rounded-lg px-4 py-2 shadow-elevated"
               >
                 <p class="text-xs text-secondary mb-1">Coordenadas seleccionadas:</p>
                 <p class="text-sm font-mono text-neutral">
@@ -421,9 +421,7 @@ const centerOnCurrentLocation = () => {
 </template>
 
 <style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
+
 
 /* Transiciones del modal */
 .modal-enter-active,

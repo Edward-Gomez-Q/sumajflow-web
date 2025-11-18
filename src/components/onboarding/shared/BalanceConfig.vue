@@ -244,7 +244,7 @@ const totalDivisions = computed(() => {
         class="bg-info/10 border border-info/30 rounded-lg p-4"
       >
         <div class="flex gap-3">
-          <div class="text-info flex-shrink-0">
+          <div class="text-info shrink-0">
             <Info class="w-5 h-5" />
           </div>
           <div class="text-sm">
@@ -309,7 +309,7 @@ const totalDivisions = computed(() => {
         class="bg-error/10 border border-error/30 rounded-lg p-4"
       >
         <div class="flex gap-3">
-          <div class="text-error flex-shrink-0">
+          <div class="text-error shrink-0">
             <AlertTriangle class="w-5 h-5" />
           </div>
           <p class="text-sm text-error">
@@ -321,7 +321,7 @@ const totalDivisions = computed(() => {
       <!-- Info contextual sobre calibración -->
       <div class="bg-warning/10 border border-warning/30 rounded-lg p-4">
         <div class="flex gap-3">
-          <div class="text-warning flex-shrink-0">
+          <div class="text-warning shrink-0">
             <Info class="w-5 h-5" />
           </div>
           <div class="text-sm">
@@ -351,9 +351,3 @@ const totalDivisions = computed(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

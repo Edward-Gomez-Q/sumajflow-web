@@ -97,7 +97,7 @@ const isFormValid = computed(() => {
     <!-- Información contextual -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">
+        <div class="text-info text-xl shrink-0">
           <Building2 class="w-5 h-5" />
         </div>
         <div class="text-sm">
@@ -306,8 +306,3 @@ const isFormValid = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

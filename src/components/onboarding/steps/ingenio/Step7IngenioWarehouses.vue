@@ -66,7 +66,7 @@ const totalArea = computed(() => {
     <!-- Información contextual -->
     <div class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
       <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
           <Info class="w-4 h-4 text-blue-700 dark:text-blue-300" />
         </div>
         <div class="text-sm">
@@ -125,7 +125,7 @@ const totalArea = computed(() => {
       <!-- ✅ Almacenes configurados correctamente -->
       <div v-if="hasValidWarehouses" class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
             <CheckCircle class="w-4 h-4 text-green-700 dark:text-green-300" />
           </div>
           <div>
@@ -141,7 +141,7 @@ const totalArea = computed(() => {
       <!-- ⚠️ Almacenes incompletos -->
       <div v-else class="bg-orange-100/70 dark:bg-orange-900/40 border border-orange-400/60 dark:border-orange-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-orange-200/50 dark:bg-orange-800/50 center flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-orange-200/50 dark:bg-orange-800/50 center shrink-0">
             <AlertTriangle class="w-4 h-4 text-orange-700 dark:text-orange-300" />
           </div>
           <div>
@@ -173,7 +173,7 @@ const totalArea = computed(() => {
         <!-- Almacén de Concentrados -->
         <div class="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
           <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg center flex-shrink-0">
+            <div class="w-8 h-8 rounded-lg center shrink-0">
               <Package class="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div class="flex-1">
@@ -189,7 +189,7 @@ const totalArea = computed(() => {
         <!-- Almacén de Complejo -->
         <div class="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
           <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg center flex-shrink-0">
+            <div class="w-8 h-8 rounded-lg center shrink-0">
               <TrendingUp class="w-4 h-4 text-purple-600 dark:text-purple-400" />
             </div>
             <div class="flex-1">
@@ -212,7 +212,7 @@ const totalArea = computed(() => {
     <!-- Resumen final -->
     <div v-if="hasValidWarehouses" class="border-l-4 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 rounded-r-lg p-4">
       <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 center flex-shrink-0">
+        <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 center shrink-0">
           <CheckCircle class="w-4 h-4 text-green-600 dark:text-green-400" />
         </div>
         <p class="text-sm text-neutral leading-relaxed">
@@ -226,8 +226,3 @@ const totalArea = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

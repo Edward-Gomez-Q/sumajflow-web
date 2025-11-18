@@ -80,7 +80,7 @@ const mineralesComercializados = computed(() => {
     <!-- Información contextual -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">💡</div>
+        <div class="text-info text-xl shrink-0">💡</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">Importancia del pesaje en comercializadoras</p>
           <p class="text-secondary mb-2">
@@ -126,7 +126,7 @@ const mineralesComercializados = computed(() => {
     <div v-if="balanza">
       <div v-if="isBalanzaValid" class="bg-success/10 border border-success/30 rounded-lg p-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full bg-success/20 center text-success text-xl flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-success/20 center text-success text-xl shrink-0">
             ✓
           </div>
           <div class="flex-1">
@@ -231,7 +231,7 @@ const mineralesComercializados = computed(() => {
       </h4>
       <div class="space-y-3">
         <div class="flex items-start gap-3 bg-hover rounded-lg p-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             ✓
           </div>
           <div class="flex-1">
@@ -244,7 +244,7 @@ const mineralesComercializados = computed(() => {
         </div>
 
         <div class="flex items-start gap-3 bg-hover rounded-lg p-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             ✓
           </div>
           <div class="flex-1">
@@ -257,7 +257,7 @@ const mineralesComercializados = computed(() => {
         </div>
 
         <div class="flex items-start gap-3 bg-hover rounded-lg p-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             ✓
           </div>
           <div class="flex-1">
@@ -303,7 +303,7 @@ const mineralesComercializados = computed(() => {
     <!-- Mantenimiento y calibración -->
     <div class="bg-warning/10 border border-warning/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-warning text-xl flex-shrink-0">🔧</div>
+        <div class="text-warning text-xl shrink-0">🔧</div>
         <div class="text-sm">
           <p class="font-medium text-warning mb-1">Programa de Mantenimiento Obligatorio</p>
           <p class="text-warning mb-2">
@@ -323,7 +323,7 @@ const mineralesComercializados = computed(() => {
     <!-- Consecuencias de balanza descalibrada -->
     <div class="bg-error/10 border border-error/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-error text-xl flex-shrink-0">⚠️</div>
+        <div class="text-error text-xl shrink-0">⚠️</div>
         <div class="text-sm">
           <p class="font-medium text-error mb-1">Riesgos de Balanza sin Calibración Vigente</p>
           <ul class="space-y-1 text-error">
@@ -349,7 +349,7 @@ const mineralesComercializados = computed(() => {
     <!-- Información adicional -->
     <div class="bg-accent/5 border border-accent/20 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-accent text-xl flex-shrink-0">🎯</div>
+        <div class="text-accent text-xl shrink-0">🎯</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">¿Tienes múltiples balanzas?</p>
           <p class="text-secondary">

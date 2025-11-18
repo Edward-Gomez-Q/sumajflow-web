@@ -79,7 +79,7 @@ const isFormValid = computed(() => {
     <!-- Información contextual -->
     <div class="bg-info/10 border border-info/30 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-info text-xl flex-shrink-0">💡</div>
+        <div class="text-info text-xl shrink-0">💡</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">¿Qué es una comercializadora minera?</p>
           <p class="text-secondary">
@@ -322,7 +322,7 @@ const isFormValid = computed(() => {
     <!-- Estado de validación -->
     <div v-if="isFormValid" class="bg-success/10 border border-success/30 rounded-lg p-4">
       <div class="flex items-start gap-3">
-        <div class="w-10 h-10 rounded-full bg-success/20 center text-success text-xl flex-shrink-0">
+        <div class="w-10 h-10 rounded-full bg-success/20 center text-success text-xl shrink-0">
           ✓
         </div>
         <div class="flex-1">
@@ -345,7 +345,7 @@ const isFormValid = computed(() => {
       </h4>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             💰
           </div>
           <div>
@@ -357,7 +357,7 @@ const isFormValid = computed(() => {
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             📦
           </div>
           <div>
@@ -369,7 +369,7 @@ const isFormValid = computed(() => {
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             🧪
           </div>
           <div>
@@ -381,7 +381,7 @@ const isFormValid = computed(() => {
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary flex-shrink-0">
+          <div class="w-10 h-10 rounded-lg bg-primary/10 center text-primary shrink-0">
             🌍
           </div>
           <div>
@@ -405,7 +405,7 @@ const isFormValid = computed(() => {
     <!-- Requisitos legales -->
     <div class="bg-accent/5 border border-accent/20 rounded-lg p-4">
       <div class="flex gap-3">
-        <div class="text-accent text-xl flex-shrink-0">📄</div>
+        <div class="text-accent text-xl shrink-0">📄</div>
         <div class="text-sm">
           <p class="font-medium text-neutral mb-1">Requisitos Legales para Comercializadoras</p>
           <ul class="space-y-1 text-secondary mt-2">

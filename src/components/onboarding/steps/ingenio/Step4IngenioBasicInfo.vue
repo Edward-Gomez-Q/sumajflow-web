@@ -97,7 +97,7 @@ const isFormValid = computed(() => {
     <!-- Información contextual -->
     <div class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
       <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
           <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300" />
         </div>
         <div class="text-sm">
@@ -323,7 +323,7 @@ const isFormValid = computed(() => {
   class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
   <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+    <div class="w-10 h-10 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
       <ChevronRight class="w-5 h-5 text-blue-700 dark:text-blue-300" />
     </div>
     <div class="text-sm">
@@ -340,8 +340,3 @@ const isFormValid = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

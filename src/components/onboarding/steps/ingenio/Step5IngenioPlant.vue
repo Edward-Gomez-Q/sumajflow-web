@@ -108,7 +108,7 @@ const isFormValid = computed(() => {
   class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
   <div class="flex items-start gap-3">
-    <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+    <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
       <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300" />
     </div>
     <div class="text-sm">
@@ -180,7 +180,7 @@ const isFormValid = computed(() => {
   v-if="planta.minerales.length > 0"
   class="inline-flex items-center gap-3 px-4 py-2 rounded-lg border border-green-400/60 bg-green-100/70 dark:border-green-700 dark:bg-green-900/40 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
-  <div class="w-6 h-6 rounded-full bg-green-200/50 dark:bg-green-800/50 center flex-shrink-0">
+  <div class="w-6 h-6 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
     <CheckCircle class="w-3.5 h-3.5 text-green-700 dark:text-green-300" />
   </div>
   <span class="text-sm font-medium text-neutral">
@@ -339,7 +339,7 @@ const isFormValid = computed(() => {
           >
             <!-- Checkbox -->
             <div 
-              class="w-5 h-5 rounded border-2 center flex-shrink-0 transition-all"
+              class="w-5 h-5 rounded border-2 center shrink-0 transition-all"
               :class="isProcesoSelected(proceso.id) 
                 ? 'bg-primary border-primary' 
                 : 'bg-white dark:bg-slate-800 border-border'"
@@ -361,7 +361,7 @@ const isFormValid = computed(() => {
   v-if="planta.procesos.length > 0"
   class="inline-flex items-center gap-3 px-4 py-2 rounded-lg border border-green-400/60 bg-green-100/70 dark:border-green-700 dark:bg-green-900/40 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
-  <div class="w-6 h-6 rounded-full bg-green-200/50 dark:bg-green-800/50 center flex-shrink-0">
+  <div class="w-6 h-6 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
     <CheckCircle class="w-3.5 h-3.5 text-green-700 dark:text-green-300" />
   </div>
   <span class="text-sm font-medium text-neutral">
@@ -457,7 +457,7 @@ const isFormValid = computed(() => {
   class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
   <div class="flex items-start gap-3">
-    <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center flex-shrink-0">
+    <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
       <CheckCircle class="w-4 h-4 text-green-700 dark:text-green-300" />
     </div>
     <div class="flex-1 text-sm">
@@ -483,7 +483,7 @@ const isFormValid = computed(() => {
   class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
 >
   <div class="flex items-center gap-3">
-    <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+    <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
       <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300" />
     </div>
     <div class="text-sm">
@@ -499,8 +499,3 @@ const isFormValid = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

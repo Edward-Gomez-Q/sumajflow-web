@@ -116,7 +116,7 @@ const isValidCoordinate = (coord) => {
       >
         <div class="flex items-start gap-3">
           <!-- Número de orden -->
-          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm">
+          <div class="shrink-0 w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm">
             {{ coord.orden }}
           </div>
 

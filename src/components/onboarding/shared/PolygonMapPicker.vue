@@ -435,7 +435,7 @@ defineExpose({
 <template>
   <div class="flex flex-col h-full">
     <!-- Barra de herramientas -->
-    <div v-if="editMode || showSearch" class="p-4 border-b border-border bg-hover space-y-3 flex-shrink-0">
+    <div v-if="editMode || showSearch" class="p-4 border-b border-border bg-hover space-y-3 shrink-0">
       <!-- Buscador -->
       <div v-if="showSearch" class="flex gap-2">
         <div class="relative flex-1">
@@ -473,7 +473,7 @@ defineExpose({
           @click="selectSearchResult(result)"
           class="w-full text-left p-3 hover:bg-primary/10 transition flex items-start gap-2"
         >
-          <MapPin class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <MapPin class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <div class="text-sm text-neutral">{{ result.display_name }}</div>
         </button>
       </div>
@@ -554,7 +554,7 @@ defineExpose({
       </div>
 
       <!-- Panel lateral con lista de puntos (solo en modo edición) -->
-      <div v-if="editMode && localCoordinates.length > 0" class="w-80 border-l border-border bg-hover overflow-y-auto flex-shrink-0">
+      <div v-if="editMode && localCoordinates.length > 0" class="w-80 border-l border-border bg-hover overflow-y-auto shrink-0">
         <div class="p-4">
           <div class="flex items-center justify-between mb-3">
             <h4 class="text-sm font-semibold text-neutral">Puntos del Polígono</h4>
@@ -569,7 +569,7 @@ defineExpose({
             >
               <div class="flex items-start gap-3">
                 <div 
-                  class="w-8 h-8 rounded-full center font-bold text-white text-sm flex-shrink-0"
+                  class="w-8 h-8 rounded-full center font-bold text-white text-sm shrink-0"
                   :style="{ backgroundColor: activeSector?.color }"
                 >
                   {{ coord.orden }}
@@ -588,7 +588,7 @@ defineExpose({
                 </div>
                 <button
                   @click="removePolygonPoint(index)"
-                  class="w-7 h-7 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors flex-shrink-0"
+                  class="w-7 h-7 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors shrink-0"
                   title="Eliminar punto"
                 >
                   <Trash2 class="w-4 h-4" />
@@ -610,9 +610,6 @@ defineExpose({
 </template>
 
 <style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
 
 :deep(.custom-polygon-marker) {
   background: transparent;

@@ -151,7 +151,7 @@ const progressSteps = [
 
       <div class="bg-primary/5 border border-primary/30 rounded-lg p-4">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary/20 center flex-shrink-0">
+          <div class="w-10 h-10 rounded-full bg-primary/20 center shrink-0">
             <Building2 class="w-5 h-5 text-primary" />
           </div>
           <div class="flex-1">
@@ -267,7 +267,7 @@ const progressSteps = [
 
       <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
         <div class="flex gap-3">
-          <AlertCircle class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+          <AlertCircle class="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0" />
           <p class="text-sm text-yellow-900 dark:text-yellow-100">
             <strong>Tip:</strong> Menciona tu ID de solicitud <code class="bg-yellow-100 dark:bg-yellow-800 px-1.5 py-0.5 rounded">{{ solicitudId }}</code> al contactar con la cooperativa para agilizar la búsqueda de tu información.
           </p>
@@ -281,7 +281,7 @@ const progressSteps = [
 
       <div class="space-y-3">
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
             1
           </div>
           <div>
@@ -293,7 +293,7 @@ const progressSteps = [
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
             2
           </div>
           <div>
@@ -305,7 +305,7 @@ const progressSteps = [
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
             3
           </div>
           <div>
@@ -317,7 +317,7 @@ const progressSteps = [
         </div>
 
         <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 center flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 center shrink-0">
             <CheckCircle class="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <div>
@@ -348,9 +348,3 @@ const progressSteps = [
     </div>
   </div>
 </template>
-
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

@@ -354,7 +354,7 @@ watch(() => props.coordinates, (newCoords) => {
             @click="selectSearchResult(result)"
             class="w-full text-left p-3 hover:bg-primary/10 transition flex items-start gap-2"
           >
-            <MapPin class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <MapPin class="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <div class="text-sm text-neutral">{{ result.display_name }}</div>
           </button>
         </div>
@@ -400,7 +400,7 @@ watch(() => props.coordinates, (newCoords) => {
               :key="index"
               class="flex items-center gap-2 bg-hover p-2 rounded-lg"
             >
-              <div class="w-6 h-6 rounded-full bg-primary text-white center font-bold text-xs flex-shrink-0">
+              <div class="w-6 h-6 rounded-full bg-primary text-white center font-bold text-xs shrink-0">
                 {{ coord.orden }}
               </div>
               <div class="flex-1 min-w-0 font-mono text-xs space-y-0.5">
@@ -409,7 +409,7 @@ watch(() => props.coordinates, (newCoords) => {
               </div>
               <button
                 @click="removePolygonPoint(index)"
-                class="w-6 h-6 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors flex-shrink-0"
+                class="w-6 h-6 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors shrink-0"
                 title="Eliminar punto"
               >
                 <X class="w-4 h-4" />
@@ -450,9 +450,7 @@ watch(() => props.coordinates, (newCoords) => {
 </template>
 
 <style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
+
 
 /* Estilos específicos para el mapa */
 :deep(.leaflet-container) {

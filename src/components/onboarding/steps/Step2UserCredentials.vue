@@ -198,8 +198,3 @@ const passwordsMatch = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

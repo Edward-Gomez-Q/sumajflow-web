@@ -53,7 +53,7 @@ const hasValidSectors = computed(() => {
     <!-- Información contextual -->
     <div class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
       <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
           <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300" />
         </div>
         <div class="text-sm">
@@ -138,7 +138,7 @@ const hasValidSectors = computed(() => {
               class="flex items-center gap-2"
             >
               <div
-                class="w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 shadow-sm flex-shrink-0"
+                class="w-4 h-4 rounded-full border-2 border-white dark:border-slate-800 shadow-sm shrink-0"
                 :style="{ backgroundColor: sector.color }"
               ></div>
               <span class="text-xs text-neutral truncate">{{ sector.nombre }}</span>
@@ -156,23 +156,23 @@ const hasValidSectors = computed(() => {
       </div>
       <ul class="space-y-2 text-sm text-secondary">
         <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ChevronRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Haz clic directamente en el mapa para agregar puntos del perímetro</span>
         </li>
         <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ChevronRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Usa el buscador del mapa para encontrar ubicaciones específicas</span>
         </li>
         <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ChevronRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Arrastra los marcadores para ajustar la posición de cada punto</span>
         </li>
         <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ChevronRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Asigna un nombre único y color diferente a cada sector</span>
         </li>
         <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <ChevronRight class="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Evita que los sectores se solapen entre sí</span>
         </li>
       </ul>
@@ -180,8 +180,3 @@ const hasValidSectors = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

@@ -389,8 +389,3 @@ if (personalData.value.ci) {
   </div>
 </template>
 
-<style scoped>
-.center {
-  @apply flex justify-center items-center;
-}
-</style>

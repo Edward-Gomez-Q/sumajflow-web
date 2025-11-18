@@ -21,5 +21,7 @@ sessionStore.loadFromLocalStorage()
 themeStore.loadFromLocalStorage()
 
 publicDataStore.fetchCooperativas()
+publicDataStore.fetchProcesos()
+publicDataStore.fetchMinerales()
 
 app.mount('#app')

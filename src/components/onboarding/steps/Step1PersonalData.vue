@@ -141,7 +141,7 @@ if (personalData.value.ci) {
             type="text"
             :value="personalData.nombres"
             @input="updateField('nombres', $event.target.value)"
-            placeholder="Ej: María Elena"
+            placeholder="Nombres"
             class="w-full"
             required
           />
@@ -157,7 +157,7 @@ if (personalData.value.ci) {
               type="text"
               :value="personalData.primer_apellido"
               @input="updateField('primer_apellido', $event.target.value)"
-              placeholder="Ej: Condori"
+              placeholder="Primer Apellido"
               class="w-full"
               required
             />
@@ -172,10 +172,9 @@ if (personalData.value.ci) {
               type="text"
               :value="personalData.segundo_apellido"
               @input="updateField('segundo_apellido', $event.target.value)"
-              placeholder="Ej: Mamani"
+              placeholder="Segundo Apellido"
               class="w-full"
             />
-            <p class="input-helper">Opcional si no aplica</p>
           </div>
         </div>
       </div>

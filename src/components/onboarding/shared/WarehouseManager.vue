@@ -1,7 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { Warehouse, Plus, Edit2, Trash2, X, MapPin, Package, Maximize2, CheckCircle } from 'lucide-vue-next'
 import AddressForm from './AddressForm.vue'
 import MapPicker from './MapPicker.vue'
+import { usePublicDataStore } from '@/stores/publicDataStore'
+
+const publicDataStore = usePublicDataStore()
 
 const props = defineProps({
   modelValue: {
@@ -10,12 +14,19 @@ const props = defineProps({
   },
   availableMinerals: {
     type: Array,
-    default: () => ['Ag', 'Pb', 'Zn', 'Sn']
+    default: () => ['Ag', 'Pb', 'Zn']
   },
   showType: {
     type: Boolean,
     default: true
   }
+})
+
+//Obtener los minerales desde el store por el id que se pasa en availableMinerals
+const minerals = computed(() => {
+  return publicDataStore.minerales.filter(mineral => 
+    props.availableMinerals.includes(mineral.id)
+  )
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -31,12 +42,20 @@ const isEditing = ref(false)
 const editingIndex = ref(-1)
 const showMapPicker = ref(false)
 
-// Tipos de almacén
+// Tipos de almacén con colores
 const warehouseTypes = [
-  { value: 'concentrado', label: 'Concentrado' },
-  { value: 'complejo', label: 'Complejo' },
-  { value: 'abierto', label: 'Abierto' },
-  { value: 'cerrado', label: 'Cerrado' }
+  { 
+    value: 'concentrado', 
+    label: 'Concentrado',
+    color: 'blue',
+    icon: Package
+  },
+  { 
+    value: 'complejo', 
+    label: 'Complejo',
+    color: 'purple',
+    icon: Warehouse
+  }
 ]
 
 // Formulario del almacén
@@ -155,15 +174,9 @@ const isFormValid = computed(() => {
          (!props.showType || warehouseForm.value.tipo !== '')
 })
 
-// Iconos por tipo
-const getTypeIcon = (type) => {
-  const icons = {
-    'concentrado': '📦',
-    'complejo': '🏢',
-    'abierto': '🌤️',
-    'cerrado': '🏠'
-  }
-  return icons[type] || '📦'
+// Obtener configuración del tipo
+const getTypeConfig = (type) => {
+  return warehouseTypes.find(t => t.value === type) || warehouseTypes[0]
 }
 </script>
 
@@ -174,9 +187,10 @@ const getTypeIcon = (type) => {
       <button
         @click="openModal()"
         type="button"
-        class="btn-outline"
+        class="btn-outline inline-flex items-center gap-2"
       >
-        ➕ Agregar Almacén
+        <Plus class="w-4 h-4" />
+        <span>Agregar Almacén</span>
       </button>
     </div>
 
@@ -185,41 +199,88 @@ const getTypeIcon = (type) => {
       <div
         v-for="(warehouse, index) in warehouses"
         :key="index"
-        class="card p-4 hover:shadow-lg transition-shadow"
+        class="border border-border rounded-lg p-5 hover:border-primary/50 transition-all hover:shadow-md"
       >
         <div class="flex items-start gap-4">
-          <!-- Icono -->
-          <div class="w-12 h-12 rounded-lg bg-primary/10 center text-2xl flex-shrink-0">
-            {{ getTypeIcon(warehouse.tipo) }}
+          <!-- Icono sin fondo de color -->
+          <div class="w-12 h-12 rounded-lg border-2 center flex-shrink-0"
+            :class="{
+              '': warehouse.tipo === 'concentrado',
+              '': warehouse.tipo === 'complejo',
+              'border-primary': !warehouse.tipo
+            }"
+          >
+            <component 
+              :is="getTypeConfig(warehouse.tipo).icon"
+              class="w-6 h-6"
+              :class="{
+                'text-blue-600 dark:text-blue-400': warehouse.tipo === 'concentrado',
+                'text-purple-600 dark:text-purple-400': warehouse.tipo === 'complejo',
+                'text-primary': !warehouse.tipo
+              }"
+            />
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between gap-2">
-              <h4 class="font-semibold text-neutral">{{ warehouse.nombre }}</h4>
-              <div v-if="showType && warehouse.tipo" class="badge badge-neutral">
-                {{ warehouseTypes.find(t => t.value === warehouse.tipo)?.label }}
+            <div class="flex items-start justify-between gap-3 mb-4">
+              <h4 class="font-semibold text-neutral text-lg">{{ warehouse.nombre }}</h4>
+              <div 
+                v-if="showType && warehouse.tipo" 
+                class="px-3 py-1.5 rounded-full text-xs font-semibold border-2 whitespace-nowrap"
+                :class="{
+                  ' text-blue-700 ': warehouse.tipo === 'concentrado',
+                  ' text-purple-700': warehouse.tipo === 'complejo'
+                }"
+              >
+                {{ getTypeConfig(warehouse.tipo).label }}
               </div>
             </div>
 
-            <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-              <div>
-                <span class="text-tertiary">Capacidad:</span>
-                <span class="font-medium text-neutral ml-1">{{ warehouse.capacidad_maxima }} ton</span>
+            <div class="space-y-3">
+              <!-- Capacidad y Área -->
+              <div class="flex flex-wrap gap-4 text-sm">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/20 center flex-shrink-0">
+                    <Package class="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <span class="text-tertiary text-xs block leading-tight">Capacidad</span>
+                    <span class="font-semibold text-neutral">{{ warehouse.capacidad_maxima }} ton</span>
+                  </div>
+                </div>
+                
+                <div v-if="warehouse.area" class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/20 center flex-shrink-0">
+                    <Maximize2 class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <span class="text-tertiary text-xs block leading-tight">Área</span>
+                    <span class="font-semibold text-neutral">{{ warehouse.area }} m²</span>
+                  </div>
+                </div>
               </div>
-              <div v-if="warehouse.area">
-                <span class="text-tertiary">Área:</span>
-                <span class="font-medium text-neutral ml-1">{{ warehouse.area }} m²</span>
+
+              <!-- Minerales -->
+              <div v-if="warehouse.minerales?.length > 0">
+                <span class="text-tertiary text-xs font-medium block mb-2">Minerales almacenados</span>
+                <div class="flex flex-wrap gap-2">
+                  <span 
+                    v-for="mineral in warehouse.minerales" 
+                    :key="mineral"
+                    class="px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold border border-primary/20"
+                  >
+                    {{ mineral }}
+                  </span>
+                </div>
               </div>
-              <div v-if="warehouse.minerales?.length > 0" class="col-span-2">
-                <span class="text-tertiary">Minerales:</span>
-                <span class="font-medium text-neutral ml-1">{{ warehouse.minerales.join(', ') }}</span>
+
+              <!-- Ubicación -->
+              <div v-if="warehouse.direccion" class="flex items-start gap-2 pt-1 text-sm text-secondary">
+                <MapPin class="w-4 h-4 flex-shrink-0 mt-0.5 text-tertiary" />
+                <span class="leading-relaxed">{{ warehouse.direccion }}, {{ warehouse.municipio }}</span>
               </div>
             </div>
-
-            <p v-if="warehouse.direccion" class="text-sm text-secondary mt-2">
-              📍 {{ warehouse.direccion }}, {{ warehouse.municipio }}
-            </p>
           </div>
 
           <!-- Acciones -->
@@ -227,18 +288,18 @@ const getTypeIcon = (type) => {
             <button
               @click="openModal(warehouse, index)"
               type="button"
-              class="btn-ghost w-10 h-10 p-0"
+              class="w-9 h-9 rounded-lg border border-border hover:border-primary hover:bg-primary/5 center transition-all"
               title="Editar"
             >
-              ✏️
+              <Edit2 class="w-4 h-4 text-secondary" />
             </button>
             <button
               @click="deleteWarehouse(index)"
               type="button"
-              class="btn-ghost w-10 h-10 p-0 text-error"
+              class="w-9 h-9 rounded-lg border border-border hover:border-error hover:bg-error/5 center transition-all"
               title="Eliminar"
             >
-              🗑️
+              <Trash2 class="w-4 h-4 text-error" />
             </button>
           </div>
         </div>
@@ -246,18 +307,21 @@ const getTypeIcon = (type) => {
     </div>
 
     <!-- Estado vacío -->
-    <div v-else class="card p-8 text-center">
-      <div class="text-5xl mb-3">📦</div>
+    <div v-else class="border border-dashed border-border rounded-lg p-8 text-center">
+      <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
+        <Warehouse class="w-8 h-8 text-primary" />
+      </div>
       <h4 class="font-semibold text-neutral mb-2">No hay almacenes registrados</h4>
-      <p class="text-sm text-secondary mb-4">
+      <p class="text-sm text-secondary mb-4 max-w-md mx-auto">
         Registra los almacenes donde guardas minerales o concentrados
       </p>
       <button
         @click="openModal()"
         type="button"
-        class="btn"
+        class="btn inline-flex items-center gap-2"
       >
-        ➕ Agregar Primer Almacén
+        <Plus class="w-4 h-4" />
+        <span>Agregar Primer Almacén</span>
       </button>
     </div>
 
@@ -271,20 +335,25 @@ const getTypeIcon = (type) => {
         <div class="bg-surface rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col border border-border">
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-border">
-            <div>
-              <h3 class="text-xl font-semibold text-neutral">
-                {{ isEditing ? 'Editar Almacén' : 'Nuevo Almacén' }}
-              </h3>
-              <p class="text-sm text-secondary mt-1">
-                Registra la información del almacén
-              </p>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-primary/10 center">
+                <Warehouse class="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 class="text-xl font-semibold text-neutral">
+                  {{ isEditing ? 'Editar Almacén' : 'Nuevo Almacén' }}
+                </h3>
+                <p class="text-sm text-secondary mt-1">
+                  Registra la información del almacén
+                </p>
+              </div>
             </div>
             <button
               @click="closeModal"
               type="button"
-              class="btn-ghost w-10 h-10 p-0"
+              class="w-10 h-10 rounded-lg hover:bg-hover center transition-colors"
             >
-              ✕
+              <X class="w-5 h-5 text-secondary" />
             </button>
           </div>
 
@@ -303,6 +372,9 @@ const getTypeIcon = (type) => {
                   class="w-full"
                   required
                 />
+                <p class="input-helper">
+                  Nombre descriptivo del almacén
+                </p>
               </div>
 
               <div v-if="showType" class="input-group">
@@ -314,11 +386,14 @@ const getTypeIcon = (type) => {
                   class="w-full"
                   required
                 >
-                  <option value="">Seleccionar</option>
+                  <option value="">Seleccionar tipo</option>
                   <option v-for="type in warehouseTypes" :key="type.value" :value="type.value">
                     {{ type.label }}
                   </option>
                 </select>
+                <p class="input-helper">
+                  Categoría según su uso
+                </p>
               </div>
             </div>
 
@@ -327,18 +402,25 @@ const getTypeIcon = (type) => {
               <label class="input-label">Minerales que Almacena</label>
               <div class="flex flex-wrap gap-2">
                 <button
-                  v-for="mineral in availableMinerals"
-                  :key="mineral"
-                  @click="toggleMineral(mineral)"
+                  v-for="mineral in minerals"
+                  :key="mineral.id"
+                  @click="toggleMineral(mineral.id)"
                   type="button"
-                  class="px-4 py-2 rounded-lg border-2 transition-all"
-                  :class="warehouseForm.minerales.includes(mineral)
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-surface text-neutral border-border hover:border-primary'"
+                  class="relative px-4 py-2 rounded-lg border-2 transition-all font-medium"
+                  :class="warehouseForm.minerales.includes(mineral.id)
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-surface text-neutral border-border hover:border-primary/50'"
                 >
-                  {{ mineral }}
+                  <CheckCircle 
+                    v-if="warehouseForm.minerales.includes(mineral.id)"
+                    class="w-3 h-3 absolute top-1 right-1"
+                  />
+                  {{ mineral.nombre }}
                 </button>
               </div>
+              <p class="input-helper">
+                Selecciona los tipos de mineral que se almacenan aquí
+              </p>
             </div>
 
             <!-- Capacidad y Área -->
@@ -347,25 +429,37 @@ const getTypeIcon = (type) => {
                 <label class="input-label">
                   Capacidad Máxima (ton) <span class="text-error">*</span>
                 </label>
-                <input
-                  v-model.number="warehouseForm.capacidad_maxima"
-                  type="number"
-                  step="0.01"
-                  placeholder="100"
-                  class="w-full"
-                  required
-                />
+                <div class="relative">
+                  <Package class="w-5 h-5 text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    v-model.number="warehouseForm.capacidad_maxima"
+                    type="number"
+                    step="0.01"
+                    placeholder="100.00"
+                    class="w-full pl-10"
+                    required
+                  />
+                </div>
+                <p class="input-helper">
+                  Capacidad máxima en toneladas
+                </p>
               </div>
 
               <div class="input-group">
                 <label class="input-label">Área (m²)</label>
-                <input
-                  v-model.number="warehouseForm.area"
-                  type="number"
-                  step="0.01"
-                  placeholder="500"
-                  class="w-full"
-                />
+                <div class="relative">
+                  <Maximize2 class="w-5 h-5 text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    v-model.number="warehouseForm.area"
+                    type="number"
+                    step="0.01"
+                    placeholder="500.00"
+                    class="w-full pl-10"
+                  />
+                </div>
+                <p class="input-helper">
+                  Área física del almacén
+                </p>
               </div>
             </div>
 
@@ -387,7 +481,7 @@ const getTypeIcon = (type) => {
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between p-6 border-t border-border bg-hover">
+          <div class="flex items-center justify-between gap-4 p-6 border-t border-border bg-hover">
             <button
               @click="closeModal"
               type="button"
@@ -399,9 +493,10 @@ const getTypeIcon = (type) => {
               @click="saveWarehouse"
               :disabled="!isFormValid"
               type="button"
-              class="btn"
+              class="btn inline-flex items-center gap-2"
             >
-              {{ isEditing ? '💾 Guardar Cambios' : '➕ Crear Almacén' }}
+              <CheckCircle class="w-4 h-4" />
+              <span>{{ isEditing ? 'Guardar Cambios' : 'Crear Almacén' }}</span>
             </button>
           </div>
         </div>
@@ -419,3 +514,9 @@ const getTypeIcon = (type) => {
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.center {
+  @apply flex justify-center items-center;
+}
+</style>

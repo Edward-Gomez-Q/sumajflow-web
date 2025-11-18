@@ -95,16 +95,14 @@ const isFormValid = computed(() => {
     </div>
 
     <!-- Información contextual -->
-    <div class="rounded-xl p-4 border border-blue-400/60 bg-blue-100/70 dark:border-blue-700 dark:bg-blue-900/40 shadow-sm backdrop-blur-[2px] transition-all duration-200">
-      <div class="flex gap-3">
-        <div class="flex-shrink-0 mt-0.5">
-          <AlertCircle class="w-5 h-5 text-blue-700 dark:text-blue-300" />
+    <div class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+          <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300" />
         </div>
-        <div class="flex-1">
-          <p class="text-sm font-semibold text-blue-950 dark:text-blue-100 mb-1 tracking-tight">
-            ¿Qué es un ingenio minero?
-          </p>
-          <p class="text-sm text-blue-900 dark:text-blue-200 leading-relaxed">
+        <div class="text-sm">
+          <p class="font-medium text-neutral mb-1">¿Qué es un ingenio minero?</p>
+          <p class="text-secondary leading-relaxed">
             Los ingenios son plantas industriales especializadas en el procesamiento y beneficio de minerales. 
             Reciben mineral crudo y lo transforman en concentrados de mayor valor mediante procesos como 
             chancado, molienda, flotación y secado.
@@ -112,6 +110,7 @@ const isFormValid = computed(() => {
         </div>
       </div>
     </div>
+
 
     <!-- Contenido del formulario -->
     <div class="space-y-6">
@@ -217,7 +216,7 @@ const isFormValid = computed(() => {
             </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
             <div class="input-group">
               <label for="telefono-fijo" class="input-label">
                 Teléfono Fijo
@@ -237,8 +236,10 @@ const isFormValid = computed(() => {
                 Teléfono de oficina (opcional)
               </p>
             </div>
-
-            <div class="input-group">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                      <div class="input-group">
               <label for="telefono-movil" class="input-label">
                 Teléfono Móvil
               </label>
@@ -269,7 +270,6 @@ const isFormValid = computed(() => {
                 Celular de contacto directo (opcional)
               </p>
             </div>
-          </div>
         </div>
       </div>
 
@@ -300,65 +300,43 @@ const isFormValid = computed(() => {
       </div>
     </div>
 
-    <!-- Estado de validación -->
-    <div v-if="isFormValid" class="rounded-xl p-4 border border-green-400/60 bg-green-100/70 dark:border-green-700 dark:bg-green-900/40 shadow-sm backdrop-blur-[2px] transition-all duration-200">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-green-200/50 dark:bg-green-800/50 center">
-          <CheckCircle2 class="w-5 h-5 text-green-700 dark:text-green-300" />
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-green-950 dark:text-green-100">Información básica completa</p>
-          <p class="text-sm text-green-900 dark:text-green-200 mt-1">
-            {{ ingenioData.razon_social }} - NIT: {{ ingenioData.nit }}
-          </p>
-        </div>
-      </div>
+<!-- ✅ Estado de validación -->
+<div
+  v-if="isFormValid"
+  class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
+>
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-green-200/50 dark:bg-green-800/50 center">
+      <CheckCircle2 class="w-5 h-5 text-green-700 dark:text-green-300" />
     </div>
+    <div class="text-sm">
+      <p class="font-medium text-neutral mb-1">Información básica completa</p>
+      <p class="text-secondary leading-relaxed">
+        {{ ingenioData.razon_social }} – NIT: {{ ingenioData.nit }}
+      </p>
+    </div>
+  </div>
+</div>
 
-    <!-- Próximo paso -->
-    <div class="rounded-xl p-4 border border-blue-400/60 bg-blue-100/70 dark:border-blue-700 dark:bg-blue-900/40 shadow-sm backdrop-blur-[2px] transition-all duration-200">
-      <div class="flex gap-3">
-        <ChevronRight class="w-5 h-5 text-blue-700 dark:text-blue-300 flex-shrink-0 mt-0.5" />
-        <p class="text-sm text-blue-900 dark:text-blue-200">
-          <span class="font-semibold text-blue-950 dark:text-blue-100">Siguiente paso:</span> Configurarás la información de tu planta de procesamiento, 
-          incluyendo capacidad, minerales que procesas y procesos disponibles.
-        </p>
-      </div>
+<!-- 🔵 Próximo paso -->
+<div
+  class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200"
+>
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center flex-shrink-0">
+      <ChevronRight class="w-5 h-5 text-blue-700 dark:text-blue-300" />
     </div>
+    <div class="text-sm">
+      <p class="font-medium text-neutral mb-1">Siguiente paso</p>
+      <p class="text-secondary leading-relaxed">
+        Configurarás la información de tu planta de procesamiento, incluyendo capacidad,
+        minerales que procesas y procesos disponibles.
+      </p>
+    </div>
+  </div>
+</div>
 
-    <!-- Información adicional -->
-    <div class="bg-surface border border-border rounded-lg p-4">
-      <div class="flex items-center gap-2 mb-3">
-        <FileText class="w-5 h-5 text-primary" />
-        <h4 class="text-sm font-semibold text-neutral">Documentación Requerida</h4>
-      </div>
-      <ul class="space-y-2 text-sm text-secondary">
-        <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-          <span>Registro de Comercio actualizado</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-          <span>Licencia Ambiental vigente (LEIA)</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-          <span>Certificado de operaciones mineras</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <ChevronRight class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-          <span>Certificados de calibración de equipos</span>
-        </li>
-      </ul>
-      <div class="mt-3 rounded-xl p-3 border border-blue-400/60 bg-blue-100/70 dark:border-blue-700 dark:bg-blue-900/40 shadow-sm backdrop-blur-[2px]">
-        <div class="flex gap-2">
-          <AlertCircle class="w-4 h-4 text-blue-700 dark:text-blue-300 flex-shrink-0 mt-0.5" />
-          <p class="text-xs text-blue-900 dark:text-blue-200">
-            Podrás subir estos documentos después del registro desde tu panel de control
-          </p>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 

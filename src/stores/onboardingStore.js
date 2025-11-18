@@ -96,17 +96,11 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     latitud: -16.520000,
     longitud: -68.180000,
     planta: {
-      minerales: ['Au', 'Ag', 'Zn'],
+      minerales: [],
       cupo_minimo: 15,
       capacidad_procesamiento: 200,
       costo_procesamiento: 50,
-      turnos: ['mañana', 'tarde'],
-      procesos: [
-        { id: 'trituracion', nombre: 'Trituración' },
-        { id: 'molienda', nombre: 'Molienda' },
-        { id: 'cianuración', nombre: 'Cianuración' },
-        { id: 'filtrado', nombre: 'Filtrado' }
-      ],
+      procesos: [],
       licencia_ambiental_url: 'data:application/pdf;base64,JVBERi0xLjQK...',
       numero_licencia: 'LEIA-045-2024',
       departamento: 'La Paz',
@@ -133,32 +127,6 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       longitud: -68.180000
     },
     almacenes: [
-      {
-        nombre: 'Almacén Principal Oro-Plata',
-        tipo: 'cerrado',
-        minerales: ['Au', 'Ag'],
-        capacidad_maxima: 300,
-        area: 600,
-        departamento: 'La Paz',
-        provincia: 'Murillo',
-        municipio: 'El Alto',
-        direccion: 'Km 12 Carretera La Paz - El Alto - Sector A',
-        latitud: -16.521000,
-        longitud: -68.181000
-      },
-      {
-        nombre: 'Almacén Secundario Zinc',
-        tipo: 'concentrado',
-        minerales: ['Zn'],
-        capacidad_maxima: 180,
-        area: 400,
-        departamento: 'La Paz',
-        provincia: 'Murillo',
-        municipio: 'El Alto',
-        direccion: 'Km 12 Carretera La Paz - El Alto - Sector B',
-        latitud: -16.522000,
-        longitud: -68.182000
-      }
     ]
   })
 
@@ -413,7 +381,6 @@ export const useOnboardingStore = defineStore('onboarding', () => {
       planta.cupo_minimo > 0 &&
       planta.capacidad_procesamiento > 0 &&
       planta.costo_procesamiento > 0 &&
-      planta.turnos.length > 0 &&
       planta.procesos.length > 0 &&
       planta.numero_licencia?.trim() !== '' &&
       planta.licencia_ambiental_url !== '' &&

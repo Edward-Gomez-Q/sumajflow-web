@@ -4,7 +4,14 @@ import { useSessionStore } from './stores/sessionStore'
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: (to) => {
+      const sessionStore = useSessionStore()
+      if (sessionStore.isAuthenticated) {
+        // Redirigir según rol
+        return `/${sessionStore.userRole}`
+      }
+      return '/login'
+    }
   },
   {
     path: '/login',
@@ -24,7 +31,60 @@ const routes = [
       title: 'Crear Cuenta - SumajFlow'
     }
   },
-  // Ruta 404
+  
+  // === RUTAS PROTEGIDAS POR ROL ===
+  {
+    path: '/cooperativa',
+    name: 'CooperativaDashboard',
+    component: () => import('./views/cooperativa/Dashboard.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiredRole: 'cooperativa',
+      title: 'Dashboard - Cooperativa'
+    }
+  },
+  {
+    path: '/socio',
+    name: 'SocioDashboard',
+    component: () => import('./views/socio/Dashboard.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiredRole: 'socio',
+      title: 'Dashboard - Socio'
+    }
+  },
+  {
+    path: '/ingenio',
+    name: 'IngenioDashboard',
+    component: () => import('./views/ingenio/Dashboard.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiredRole: 'ingenio',
+      title: 'Dashboard - Ingenio'
+    }
+  },
+  {
+    path: '/comercializadora',
+    name: 'ComercializadoraDashboard',
+    component: () => import('./views/comercializadora/Dashboard.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiredRole: 'comercializadora',
+      title: 'Dashboard - Comercializadora'
+    }
+  },
+  
+  // === RUTA 403 - ACCESO DENEGADO ===
+  {
+    path: '/forbidden',
+    name: 'Forbidden',
+    component: () => import('./views/Forbidden.vue'),
+    meta: {
+      title: 'Acceso Denegado - SumajFlow'
+    }
+  },
+  
+  // === RUTA 404 ===
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -47,29 +107,28 @@ const router = createRouter({
   }
 })
 
-// Guard de navegación
+// Guard de navegación mejorado
 router.beforeEach((to, from, next) => {
   const sessionStore = useSessionStore()
   
-  // Actualizar título de la página
+  // Actualizar título
   document.title = to.meta.title || 'SumajFlow'
 
-  // Verificar rutas que requieren autenticación
+  // Verificar autenticación
   if (to.meta.requiresAuth && !sessionStore.isAuthenticated) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
   }
 
-  // Verificar rutas que requieren ser invitado (no autenticado)
-  // Por ahora, redirige a login si está autenticado (hasta que tengas dashboard)
+  // Verificar rol
+  if (to.meta.requiredRole && sessionStore.userRole !== to.meta.requiredRole) {
+    next({ name: 'Forbidden' })
+    return
+  }
+
+  // Redirigir autenticados fuera de login/register
   if (to.meta.requiresGuest && sessionStore.isAuthenticated) {
-    // Evitar bucle: si ya está intentando ir a login, permitir
-    if (to.name === 'Login') {
-      next()
-      return
-    }
-    // Redirigir a login (cambiar por Dashboard cuando lo tengas)
-    next({ name: 'Login' })
+    next({ path: `/${sessionStore.userRole}` })
     return
   }
 

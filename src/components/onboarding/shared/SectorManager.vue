@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Plus, Edit2, Trash2, Mountain, X, Save, MapPin, AlertTriangle, Info } from 'lucide-vue-next'
+import { Plus, Edit2, Trash2, Mountain, X, Save, MapPin, AlertTriangle } from 'lucide-vue-next'
 import PolygonMapPicker from './PolygonMapPicker.vue'
 
 const props = defineProps({
@@ -276,6 +276,19 @@ const activeSectorForMap = computed(() => {
     coordenadas: sectorForm.value.coordenadas
   }
 })
+
+// Sectores a mostrar en el mapa (existentes + el que se está editando)
+const sectorsForMap = computed(() => {
+  if (!showModal.value) return []
+  
+  // Si estamos editando, excluir el sector siendo editado de la lista
+  if (isEditing.value) {
+    return sectors.value.filter((_, index) => index !== editingIndex.value)
+  }
+  
+  // Si es nuevo sector, mostrar todos los existentes
+  return [...sectors.value]
+})
 </script>
 
 <template>
@@ -385,10 +398,10 @@ const activeSectorForMap = computed(() => {
     <Teleport to="body">
       <div
         v-if="showModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         @click.self="closeModal"
       >
-        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border">
+        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border relative z-[10000]">
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-border shrink-0">
             <div class="flex items-center gap-3">
@@ -483,22 +496,66 @@ const activeSectorForMap = computed(() => {
                   </div>
                 </div>
 
-                <!-- Información -->
-                <div class="bg-info/10 border border-info/30 rounded-lg p-4">
-                  <div class="flex gap-3">
-                    <div class="text-info text-xl shrink-0">
-                      <Info class="w-5 h-5" />
-                    </div>
-                    <div class="text-sm">
-                      <p class="font-medium text-neutral mb-1">Instrucciones para el mapa</p>
-                      <p class="text-secondary leading-relaxed">
-                        1. Haz clic en el mapa para agregar puntos<br>
-                        2. Necesitas al menos <strong>3 puntos</strong> para definir un área<br>
-                        3. Arrastra los marcadores para ajustar la posición<br>
-                        4. Usa el buscador para encontrar ubicaciones específicas
-                      </p>
+                <!-- Lista de puntos (reemplaza las instrucciones) -->
+                <div v-if="sectorForm.coordenadas.length > 0" class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-neutral">Puntos del Polígono</h4>
+                    <span class="text-xs text-secondary">{{ sectorForm.coordenadas.length }} punto{{ sectorForm.coordenadas.length !== 1 ? 's' : '' }}</span>
+                  </div>
+                  
+                  <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <div
+                      v-for="(coord, index) in sectorForm.coordenadas"
+                      :key="index"
+                      class="bg-hover border border-border rounded-lg p-3 hover:shadow-sm transition-shadow"
+                    >
+                      <div class="flex items-start gap-3">
+                        <div 
+                          class="w-7 h-7 rounded-full center font-bold text-white text-xs shrink-0"
+                          :style="{ backgroundColor: sectorForm.color }"
+                        >
+                          {{ coord.orden }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-mono text-xs space-y-1">
+                            <div class="flex items-center gap-2">
+                              <span class="text-tertiary w-8">Lat:</span>
+                              <span class="text-neutral">{{ coord.latitud.toFixed(6) }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                              <span class="text-tertiary w-8">Lng:</span>
+                              <span class="text-neutral">{{ coord.longitud.toFixed(6) }}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          @click="() => {
+                            sectorForm.coordenadas.splice(index, 1)
+                            sectorForm.coordenadas.forEach((c, i) => { c.orden = i + 1 })
+                            handleCoordinatesUpdate(sectorForm.coordenadas)
+                          }"
+                          class="w-7 h-7 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors shrink-0"
+                          title="Eliminar punto"
+                        >
+                          <Trash2 class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  <!-- Consejos -->
+                  <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                    <p class="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+                      💡 <strong>Consejo:</strong> Arrastra los marcadores en el mapa para ajustar su posición.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Mensaje cuando no hay puntos -->
+                <div v-else class="bg-surface border border-border rounded-lg p-4 text-center">
+                  <p class="text-sm text-secondary">
+                    Haz clic en el mapa para comenzar a agregar puntos
+                  </p>
                 </div>
               </div>
             </div>
@@ -506,7 +563,7 @@ const activeSectorForMap = computed(() => {
             <!-- Panel derecho: Mapa -->
             <div class="flex-1 min-w-0">
               <PolygonMapPicker
-                :sectors="[]"
+                :sectors="sectorsForMap"
                 :edit-mode="true"
                 :active-sector="activeSectorForMap"
                 :show-search="true"

@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSessionStore } from './sessionStore'
+import rutaApi from '../assets/rutaApi.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const error = ref(null)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+  const API_URL = rutaApi
 
   const login = async (email, password) => {
     isLoading.value = true
@@ -27,37 +28,9 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.message || 'Error al iniciar sesión')
       }
 
-      // Guardar sesión
+      // Guardar sesión con refreshToken
       const sessionStore = useSessionStore()
-      sessionStore.setSession(data.token, data.user)
-
-      return { success: true, data }
-    } catch (err) {
-      error.value = err.message
-      return { success: false, error: err.message }
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  const register = async (userData) => {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al registrar usuario')
-      }
+      sessionStore.setSession(data.token, data.refreshToken, data.user)
 
       return { success: true, data }
     } catch (err) {
@@ -74,28 +47,43 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const sessionStore = useSessionStore()
-      
-      // Opcional: llamar al backend para invalidar el token
-      if (sessionStore.token) {
-        await fetch(`${API_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-      }
-
       sessionStore.clearSession()
       return { success: true }
     } catch (err) {
       error.value = err.message
-      // Aún así limpiar la sesión local
-      const sessionStore = useSessionStore()
-      sessionStore.clearSession()
       return { success: false, error: err.message }
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const refreshToken = async () => {
+    const sessionStore = useSessionStore()
+    
+    if (!sessionStore.refreshToken) {
+      return { success: false }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: sessionStore.refreshToken }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error('Token expirado')
+      }
+
+      sessionStore.setSession(data.token, data.refreshToken, data.user)
+      return { success: true }
+    } catch (err) {
+      sessionStore.clearSession()
+      return { success: false }
     }
   }
 
@@ -107,8 +95,8 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading,
     error,
     login,
-    register,
     logout,
+    refreshToken,
     resetError,
   }
 })

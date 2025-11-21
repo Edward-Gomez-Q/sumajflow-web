@@ -261,19 +261,6 @@ const getTypeConfig = (type) => {
                 </div>
               </div>
 
-              <!-- Minerales -->
-              <div v-if="warehouse.minerales?.length > 0">
-                <span class="text-tertiary text-xs font-medium block mb-2">Minerales almacenados</span>
-                <div class="flex flex-wrap gap-2">
-                  <span 
-                    v-for="mineral in warehouse.minerales" 
-                    :key="mineral"
-                    class="px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold border border-primary/20"
-                  >
-                    {{ mineral }}
-                  </span>
-                </div>
-              </div>
 
               <!-- Ubicación -->
               <div v-if="warehouse.direccion" class="flex items-start gap-2 pt-1 text-sm text-secondary">

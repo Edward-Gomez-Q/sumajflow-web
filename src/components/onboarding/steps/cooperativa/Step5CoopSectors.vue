@@ -112,8 +112,8 @@ const hasValidSectors = computed(() => {
       </div>
     </div>
 
-    <!-- Mapa de resumen -->
-    <div v-if="hasValidSectors" class="space-y-3">
+    <!-- Mapa de resumen con z-index corregido -->
+    <div v-if="hasValidSectors" class="space-y-3 relative z-0">
       <div class="flex items-center gap-2">
         <Map class="w-5 h-5 text-primary" />
         <h3 class="text-lg font-semibold text-neutral">Vista General de Sectores</h3>
@@ -179,4 +179,3 @@ const hasValidSectors = computed(() => {
     </div>
   </div>
 </template>
-

@@ -8,191 +8,150 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const totalSteps = ref(3) // Se ajusta según el rol seleccionado
 
   const personalData = ref({
-    nombres: 'María Elena',
-    primer_apellido: 'Condori',
-    segundo_apellido: 'Apaza',
-    ci: '8765432 LP',
-    fecha_nacimiento: '1990-08-22',
-    numero_celular: '71456789',
-    genero: 'Femenino',
+    nombres: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    ci: '',
+    fecha_nacimiento: '',
+    numero_celular: '',
+    genero: '',
     nacionalidad: 'Boliviana',
-    departamento: 'La Paz',
-    provincia: 'Murillo',
-    municipio: 'La Paz',
-    direccion: 'Calle Comercio #456, Zona San Pedro',
-    latitud: -16.500000,
-    longitud: -68.150000
+    departamento: '',
+    provincia: '',
+    municipio: '',
+    direccion: '',
+    latitud: null,
+    longitud: null
   })
 
   const userData = ref({
-    correo: 'maria.condori@example.com',
-    contrasena: 'minera2024',
-    confirmar_contrasena: 'minera2024'
+    correo: '',
+    contrasena: '',
+    confirmar_contrasena: ''
   })
 
   const cooperativaData = ref({
-    razon_social: 'Cooperativa Minera Pachamama LTDA',
-    nit: '9988776655',
-    nim: 67890,
-    correo_contacto: 'contacto@pachamama.com',
-    numero_telefono_fijo: '22456789',
-    numero_telefono_movil: '71234567',
-    departamento: 'La Paz',
-    provincia: 'Murillo',
-    municipio: 'La Paz',
-    direccion: 'Mina Milluni, Zona Alta',
-    latitud: -16.350000,
-    longitud: -68.100000,
-    sectores: [
-      {
-        nombre: 'Sector Milluni',
-        color: '#059669',
-        coordenadas: [
-          { orden: 1, latitud: -16.350000, longitud: -68.100000 },
-          { orden: 2, latitud: -16.355000, longitud: -68.105000 },
-          { orden: 3, latitud: -16.360000, longitud: -68.100000 },
-          { orden: 4, latitud: -16.355000, longitud: -68.095000 }
-        ]
-      }
-    ],
+    razon_social: '',
+    nit: '',
+    nim: null,
+    correo_contacto: '',
+    numero_telefono_fijo: '',
+    numero_telefono_movil: '',
+    departamento: '',
+    provincia: '',
+    municipio: '',
+    direccion: '',
+    latitud: null,
+    longitud: null,
+    sectores: [],
     balanza: {
-      nombre: 'Balanza Cooperativa Pachamama',
-      marca: 'OHAUS',
-      modelo: 'D52XW50WQS5',
-      numero_serie: 'OHS-67890-2024',
-      capacidad_maxima: 7500,
-      precision_minima: 0.8,
-      fecha_ultima_calibracion: '2024-10-15',
-      fecha_proxima_calibracion: '2025-04-15',
-      departamento: 'La Paz',
-      provincia: 'Murillo',
-      municipio: 'La Paz',
-      direccion: 'Mina Milluni, Zona Alta',
-      latitud: -16.350000,
-      longitud: -68.100000
+      nombre: '',
+      marca: '',
+      modelo: '',
+      numero_serie: '',
+      capacidad_maxima: null,
+      precision_minima: null,
+      fecha_ultima_calibracion: '',
+      fecha_proxima_calibracion: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null
     }
   })
 
   const socioData = ref({
-    cooperativa_id: 2,
-    numero_socio: 'S-005678',
-    fecha_afiliacion: '2021-06-20',
+    cooperativa_id: null,
+    numero_socio: '',
+    fecha_afiliacion: '',
     carnet_afiliacion_url: '',
     carnet_identidad_url: '',
     estado: 'pendiente'
   })
 
   const ingenioData = ref({
-    razon_social: 'Ingenio Minero Illimani S.R.L.',
-    nit: '4455667788',
-    nim: 98765,
-    correo_contacto: 'contacto@ingenioillimani.com',
-    numero_telefono_fijo: '22567890',
-    numero_telefono_movil: '72456789',
-    departamento: 'La Paz',
-    provincia: 'Murillo',
-    municipio: 'El Alto',
-    direccion: 'Km 12 Carretera La Paz - El Alto',
-    latitud: -16.520000,
-    longitud: -68.180000,
+    razon_social: '',
+    nit: '',
+    nim: null,
+    correo_contacto: '',
+    numero_telefono_fijo: '',
+    numero_telefono_movil: '',
+    departamento: '',
+    provincia: '',
+    municipio: '',
+    direccion: '',
+    latitud: null,
+    longitud: null,
     planta: {
       minerales: [],
-      cupo_minimo: 15,
-      capacidad_procesamiento: 200,
-      costo_procesamiento: 50,
+      cupo_minimo: null,
+      capacidad_procesamiento: null,
+      costo_procesamiento: null,
       procesos: [],
-      licencia_ambiental_url: 'data:application/pdf;base64,JVBERi0xLjQK...',
-      numero_licencia: 'LEIA-045-2024',
-      departamento: 'La Paz',
-      provincia: 'Murillo',
-      municipio: 'El Alto',
-      direccion: 'Km 12 Carretera La Paz - El Alto',
-      latitud: -16.520000,
-      longitud: -68.180000
+      licencia_ambiental_url: '',
+      numero_licencia: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null
     },
     balanza: {
-      nombre: 'Balanza Industrial Illimani',
-      marca: 'Rice Lake',
-      modelo: 'RL1260',
-      numero_serie: 'RLC-22334-2024',
-      capacidad_maxima: 15000,
-      precision_minima: 1.5,
-      fecha_ultima_calibracion: '2024-09-20',
-      fecha_proxima_calibracion: '2025-03-20',
-      departamento: 'La Paz',
-      provincia: 'Murillo',
-      municipio: 'El Alto',
-      direccion: 'Km 12 Carretera La Paz - El Alto',
-      latitud: -16.520000,
-      longitud: -68.180000
+      nombre: '',
+      marca: '',
+      modelo: '',
+      numero_serie: '',
+      capacidad_maxima: null,
+      precision_minima: null,
+      fecha_ultima_calibracion: '',
+      fecha_proxima_calibracion: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null
     },
-    almacenes: [
-    ]
+    almacenes: []
   })
 
   const comercializadoraData = ref({
-    razon_social: 'Comercializadora Altiplano S.A.',
-    nit: '3366998877',
-    nim: 24680,
-    correo_contacto: 'contacto@altiplanocom.com',
-    numero_telefono_fijo: '22678901',
-    numero_telefono_movil: '73567890',
-    minerales_comercializados: ['Au', 'Ag', 'Zn', 'Cu'],
-    numero_licencia: 'LCOM-078-2024',
-    licencia_url: 'data:application/pdf;base64,JVBERi0xLjQK...',
-    departamento: 'La Paz',
-    provincia: 'Murillo',
-    municipio: 'La Paz',
-    direccion: 'Av. Montes #789, Zona Industrial Senkata',
-    latitud: -16.510000,
-    longitud: -68.190000,
-    almacenes: [
-      {
-        nombre: 'Almacén Principal Metales Preciosos',
-        tipo: 'cerrado',
-        minerales: ['Au', 'Ag'],
-        capacidad_maxima: 600,
-        area: 1500,
-        departamento: 'La Paz',
-        provincia: 'Murillo',
-        municipio: 'La Paz',
-        direccion: 'Av. Montes #789, Zona Industrial Senkata',
-        latitud: -16.510000,
-        longitud: -68.190000
-      },
-      {
-        nombre: 'Almacén Metales Base',
-        tipo: 'abierto',
-        minerales: ['Zn', 'Cu'],
-        capacidad_maxima: 400,
-        area: 1000,
-        departamento: 'La Paz',
-        provincia: 'Murillo',
-        municipio: 'La Paz',
-        direccion: 'Av. Montes #791, Zona Industrial Senkata',
-        latitud: -16.511000,
-        longitud: -68.191000
-      }
-    ],
+    razon_social: '',
+    nit: '',
+    nim: null,
+    correo_contacto: '',
+    numero_telefono_fijo: '',
+    numero_telefono_movil: '',
+    minerales_comercializados: [],
+    numero_licencia: '',
+    licencia_url: '',
+    departamento: '',
+    provincia: '',
+    municipio: '',
+    direccion: '',
+    latitud: null,
+    longitud: null,
+    almacenes: [],
     balanza: {
-      nombre: 'Balanza Comercial Altiplano',
-      marca: 'Sartorius',
-      modelo: 'Combics 3',
-      numero_serie: 'SAR-99887-2024',
-      capacidad_maxima: 50000,
-      precision_minima: 5,
-      fecha_ultima_calibracion: '2024-10-01',
-      fecha_proxima_calibracion: '2025-04-01',
-      departamento: 'La Paz',
-      provincia: 'Murillo',
-      municipio: 'La Paz',
-      direccion: 'Av. Montes #789, Zona Industrial Senkata',
-      latitud: -16.510000,
-      longitud: -68.190000
+      nombre: '',
+      marca: '',
+      modelo: '',
+      numero_serie: '',
+      capacidad_maxima: null,
+      precision_minima: null,
+      fecha_ultima_calibracion: '',
+      fecha_proxima_calibracion: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null
     }
   })
-
-
 
   // Computed
   const canGoNext = computed(() => {
@@ -506,43 +465,158 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     }
   }
 
-  // Reset con opción de mantener datos de prueba
-  const resetOnboarding = (keepTestData = false) => {
+  // Reset
+  const resetOnboarding = () => {
     currentStep.value = 1
     selectedRole.value = null
     totalSteps.value = 3
     
-    if (!keepTestData) {
-      // Reset completo a valores vacíos
-      personalData.value = {
-        nombres: '',
-        primer_apellido: '',
-        segundo_apellido: '',
-        ci: '',
-        fecha_nacimiento: '',
-        numero_celular: '',
-        genero: '',
-        nacionalidad: 'Boliviano',
-        departamento: 'Potosí',
+    // Reset completo a valores vacíos
+    personalData.value = {
+      nombres: '',
+      primer_apellido: '',
+      segundo_apellido: '',
+      ci: '',
+      fecha_nacimiento: '',
+      numero_celular: '',
+      genero: '',
+      nacionalidad: 'Boliviana',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null
+    }
+    
+    userData.value = {
+      correo: '',
+      contrasena: '',
+      confirmar_contrasena: ''
+    }
+    
+    cooperativaData.value = {
+      razon_social: '',
+      nit: '',
+      nim: null,
+      correo_contacto: '',
+      numero_telefono_fijo: '',
+      numero_telefono_movil: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null,
+      sectores: [],
+      balanza: {
+        nombre: '',
+        marca: '',
+        modelo: '',
+        numero_serie: '',
+        capacidad_maxima: null,
+        precision_minima: null,
+        fecha_ultima_calibracion: '',
+        fecha_proxima_calibracion: '',
+        departamento: '',
         provincia: '',
         municipio: '',
         direccion: '',
         latitud: null,
         longitud: null
       }
-      userData.value = {
-        correo: '',
-        contrasena: '',
-        confirmar_contrasena: ''
-      }
-      cooperativaData.value.sectores = []
-      cooperativaData.value.balanza = null
-      ingenioData.value.almacenes = []
-      ingenioData.value.balanza = null
-      comercializadoraData.value.almacenes = []
-      comercializadoraData.value.balanza = null
     }
-    // Si keepTestData es true, mantiene los valores de prueba preestablecidos
+    
+    socioData.value = {
+      cooperativa_id: null,
+      numero_socio: '',
+      fecha_afiliacion: '',
+      carnet_afiliacion_url: '',
+      carnet_identidad_url: '',
+      estado: 'pendiente'
+    }
+    
+    ingenioData.value = {
+      razon_social: '',
+      nit: '',
+      nim: null,
+      correo_contacto: '',
+      numero_telefono_fijo: '',
+      numero_telefono_movil: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null,
+      planta: {
+        minerales: [],
+        cupo_minimo: null,
+        capacidad_procesamiento: null,
+        costo_procesamiento: null,
+        procesos: [],
+        licencia_ambiental_url: '',
+        numero_licencia: '',
+        departamento: '',
+        provincia: '',
+        municipio: '',
+        direccion: '',
+        latitud: null,
+        longitud: null
+      },
+      balanza: {
+        nombre: '',
+        marca: '',
+        modelo: '',
+        numero_serie: '',
+        capacidad_maxima: null,
+        precision_minima: null,
+        fecha_ultima_calibracion: '',
+        fecha_proxima_calibracion: '',
+        departamento: '',
+        provincia: '',
+        municipio: '',
+        direccion: '',
+        latitud: null,
+        longitud: null
+      },
+      almacenes: []
+    }
+    
+    comercializadoraData.value = {
+      razon_social: '',
+      nit: '',
+      nim: null,
+      correo_contacto: '',
+      numero_telefono_fijo: '',
+      numero_telefono_movil: '',
+      minerales_comercializados: [],
+      numero_licencia: '',
+      licencia_url: '',
+      departamento: '',
+      provincia: '',
+      municipio: '',
+      direccion: '',
+      latitud: null,
+      longitud: null,
+      almacenes: [],
+      balanza: {
+        nombre: '',
+        marca: '',
+        modelo: '',
+        numero_serie: '',
+        capacidad_maxima: null,
+        precision_minima: null,
+        fecha_ultima_calibracion: '',
+        fecha_proxima_calibracion: '',
+        departamento: '',
+        provincia: '',
+        municipio: '',
+        direccion: '',
+        latitud: null,
+        longitud: null
+      }
+    }
   }
 
   return {

@@ -81,9 +81,9 @@ watch(() => props.activeSector, (newSector) => {
   }
 }, { immediate: true, deep: true })
 
-// Watch para redibujar cuando cambian los sectores (modo lectura)
+// Watch para redibujar cuando cambian los sectores
 watch(() => props.sectors, () => {
-  if (isMapReady.value && !props.editMode) {
+  if (isMapReady.value) {
     drawAllSectors()
   }
 }, { deep: true })
@@ -250,25 +250,28 @@ const clearAll = () => {
 const drawAllSectors = () => {
   if (!map.value || !window.L) return
 
-  // Limpiar todo
-  polygons.value.forEach(p => map.value.removeLayer(p))
-  markers.value.forEach(m => map.value.removeLayer(m))
+  // Limpiar todo ANTES de redibujar
+  polygons.value.forEach(p => {
+    try {
+      map.value.removeLayer(p)
+    } catch (e) {
+      // Ignorar errores si ya fue removido
+    }
+  })
+  markers.value.forEach(m => {
+    try {
+      map.value.removeLayer(m)
+    } catch (e) {
+      // Ignorar errores si ya fue removido
+    }
+  })
   polygons.value = []
   markers.value = []
 
   const allBounds = []
 
-  if (props.editMode && props.activeSector) {
-    // Modo edición: dibujar sector activo con marcadores editables
-    drawEditableSector(props.activeSector, localCoordinates.value)
-    
-    if (localCoordinates.value.length > 0) {
-      localCoordinates.value.forEach(c => {
-        allBounds.push([c.latitud, c.longitud])
-      })
-    }
-  } else {
-    // Modo lectura: dibujar todos los sectores
+  // Primero: Dibujar sectores existentes (sin edición)
+  if (props.sectors && props.sectors.length > 0) {
     props.sectors.forEach(sector => {
       if (sector.coordenadas && sector.coordenadas.length >= 3) {
         drawReadOnlySector(sector)
@@ -276,6 +279,15 @@ const drawAllSectors = () => {
           allBounds.push([c.latitud, c.longitud])
         })
       }
+    })
+  }
+
+  // Segundo: Si está en modo edición, dibujar el sector activo encima
+  if (props.editMode && props.activeSector && localCoordinates.value.length > 0) {
+    drawEditableSector(props.activeSector, localCoordinates.value)
+    
+    localCoordinates.value.forEach(c => {
+      allBounds.push([c.latitud, c.longitud])
     })
   }
 
@@ -291,15 +303,29 @@ const drawEditableSector = (sector, coordinates) => {
 
   const color = sector.color || '#1E3A8A'
 
-  // Crear marcadores editables
+  // Crear marcadores editables con iconos HTML personalizados
   coordinates.forEach((coord, index) => {
+    // Crear un icono divIcon con HTML personalizado
     const markerIcon = window.L.divIcon({
       className: 'custom-polygon-marker',
       html: `
-        <div class="marker-wrapper">
-          <div class="marker-number" style="background-color: ${color};">
-            ${coord.orden}
-          </div>
+        <div style="
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: ${color};
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          cursor: move;
+          transform: translate(-50%, -50%);
+        ">
+          ${coord.orden}
         </div>
       `,
       iconSize: [32, 32],
@@ -308,7 +334,8 @@ const drawEditableSector = (sector, coordinates) => {
 
     const marker = window.L.marker([coord.latitud, coord.longitud], {
       draggable: true,
-      icon: markerIcon
+      icon: markerIcon,
+      zIndexOffset: 1000 // Asegurar que los marcadores estén siempre encima
     }).addTo(map.value)
 
     marker.on('dragend', (e) => {
@@ -517,90 +544,34 @@ defineExpose({
     </div>
 
     <!-- Contenedor del mapa -->
-    <div class="flex-1 relative min-h-0 flex">
-      <!-- Mapa -->
-      <div class="flex-1 relative">
-        <div ref="mapContainer" class="w-full h-full"></div>
+    <div class="flex-1 relative min-h-0">
+      <div ref="mapContainer" class="w-full h-full"></div>
 
-        <!-- Instrucciones flotantes en modo edición sin puntos -->
-        <div v-if="editMode && localCoordinates.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="bg-surface/95 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-border max-w-md">
-            <div class="text-center">
-              <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
-                <Plus class="w-8 h-8 text-primary" />
-              </div>
-              <h4 class="font-semibold text-neutral mb-2">Comienza a definir el sector</h4>
-              <p class="text-sm text-secondary leading-relaxed">
-                Haz clic en el mapa para agregar puntos del perímetro. Necesitas al menos 3 puntos para crear un área válida.
-              </p>
+      <!-- Instrucciones flotantes en modo edición sin puntos -->
+      <div v-if="editMode && localCoordinates.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div class="bg-surface/95 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-border max-w-md">
+          <div class="text-center">
+            <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
+              <Plus class="w-8 h-8 text-primary" />
             </div>
-          </div>
-        </div>
-
-        <!-- Mensaje cuando no hay sectores en modo lectura -->
-        <div v-if="!editMode && sectors.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="bg-surface/95 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-border max-w-md">
-            <div class="text-center">
-              <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
-                <MapPin class="w-8 h-8 text-primary" />
-              </div>
-              <h4 class="font-semibold text-neutral mb-2">No hay sectores para mostrar</h4>
-              <p class="text-sm text-secondary leading-relaxed">
-                Los sectores definidos aparecerán aquí en el mapa
-              </p>
-            </div>
+            <h4 class="font-semibold text-neutral mb-2">Comienza a definir el sector</h4>
+            <p class="text-sm text-secondary leading-relaxed">
+              Haz clic en el mapa para agregar puntos del perímetro. Necesitas al menos 3 puntos para crear un área válida.
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- Panel lateral con lista de puntos (solo en modo edición) -->
-      <div v-if="editMode && localCoordinates.length > 0" class="w-80 border-l border-border bg-hover overflow-y-auto shrink-0">
-        <div class="p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-semibold text-neutral">Puntos del Polígono</h4>
-            <span class="text-xs text-secondary">{{ localCoordinates.length }} punto{{ localCoordinates.length !== 1 ? 's' : '' }}</span>
-          </div>
-          
-          <div class="space-y-2">
-            <div
-              v-for="(coord, index) in localCoordinates"
-              :key="index"
-              class="bg-surface border border-border rounded-lg p-3 hover:shadow-md transition-shadow"
-            >
-              <div class="flex items-start gap-3">
-                <div 
-                  class="w-8 h-8 rounded-full center font-bold text-white text-sm shrink-0"
-                  :style="{ backgroundColor: activeSector?.color }"
-                >
-                  {{ coord.orden }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-mono text-xs space-y-1">
-                    <div class="flex items-center gap-2">
-                      <span class="text-tertiary w-8">Lat:</span>
-                      <span class="text-neutral">{{ coord.latitud.toFixed(6) }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span class="text-tertiary w-8">Lng:</span>
-                      <span class="text-neutral">{{ coord.longitud.toFixed(6) }}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  @click="removePolygonPoint(index)"
-                  class="w-7 h-7 rounded hover:bg-red-50 dark:hover:bg-red-900/20 center text-error transition-colors shrink-0"
-                  title="Eliminar punto"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </div>
+      <!-- Mensaje cuando no hay sectores en modo lectura -->
+      <div v-if="!editMode && sectors.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div class="bg-surface/95 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-border max-w-md">
+          <div class="text-center">
+            <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
+              <MapPin class="w-8 h-8 text-primary" />
             </div>
-          </div>
-
-          <!-- Consejos -->
-          <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p class="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
-              💡 <strong>Consejo:</strong> Arrastra los marcadores en el mapa para ajustar su posición.
+            <h4 class="font-semibold text-neutral mb-2">No hay sectores para mostrar</h4>
+            <p class="text-sm text-secondary leading-relaxed">
+              Los sectores definidos aparecerán aquí en el mapa
             </p>
           </div>
         </div>
@@ -610,34 +581,6 @@ defineExpose({
 </template>
 
 <style scoped>
-
-:deep(.custom-polygon-marker) {
-  background: transparent;
-  border: none;
-}
-
-:deep(.marker-wrapper) {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-:deep(.marker-number) {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  cursor: move;
-}
-
 :deep(.leaflet-container) {
   font-family: inherit;
   background: #f0f0f0;
@@ -651,5 +594,10 @@ defineExpose({
 :deep(.leaflet-popup-content) {
   margin: 12px;
   font-family: inherit;
+}
+
+:deep(.custom-polygon-marker) {
+  background: transparent !important;
+  border: none !important;
 }
 </style>

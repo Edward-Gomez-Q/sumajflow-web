@@ -398,10 +398,10 @@ const sectorsForMap = computed(() => {
     <Teleport to="body">
       <div
         v-if="showModal"
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+        class="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         @click.self="closeModal"
       >
-        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border relative z-[10000]">
+        <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col border border-border relative z-10000">
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-border shrink-0">
             <div class="flex items-center gap-3">
@@ -541,13 +541,6 @@ const sectorsForMap = computed(() => {
                         </button>
                       </div>
                     </div>
-                  </div>
-
-                  <!-- Consejos -->
-                  <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                    <p class="text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
-                      💡 <strong>Consejo:</strong> Arrastra los marcadores en el mapa para ajustar su posición.
-                    </p>
                   </div>
                 </div>
 

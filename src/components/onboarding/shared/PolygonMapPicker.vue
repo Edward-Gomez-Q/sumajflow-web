@@ -28,7 +28,7 @@ const map = ref(null)
 const polygons = ref([])
 const markers = ref([])
 const isMapReady = ref(false)
-const mapMode = ref('satellite')
+const mapMode = ref('street') // 'street' o 'satellite'
 const searchQuery = ref('')
 const searchResults = ref([])
 const isSearching = ref(false)
@@ -461,87 +461,7 @@ defineExpose({
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- Barra de herramientas -->
-    <div v-if="editMode || showSearch" class="p-4 border-b border-border bg-hover space-y-3 shrink-0">
-      <!-- Buscador -->
-      <div v-if="showSearch" class="flex gap-2">
-        <div class="relative flex-1">
-          <input
-            v-model="searchQuery"
-            @keyup.enter="searchLocation"
-            type="text"
-            placeholder="Buscar ubicación en Bolivia..."
-            class="w-full pl-10"
-          />
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiary pointer-events-none" />
-        </div>
-        <button
-          @click="searchLocation"
-          :disabled="isSearching || !searchQuery.trim()"
-          class="btn-outline px-4 flex items-center gap-2"
-        >
-          <Navigation class="w-4 h-4" />
-          {{ isSearching ? 'Buscando...' : 'Buscar' }}
-        </button>
-        <button
-          @click="toggleMapMode"
-          class="btn-outline px-4 flex items-center gap-2"
-          :title="`Cambiar a vista ${mapMode === 'satellite' ? 'de calles' : 'satelital'}`"
-        >
-          <Layers class="w-4 h-4" />
-        </button>
-      </div>
 
-      <!-- Resultados de búsqueda -->
-      <div v-if="searchResults.length > 0" class="space-y-1 max-h-32 overflow-y-auto bg-surface rounded-lg border border-border">
-        <button
-          v-for="result in searchResults"
-          :key="result.place_id"
-          @click="selectSearchResult(result)"
-          class="w-full text-left p-3 hover:bg-primary/10 transition flex items-start gap-2"
-        >
-          <MapPin class="w-4 h-4 text-primary shrink-0 mt-0.5" />
-          <div class="text-sm text-neutral">{{ result.display_name }}</div>
-        </button>
-      </div>
-
-      <!-- Info del polígono en modo edición -->
-      <div v-if="editMode && localCoordinates.length > 0" class="flex items-center justify-between bg-surface rounded-lg p-3 border border-border">
-        <div class="flex items-center gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: activeSector?.color }"></div>
-            <span class="text-neutral font-medium">{{ localCoordinates.length }} puntos</span>
-          </div>
-          <div v-if="hasValidPolygon" class="flex items-center gap-2">
-            <span class="text-tertiary">Área aprox:</span>
-            <span class="text-neutral font-medium">{{ polygonArea }} ha</span>
-          </div>
-          <div v-else class="text-warning text-xs">
-            ⚠️ Se necesitan al menos 3 puntos
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button
-            @click="undoLastPoint"
-            :disabled="localCoordinates.length === 0"
-            class="btn-ghost px-3 py-1.5 text-sm flex items-center gap-1"
-            title="Deshacer último punto"
-          >
-            <Undo class="w-4 h-4" />
-            Deshacer
-          </button>
-          <button
-            @click="clearAll"
-            :disabled="localCoordinates.length === 0"
-            class="btn-ghost px-3 py-1.5 text-sm text-error flex items-center gap-1"
-            title="Limpiar todo"
-          >
-            <Trash2 class="w-4 h-4" />
-            Limpiar
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- Contenedor del mapa -->
     <div class="flex-1 relative min-h-0">

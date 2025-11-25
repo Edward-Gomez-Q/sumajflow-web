@@ -1,3 +1,4 @@
+// src/router.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from './stores/sessionStore'
 
@@ -7,7 +8,6 @@ const routes = [
     redirect: (to) => {
       const sessionStore = useSessionStore()
       if (sessionStore.isAuthenticated) {
-        // Redirigir según rol
         return `/${sessionStore.userRole}`
       }
       return '/login'
@@ -32,49 +32,274 @@ const routes = [
     }
   },
   
-  // === RUTAS PROTEGIDAS POR ROL ===
+  // ========================================
+  // RUTAS DE COOPERATIVA
+  // ========================================
   {
     path: '/cooperativa',
-    name: 'CooperativaDashboard',
-    component: () => import('./views/cooperativa/Dashboard.vue'),
     meta: { 
       requiresAuth: true,
-      requiredRole: 'cooperativa',
-      title: 'Dashboard - Cooperativa'
-    }
+      requiredRole: 'cooperativa'
+    },
+    children: [
+      {
+        path: '',
+        name: 'CooperativaDashboard',
+        component: () => import('./views/cooperativa/Dashboard.vue'),
+        meta: { 
+          title: 'Dashboard - Cooperativa'
+        }
+      },
+      {
+        path: 'socios',
+        name: 'CooperativaSocios',
+        redirect: { name: 'CooperativaSociosLista' }
+      },
+      {
+        path: 'socios/lista',
+        name: 'CooperativaSociosLista',
+        component: () => import('./views/cooperativa/SocioLista.vue'),
+        meta: { 
+          title: 'Lista de Socios - Cooperativa'
+        }
+      },
+      {
+        path: 'socios/solicitudes',
+        name: 'CooperativaSolicitudes',
+        component: () => import('./views/cooperativa/SocioSolicitudes.vue'),
+        meta: { 
+          title: 'Solicitudes Pendientes - Cooperativa'
+        }
+      },
+      /*{
+        path: 'sectores',
+        name: 'CooperativaSectores',
+        component: () => import('./views/cooperativa/Sectores.vue'),
+        meta: { 
+          title: 'Sectores - Cooperativa'
+        }
+      },
+      {
+        path: 'lotes',
+        name: 'CooperativaLotes',
+        component: () => import('./views/cooperativa/Lotes.vue'),
+        meta: { 
+          title: 'Lotes - Cooperativa'
+        }
+      },
+      {
+        path: 'balanza',
+        name: 'CooperativaBalanza',
+        component: () => import('./views/cooperativa/Balanza.vue'),
+        meta: { 
+          title: 'Balanza - Cooperativa'
+        }
+      },
+      {
+        path: 'transportistas',
+        name: 'CooperativaTransportistas',
+        component: () => import('./views/cooperativa/Transportistas.vue'),
+        meta: { 
+          title: 'Transportistas - Cooperativa'
+        }
+      },
+      {
+        path: 'reportes',
+        name: 'CooperativaReportes',
+        component: () => import('./views/cooperativa/Reportes.vue'),
+        meta: { 
+          title: 'Reportes - Cooperativa'
+        }
+      },
+      {
+        path: 'configuracion',
+        name: 'CooperativaConfiguracion',
+        component: () => import('./views/cooperativa/Configuracion.vue'),
+        meta: { 
+          title: 'Configuración - Cooperativa'
+        }
+      }*/
+    ]
   },
+
+  // ========================================
+  // RUTAS DE SOCIO
+  // ========================================
   {
     path: '/socio',
-    name: 'SocioDashboard',
-    component: () => import('./views/socio/Dashboard.vue'),
     meta: { 
       requiresAuth: true,
-      requiredRole: 'socio',
-      title: 'Dashboard - Socio'
-    }
+      requiredRole: 'socio'
+    },
+    children: [
+      {
+        path: '',
+        name: 'SocioDashboard',
+        component: () => import('./views/socio/Dashboard.vue'),
+        meta: { 
+          title: 'Dashboard - Socio'
+        }
+      },
+      /*{
+        path: 'minas',
+        name: 'SocioMinas',
+        component: () => import('./views/socio/Minas.vue'),
+        meta: { 
+          title: 'Mis Minas - Socio'
+        }
+      },
+      {
+        path: 'lotes',
+        name: 'SocioLotes',
+        component: () => import('./views/socio/Lotes.vue'),
+        meta: { 
+          title: 'Mis Lotes - Socio'
+        }
+      },
+      {
+        path: 'liquidaciones',
+        name: 'SocioLiquidaciones',
+        component: () => import('./views/socio/Liquidaciones.vue'),
+        meta: { 
+          title: 'Liquidaciones - Socio'
+        }
+      },
+      {
+        path: 'perfil',
+        name: 'SocioPerfil',
+        component: () => import('./views/socio/Perfil.vue'),
+        meta: { 
+          title: 'Mi Perfil - Socio'
+        }
+      }*/
+    ]
   },
+
+  // ========================================
+  // RUTAS DE INGENIO
+  // ========================================
   {
     path: '/ingenio',
-    name: 'IngenioDashboard',
-    component: () => import('./views/ingenio/Dashboard.vue'),
     meta: { 
       requiresAuth: true,
-      requiredRole: 'ingenio',
-      title: 'Dashboard - Ingenio'
-    }
+      requiredRole: 'ingenio'
+    },
+    children: [
+      {
+        path: '',
+        name: 'IngenioDashboard',
+        component: () => import('./views/ingenio/Dashboard.vue'),
+        meta: { 
+          title: 'Dashboard - Ingenio'
+        }
+      },
+      /*{
+        path: 'recepciones',
+        name: 'IngenioRecepciones',
+        component: () => import('./views/ingenio/Recepciones.vue'),
+        meta: { 
+          title: 'Recepciones - Ingenio'
+        }
+      },
+      {
+        path: 'procesamiento',
+        name: 'IngenioProcesamiento',
+        component: () => import('./views/ingenio/Procesamiento.vue'),
+        meta: { 
+          title: 'Procesamiento - Ingenio'
+        }
+      },
+      {
+        path: 'inventario',
+        name: 'IngenioInventario',
+        component: () => import('./views/ingenio/Inventario.vue'),
+        meta: { 
+          title: 'Inventario - Ingenio'
+        }
+      },
+      {
+        path: 'reportes',
+        name: 'IngenioReportes',
+        component: () => import('./views/ingenio/Reportes.vue'),
+        meta: { 
+          title: 'Reportes - Ingenio'
+        }
+      },
+      {
+        path: 'configuracion',
+        name: 'IngenioConfiguracion',
+        component: () => import('./views/ingenio/Configuracion.vue'),
+        meta: { 
+          title: 'Configuración - Ingenio'
+        }
+      }*/
+    ]
   },
+
+  // ========================================
+  // RUTAS DE COMERCIALIZADORA
+  // ========================================
   {
     path: '/comercializadora',
-    name: 'ComercializadoraDashboard',
-    component: () => import('./views/comercializadora/Dashboard.vue'),
     meta: { 
       requiresAuth: true,
-      requiredRole: 'comercializadora',
-      title: 'Dashboard - Comercializadora'
-    }
+      requiredRole: 'comercializadora'
+    },
+    children: [
+      {
+        path: '',
+        name: 'ComercializadoraDashboard',
+        component: () => import('./views/comercializadora/Dashboard.vue'),
+        meta: { 
+          title: 'Dashboard - Comercializadora'
+        }
+      },
+      /*{
+        path: 'compras',
+        name: 'ComercializadoraCompras',
+        component: () => import('./views/comercializadora/Compras.vue'),
+        meta: { 
+          title: 'Compras - Comercializadora'
+        }
+      },
+      {
+        path: 'inventario',
+        name: 'ComercializadoraInventario',
+        component: () => import('./views/comercializadora/Inventario.vue'),
+        meta: { 
+          title: 'Inventario - Comercializadora'
+        }
+      },
+      {
+        path: 'ventas',
+        name: 'ComercializadoraVentas',
+        component: () => import('./views/comercializadora/Ventas.vue'),
+        meta: { 
+          title: 'Ventas - Comercializadora'
+        }
+      },
+      {
+        path: 'reportes',
+        name: 'ComercializadoraReportes',
+        component: () => import('./views/comercializadora/Reportes.vue'),
+        meta: { 
+          title: 'Reportes - Comercializadora'
+        }
+      },
+      {
+        path: 'configuracion',
+        name: 'ComercializadoraConfiguracion',
+        component: () => import('./views/comercializadora/Configuracion.vue'),
+        meta: { 
+          title: 'Configuración - Comercializadora'
+        }
+      }*/
+    ]
   },
   
-  // === RUTA 403 - ACCESO DENEGADO ===
+  // ========================================
+  // RUTAS DE ERROR
+  // ========================================
   {
     path: '/forbidden',
     name: 'Forbidden',
@@ -83,8 +308,6 @@ const routes = [
       title: 'Acceso Denegado - SumajFlow'
     }
   },
-  
-  // === RUTA 404 ===
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -111,8 +334,10 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const sessionStore = useSessionStore()
   
-  // Actualizar título
-  document.title = to.meta.title || 'SumajFlow'
+  // Actualizar título - combinar título de ruta hija con padre si existe
+  const parentTitle = to.matched[0]?.meta?.title
+  const childTitle = to.meta.title
+  document.title = childTitle || parentTitle || 'SumajFlow'
 
   // Verificar autenticación
   if (to.meta.requiresAuth && !sessionStore.isAuthenticated) {
@@ -120,8 +345,9 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // Verificar rol
-  if (to.meta.requiredRole && sessionStore.userRole !== to.meta.requiredRole) {
+  // Verificar rol - buscar en la cadena de rutas padres
+  const requiredRole = to.matched.find(record => record.meta.requiredRole)?.meta.requiredRole
+  if (requiredRole && sessionStore.userRole !== requiredRole) {
     next({ name: 'Forbidden' })
     return
   }

@@ -1,60 +1,132 @@
+<!-- src/components/onboarding/steps/socio/Step5SocioPending.vue -->
 <script setup>
 import { computed, ref } from 'vue'
-import { useOnboardingStore } from '@/stores/onboardingStore'
 import { useRouter } from 'vue-router'
-import { CheckCircle, FileText, Clock, Mail, Phone, Copy, Building2, Search, PartyPopper, AlertCircle } from 'lucide-vue-next'
+import { 
+  CheckCircle, 
+  FileText, 
+  Clock, 
+  Mail, 
+  Phone, 
+  Copy, 
+  Building2, 
+  Search, 
+  LogOut,
+  RefreshCw
+} from 'lucide-vue-next'
+import { useSocioStore } from '@/stores/socio/socioStore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { useAuthStore } from '@/stores/authStore'
+import AlertMessage from '../../../common/AlertMessage.vue'
 
+const socioStore = useSocioStore()
+const sessionStore = useSessionStore()
+const authStore = useAuthStore()
 const router = useRouter()
-const onboardingStore = useOnboardingStore()
 
-const socioData = computed(() => onboardingStore.socioData)
-const personalData = computed(() => onboardingStore.personalData)
+const verificando = ref(false)
+const mensajeVerificacion = ref(null)
 
-// Generar ID de solicitud simulado
-const solicitudId = ref(`SOL-${Date.now().toString(36).toUpperCase()}`)
-const fechaEnvio = ref(new Date())
-
-// Información de la cooperativa (simulada - vendría del backend)
-const cooperativaInfo = ref({
-  id: socioData.value.cooperativa_id,
-  razon_social: 'Cooperativa Minera 15 de Agosto LTDA',
-  nit: '1234567890',
-  correo_contacto: 'contacto@cooperativa15.com',
-  telefono: '(2) 6234567'
-})
+const estadoData = computed(() => socioStore.estadoSocio?.data)
+const cooperativa = computed(() => estadoData.value?.cooperativa)
+const solicitudId = computed(() => estadoData.value?.solicitudId)
 
 const formatDate = (date) => {
+  if (!date) return ''
   return new Intl.DateTimeFormat('es-BO', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  }).format(date)
+  }).format(new Date(date))
+}
+
+const formatDateOnly = (date) => {
+  if (!date) return ''
+  return new Intl.DateTimeFormat('es-BO', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date(date))
 }
 
 const copyToClipboard = (text) => {
   navigator.clipboard.writeText(text)
-  alert('ID copiado al portapapeles')
+  mensajeVerificacion.value = {
+    type: 'success',
+    message: 'ID copiado al portapapeles'
+  }
+  setTimeout(() => {
+    mensajeVerificacion.value = null
+  }, 3000)
 }
 
-const handleFinish = () => {
-  // Cerrar sesión temporal y redirigir al login
-  onboardingStore.resetOnboarding()
-  router.push('/login')
+const verificarEstado = async () => {
+  verificando.value = true
+  mensajeVerificacion.value = null
+
+  try {
+    const resultado = await socioStore.obtenerEstadoSocio()
+    
+    if (resultado.success) {
+      if (socioStore.estaAprobado) {
+        mensajeVerificacion.value = {
+          type: 'success',
+          message: '¡Tu cuenta ha sido aprobada! Redirigiendo...'
+        }
+        
+        // Redirigir al dashboard después de 2 segundos
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else if (socioStore.estaPendiente) {
+        mensajeVerificacion.value = {
+          type: 'info',
+          message: 'Tu solicitud aún está en revisión. Te notificaremos cuando sea aprobada.'
+        }
+      } else if (socioStore.estaRechazado) {
+        mensajeVerificacion.value = {
+          type: 'error',
+          message: 'Tu solicitud ha sido rechazada. Por favor, contacta con la cooperativa.'
+        }
+      }
+    } else {
+      mensajeVerificacion.value = {
+        type: 'error',
+        message: 'Error al verificar el estado. Inténtalo nuevamente.'
+      }
+    }
+  } catch (error) {
+    console.error('Error al verificar estado:', error)
+    mensajeVerificacion.value = {
+      type: 'error',
+      message: 'Error de conexión. Por favor, verifica tu conexión a internet.'
+    }
+  } finally {
+    verificando.value = false
+  }
 }
 
-// Tiempo estimado de revisión
-const estimatedDays = ref(2) // 2-3 días laborables
+const cerrarSesion = async () => {
+  try {
+    await authStore.logout()
+    router.push('/login')
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error)
+  }
+}
 
-const progressSteps = [
+const estimatedDays = 2
+
+const progressSteps = computed(() => [
   {
     id: 1,
     title: 'Solicitud Enviada',
     description: 'Tu solicitud ha sido enviada exitosamente',
     icon: CheckCircle,
     status: 'completed',
-    date: fechaEnvio.value
+    date: estadoData.value?.fechaEnvio
   },
   {
     id: 2,
@@ -68,283 +140,235 @@ const progressSteps = [
     id: 3,
     title: 'Aprobado',
     description: 'Tu cuenta será activada',
-    icon: PartyPopper,
+    icon: CheckCircle,
     status: 'pending',
     date: null
   }
-]
+])
 </script>
 
 <template>
-  <div class="space-y-8">
-    <!-- Header Success -->
-    <div class="text-center space-y-4">
-      <div class="inline-flex w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 center mb-2">
-        <CheckCircle class="w-12 h-12 text-green-600 dark:text-green-400" />
-      </div>
-      <div>
-        <h2 class="text-3xl font-bold text-neutral mb-2">¡Solicitud Enviada!</h2>
-        <p class="text-lg text-secondary max-w-2xl mx-auto">
-          Tu solicitud de asociación ha sido enviada exitosamente a la cooperativa
-        </p>
-      </div>
-    </div>
-
-    <!-- ID de Solicitud -->
-    <div class="bg-linear-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-xl p-6">
-      <div class="text-center space-y-3">
-        <p class="text-sm font-medium text-secondary">ID de Solicitud</p>
-        <div class="flex items-center justify-center gap-3">
-          <code class="text-2xl font-bold text-primary font-mono bg-white dark:bg-slate-800 px-6 py-3 rounded-lg">
-            {{ solicitudId }}
-          </code>
-          <button
-            @click="copyToClipboard(solicitudId)"
-            class="btn-ghost w-10 h-10 p-0"
-            title="Copiar ID"
-          >
-            <Copy class="w-5 h-5" />
-          </button>
+  <div class="min-h-screen bg-background p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+      <!-- Header Success -->
+      <div class="text-center space-y-4">
+        <div class="inline-flex w-20 h-20 rounded-full bg-primary/10 dark:bg-primary/30 items-center justify-center mb-2">
+          <Clock class="w-12 h-12 text-primary" />
         </div>
-        <p class="text-xs text-tertiary">
-          Guarda este ID para consultar el estado de tu solicitud
-        </p>
-      </div>
-    </div>
-
-    <!-- Información de la Solicitud -->
-    <div class="space-y-4">
-      <div class="flex items-center gap-2 mb-4">
-        <FileText class="w-5 h-5 text-primary" />
-        <h3 class="text-lg font-semibold text-neutral">Resumen de tu Solicitud</h3>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-surface border border-border rounded-lg p-4">
-          <p class="text-xs text-tertiary mb-1">Nombre Completo</p>
-          <p class="font-medium text-neutral">
-            {{ personalData.nombres }} {{ personalData.primer_apellido }} {{ personalData.segundo_apellido }}
-          </p>
-        </div>
-
-        <div class="bg-surface border border-border rounded-lg p-4">
-          <p class="text-xs text-tertiary mb-1">Carnet de Identidad</p>
-          <p class="font-medium text-neutral">{{ personalData.ci }}</p>
-        </div>
-
-        <div class="bg-surface border border-border rounded-lg p-4">
-          <p class="text-xs text-tertiary mb-1">Número de Socio</p>
-          <p class="font-medium text-neutral">{{ socioData.numero_socio }}</p>
-        </div>
-
-        <div class="bg-surface border border-border rounded-lg p-4">
-          <p class="text-xs text-tertiary mb-1">Fecha de Afiliación</p>
-          <p class="font-medium text-neutral">
-            {{ new Date(socioData.fecha_afiliacion).toLocaleDateString('es-BO', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            }) }}
+        <div>
+          <h2 class="text-3xl font-bold text-neutral mb-2">Solicitud en Revisión</h2>
+          <p class="text-lg text-secondary max-w-2xl mx-auto">
+            {{ socioStore.mensajeEstado }}
           </p>
         </div>
       </div>
 
-      <div class="bg-primary/5 border border-primary/30 rounded-lg p-4">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary/20 center shrink-0">
-            <Building2 class="w-5 h-5 text-primary" />
-          </div>
-          <div class="flex-1">
-            <p class="text-xs text-tertiary mb-1">Cooperativa</p>
-            <p class="font-semibold text-neutral">{{ cooperativaInfo.razon_social }}</p>
-            <p class="text-sm text-secondary mt-1">NIT: {{ cooperativaInfo.nit }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <!-- Mensaje de verificación -->
+      <AlertMessage
+        v-if="mensajeVerificacion"
+        :type="mensajeVerificacion.type"
+        :message="mensajeVerificacion.message"
+        :dismissible="true"
+        @dismiss="mensajeVerificacion = null"
+      />
 
-    <!-- Progreso de la Solicitud -->
-    <div class="space-y-6">
-      <div class="flex items-center gap-2">
-        <Clock class="w-5 h-5 text-primary" />
-        <h3 class="text-lg font-semibold text-neutral">Estado de tu Solicitud</h3>
-      </div>
-
-      <div class="space-y-4">
-        <div
-          v-for="step in progressSteps"
-          :key="step.id"
-          class="flex items-start gap-4"
+      <!-- Botones de acción -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button
+          @click="verificarEstado"
+          :disabled="verificando"
+          class="btn btn-primary flex items-center justify-center gap-2"
         >
-          <!-- Icono de estado -->
-          <div class="flex flex-col items-center">
-            <div
-              class="w-12 h-12 rounded-full center transition-all"
-              :class="[
-                step.status === 'completed' ? 'bg-green-500 text-white' : '',
-                step.status === 'current' ? 'bg-primary text-white ring-4 ring-primary/20' : '',
-                step.status === 'pending' ? 'bg-slate-200 dark:bg-slate-700 text-slate-400' : ''
-              ]"
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': verificando }" />
+          {{ verificando ? 'Verificando...' : 'Verificar Estado' }}
+        </button>
+        
+        <button
+          @click="cerrarSesion"
+          class="btn btn-outline flex items-center justify-center gap-2"
+        >
+          <LogOut class="w-4 h-4" />
+          Cerrar Sesión
+        </button>
+      </div>
+
+      <!-- ID de Solicitud -->
+      <div class="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-xl p-6">
+        <div class="text-center space-y-3">
+          <p class="text-sm font-medium text-secondary">ID de Solicitud</p>
+          <div class="flex items-center justify-center gap-3">
+            <code class="text-2xl font-bold text-primary font-mono bg-white dark:bg-slate-800 px-6 py-3 rounded-lg">
+              {{ solicitudId }}
+            </code>
+            <button
+              @click="copyToClipboard(solicitudId)"
+              class="btn-ghost w-10 h-10 p-0"
+              title="Copiar ID"
             >
-              <component :is="step.icon" class="w-6 h-6" />
-            </div>
-            <div
-              v-if="step.id < progressSteps.length"
-              class="w-0.5 h-12 mt-2"
-              :class="step.status === 'completed' ? 'bg-green-500' : 'bg-border'"
-            ></div>
+              <Copy class="w-5 h-5" />
+            </button>
+          </div>
+          <p class="text-xs text-tertiary">
+            Guarda este ID para consultar el estado de tu solicitud
+          </p>
+        </div>
+      </div>
+
+      <!-- Información de la Solicitud -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 mb-4">
+          <FileText class="w-5 h-5 text-primary" />
+          <h3 class="text-lg font-semibold text-neutral">Resumen de tu Solicitud</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-surface border border-border rounded-lg p-4">
+            <p class="text-xs text-tertiary mb-1">Nombre Completo</p>
+            <p class="font-medium text-neutral">
+              {{ sessionStore.user?.nombres }} {{ sessionStore.user?.primerApellido }} {{ sessionStore.user?.segundoApellido }}
+            </p>
           </div>
 
-          <!-- Contenido -->
-          <div class="flex-1 pb-4">
-            <h4
-              class="font-semibold mb-1"
-              :class="step.status === 'pending' ? 'text-tertiary' : 'text-neutral'"
-            >
-              {{ step.title }}
-            </h4>
-            <p class="text-sm text-secondary mb-2">{{ step.description }}</p>
-            <p v-if="step.date" class="text-xs text-tertiary">
-              {{ formatDate(step.date) }}
-            </p>
-            <div v-if="step.status === 'current'" class="mt-2">
-              <div class="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">
-                <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                En proceso
+          <div class="bg-surface border border-border rounded-lg p-4">
+            <p class="text-xs text-tertiary mb-1">Fecha de Envío</p>
+            <p class="font-medium text-neutral">{{ formatDateOnly(estadoData?.fechaEnvio) }}</p>
+          </div>
+
+          <div class="bg-surface border border-border rounded-lg p-4">
+            <p class="text-xs text-tertiary mb-1">Fecha de Afiliación</p>
+            <p class="font-medium text-neutral">{{ formatDateOnly(estadoData?.fechaAfiliacion) }}</p>
+          </div>
+
+          <div class="bg-surface border border-border rounded-lg p-4">
+            <p class="text-xs text-tertiary mb-1">Estado</p>
+            <span class="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+              <div class="w-2 h-2 rounded-full bg-yellow-600 animate-pulse"></div>
+              {{ estadoData?.estado }}
+            </span>
+          </div>
+        </div>
+
+        <div v-if="cooperativa" class="bg-primary/5 border border-primary/30 rounded-lg p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <Building2 class="w-5 h-5 text-primary" />
+            </div>
+            <div class="flex-1">
+              <p class="text-xs text-tertiary mb-1">Cooperativa</p>
+              <p class="font-semibold text-neutral">{{ cooperativa.razonSocial }}</p>
+              <p class="text-sm text-secondary mt-1">NIT: {{ cooperativa.nit }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso de la Solicitud -->
+      <div class="space-y-6">
+        <div class="flex items-center gap-2">
+          <Clock class="w-5 h-5 text-primary" />
+          <h3 class="text-lg font-semibold text-neutral">Estado de tu Solicitud</h3>
+        </div>
+
+        <div class="space-y-4">
+          <div
+            v-for="step in progressSteps"
+            :key="step.id"
+            class="flex items-start gap-4"
+          >
+            <!-- Icono de estado -->
+            <div class="flex flex-col items-center">
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
+                :class="[
+                  step.status === 'completed' ? 'bg-green-500 text-white' : '',
+                  step.status === 'current' ? 'bg-primary text-white ring-4 ring-primary/20' : '',
+                  step.status === 'pending' ? 'bg-slate-200 dark:bg-slate-700 text-slate-400' : ''
+                ]"
+              >
+                <component :is="step.icon" class="w-6 h-6" />
+              </div>
+              <div
+                v-if="step.id < progressSteps.length"
+                class="w-0.5 h-12 mt-2"
+                :class="step.status === 'completed' ? 'bg-green-500' : 'bg-border'"
+              ></div>
+            </div>
+
+            <!-- Contenido -->
+            <div class="flex-1 pb-4">
+              <h4
+                class="font-semibold mb-1"
+                :class="step.status === 'pending' ? 'text-tertiary' : 'text-neutral'"
+              >
+                {{ step.title }}
+              </h4>
+              <p class="text-sm text-secondary mb-2">{{ step.description }}</p>
+              <p v-if="step.date" class="text-xs text-tertiary">
+                {{ formatDate(step.date) }}
+              </p>
+              <div v-if="step.status === 'current'" class="mt-2">
+                <div class="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">
+                  <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                  En proceso
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Tiempo estimado usando AlertMessage -->
+        <AlertMessage
+          type="info"
+          :icon="Clock"
+          title="Tiempo Estimado de Revisión"
+          :message="`${estimatedDays}-${estimatedDays + 1} días laborables`"
+        />
       </div>
 
-      <!-- Tiempo estimado -->
-      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div class="flex items-center gap-3">
-          <Clock class="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <div>
-            <p class="font-medium text-blue-900 dark:text-blue-100">Tiempo Estimado de Revisión</p>
-            <p class="text-sm text-blue-800 dark:text-blue-200 mt-1">
-              {{ estimatedDays }}-{{ estimatedDays + 1 }} días laborables
-            </p>
+      <!-- Contacto con la Cooperativa -->
+      <div v-if="cooperativa" class="space-y-4">
+        <h3 class="text-lg font-semibold text-neutral">Información de Contacto</h3>
+
+        <p class="text-sm text-secondary">
+          Si necesitas acelerar el proceso o tienes dudas, contacta directamente con tu cooperativa:
+        </p>
+
+        <div class="space-y-3">
+          <div class="flex items-center gap-3 bg-surface border border-border rounded-lg p-3">
+            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Mail class="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p class="text-xs text-tertiary">Correo Electrónico</p>
+              <a :href="`mailto:${cooperativa.correoContacto}`" class="text-sm font-medium text-primary hover:underline">
+                {{ cooperativa.correoContacto }}
+              </a>
+            </div>
+          </div>
+
+          <div v-if="cooperativa.numeroTelefonoMovil" class="flex items-center gap-3 bg-surface border border-border rounded-lg p-3">
+            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Phone class="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p class="text-xs text-tertiary">Teléfono</p>
+              <a :href="`tel:${cooperativa.numeroTelefonoMovil}`" class="text-sm font-medium text-primary hover:underline">
+                {{ cooperativa.numeroTelefonoMovil }}
+              </a>
+            </div>
           </div>
         </div>
+
+        <!-- Mensaje de tip usando AlertMessage -->
+        <AlertMessage
+          type="warning"
+          title="Tip"
+        >
+          <template #default>
+            Menciona tu ID de solicitud <code class="bg-yellow-100 dark:bg-yellow-800 px-1.5 py-0.5 rounded font-mono">{{ solicitudId }}</code> al contactar con la cooperativa para agilizar la búsqueda de tu información.
+          </template>
+        </AlertMessage>
       </div>
-    </div>
-
-    <!-- Contacto con la Cooperativa -->
-    <div class="space-y-4">
-      <h3 class="text-lg font-semibold text-neutral">Información de Contacto</h3>
-
-      <p class="text-sm text-secondary">
-        Si necesitas acelerar el proceso o tienes dudas, contacta directamente con tu cooperativa:
-      </p>
-
-      <div class="space-y-3">
-        <div class="flex items-center gap-3 bg-surface border border-border rounded-lg p-3">
-          <div class="w-10 h-10 rounded-full bg-primary/10 center">
-            <Mail class="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p class="text-xs text-tertiary">Correo Electrónico</p>
-            <a :href="`mailto:${cooperativaInfo.correo_contacto}`" class="text-sm font-medium text-primary hover:underline">
-              {{ cooperativaInfo.correo_contacto }}
-            </a>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-3 bg-surface border border-border rounded-lg p-3">
-          <div class="w-10 h-10 rounded-full bg-primary/10 center">
-            <Phone class="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p class="text-xs text-tertiary">Teléfono</p>
-            <a :href="`tel:${cooperativaInfo.telefono}`" class="text-sm font-medium text-primary hover:underline">
-              {{ cooperativaInfo.telefono }}
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <div class="flex gap-3">
-          <AlertCircle class="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0" />
-          <p class="text-sm text-yellow-900 dark:text-yellow-100">
-            <strong>Tip:</strong> Menciona tu ID de solicitud <code class="bg-yellow-100 dark:bg-yellow-800 px-1.5 py-0.5 rounded">{{ solicitudId }}</code> al contactar con la cooperativa para agilizar la búsqueda de tu información.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Próximos Pasos -->
-    <div class="space-y-4">
-      <h3 class="text-lg font-semibold text-neutral">¿Qué Sucede Ahora?</h3>
-
-      <div class="space-y-3">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
-            1
-          </div>
-          <div>
-            <p class="text-sm font-medium text-neutral">Recibirás un correo de confirmación</p>
-            <p class="text-xs text-secondary mt-1">
-              En {{ onboardingStore.userData.correo }} con los detalles de tu solicitud
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
-            2
-          </div>
-          <div>
-            <p class="text-sm font-medium text-neutral">La cooperativa revisará tu información</p>
-            <p class="text-xs text-secondary mt-1">
-              Verificarán tus documentos y datos de afiliación
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-primary/10 center text-primary font-bold text-sm shrink-0">
-            3
-          </div>
-          <div>
-            <p class="text-sm font-medium text-neutral">Te notificaremos cuando sea aprobada</p>
-            <p class="text-xs text-secondary mt-1">
-              Recibirás un correo cuando tu cuenta esté activa
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 center shrink-0">
-            <CheckCircle class="w-5 h-5 text-green-600 dark:text-green-400" />
-          </div>
-          <div>
-            <p class="text-sm font-medium text-neutral">¡Podrás acceder a SumajFlow!</p>
-            <p class="text-xs text-secondary mt-1">
-              Comenzarás a registrar tu producción y gestionar tus lotes
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-      <button
-        @click="handleFinish"
-        class="btn px-8 py-3"
-      >
-        Ir a Inicio de Sesión
-      </button>
-    </div>
-
-    <!-- Mensaje final -->
-    <div class="text-center pt-4">
-      <p class="text-sm text-secondary">
-        ¿Tienes preguntas? <a href="mailto:soporte@sumajflow.com" class="text-primary hover:underline">Contacta a nuestro soporte</a>
-      </p>
     </div>
   </div>
 </template>

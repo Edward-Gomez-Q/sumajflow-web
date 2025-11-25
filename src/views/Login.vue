@@ -25,7 +25,22 @@ const handleSubmit = async () => {
   const result = await authStore.login(email.value, password.value)
   
   if (result.success) {
-    router.push('/dashboard')
+    switch (result.data.user.rol) {
+      case 'socio':
+        router.push('/socio')
+        break
+      case 'cooperativa':
+        router.push('/cooperativa')
+        break
+      case 'ingenio':
+        router.push('/ingenio')
+        break
+      case 'comercializadora':
+        router.push('/comercializadora')
+        break
+      default:
+        router.push('/')
+    }
   }
 }
 </script>

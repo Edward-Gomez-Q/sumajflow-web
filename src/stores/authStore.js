@@ -1,6 +1,8 @@
+// src/stores/authStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSessionStore } from './sessionStore'
+import { useNotificacionStore } from './notificacionStore'
 import rutaApi from '../assets/rutaApi.js'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -28,9 +30,14 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error(data.message || 'Error al iniciar sesión')
       }
 
-      // Guardar sesión con refreshToken
+      // Guardar sesión
       const sessionStore = useSessionStore()
       sessionStore.setSession(data.token, data.refreshToken, data.user)
+
+      const notificacionStore = useNotificacionStore()
+      notificacionStore.connectWebSocket()
+      notificacionStore.fetchNotificaciones()
+      notificacionStore.requestNotificationPermission()
 
       return { success: true, data }
     } catch (err) {
@@ -46,8 +53,12 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
+      const notificacionStore = useNotificacionStore()
+      notificacionStore.reset()
+
       const sessionStore = useSessionStore()
       sessionStore.clearSession()
+      
       return { success: true }
     } catch (err) {
       error.value = err.message
@@ -83,6 +94,10 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true }
     } catch (err) {
       sessionStore.clearSession()
+      
+      const notificacionStore = useNotificacionStore()
+      notificacionStore.reset()
+      
       return { success: false }
     }
   }

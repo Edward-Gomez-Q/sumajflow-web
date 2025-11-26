@@ -10,5 +10,15 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  define:{
+    global: 'globalThis'
+  },
+  optimizeDeps:{
+    esbuildOptions:{
+      define:{
+        global: 'globalThis'
+      }
+    }
   }
 })

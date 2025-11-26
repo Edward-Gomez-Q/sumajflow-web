@@ -1,3 +1,4 @@
+// src/stores/publicDataStore.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import rutaApi from '../assets/rutaApi.js'

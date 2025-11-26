@@ -29,11 +29,11 @@ const breadcrumbs = computed(() => {
 
     <!-- Main Content -->
     <div
-      class="transition-all duration-300"
+      class="transition-all duration-300 min-h-screen flex flex-col"
       :class="sidebarStore.isCollapsed ? 'lg:ml-20' : 'lg:ml-72'"
     >
       <!-- Top Bar -->
-      <div class="sticky top-0 z-30 h-16 bg-surface border-b border-border flex items-center justify-between px-4 lg:px-6">
+      <div class="sticky top-0 z-30 h-16 bg-surface border-b border-border flex items-center justify-between px-4 lg:px-6 shrink-0">
         <!-- Mobile Menu Button -->
         <button
           @click="sidebarStore.toggleMobileSidebar"
@@ -59,11 +59,11 @@ const breadcrumbs = computed(() => {
           </template>
         </nav>
 
-        <div class="w-10"></div> <!-- Spacer for centering -->
+        <div class="w-10"></div>
       </div>
 
       <!-- Page Content -->
-      <main class="p-6 lg:p-8">
+      <main class="flex-1 p-6 lg:p-8 w-full max-w-full overflow-x-hidden">
         <slot />
       </main>
     </div>

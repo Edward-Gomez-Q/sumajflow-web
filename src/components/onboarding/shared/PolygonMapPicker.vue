@@ -1,3 +1,4 @@
+<!-- src/components/onboarding/shared/PolygonMapPicker.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import { MapPin, Trash2, Undo, Layers, Navigation, Search, Plus, X } from 'lucide-vue-next'

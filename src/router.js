@@ -71,7 +71,7 @@ const routes = [
           title: 'Solicitudes Pendientes - Cooperativa'
         }
       },
-      /*{
+      {
         path: 'sectores',
         name: 'CooperativaSectores',
         component: () => import('./views/cooperativa/Sectores.vue'),
@@ -79,7 +79,7 @@ const routes = [
           title: 'Sectores - Cooperativa'
         }
       },
-      {
+      /*{
         path: 'lotes',
         name: 'CooperativaLotes',
         component: () => import('./views/cooperativa/Lotes.vue'),

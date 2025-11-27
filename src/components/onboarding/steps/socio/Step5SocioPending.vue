@@ -193,7 +193,7 @@ const progressSteps = computed(() => [
       </div>
 
       <!-- ID de Solicitud -->
-      <div class="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-xl p-6">
+      <div class="bg-linear-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-xl p-6">
         <div class="text-center space-y-3">
           <p class="text-sm font-medium text-secondary">ID de Solicitud</p>
           <div class="flex items-center justify-center gap-3">

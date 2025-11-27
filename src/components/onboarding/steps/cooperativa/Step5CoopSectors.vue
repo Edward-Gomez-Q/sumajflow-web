@@ -1,3 +1,4 @@
+<!-- src/components/onboarding/steps/cooperativa/Step5CoopSectors.vue -->
 <script setup>
 import { computed } from 'vue'
 import { useOnboardingStore } from '@/stores/onboardingStore'

@@ -1,3 +1,4 @@
+<!-- src/components/onboarding/shared/SectorManager.vue -->
 <script setup>
 import { ref, computed } from 'vue'
 import { Plus, Edit2, Trash2, Mountain, X, Save, MapPin, AlertTriangle } from 'lucide-vue-next'

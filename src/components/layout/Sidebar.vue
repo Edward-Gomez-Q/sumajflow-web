@@ -30,7 +30,7 @@ const sessionStore = useSessionStore()
 const sidebarStore = useSidebarStore()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
-const notificacionStore = useNotificacionStore() // ⬅️ NUEVO
+const notificacionStore = useNotificacionStore()
 
 const searchQuery = ref('')
 const showUserMenu = ref(false)
@@ -391,23 +391,23 @@ const getNotificationColor = (type) => {
                         :class="notification.read ? 'bg-gray-100 dark:bg-gray-800' : 'bg-primary/10'"
                       >
                         <component 
-                          :is="getNotificationIcon(notification.type)" 
+                          :is="getNotificationIcon(notification.tipo)" 
                           class="w-4 h-4"
-                          :class="getNotificationColor(notification.type)"
+                          :class="getNotificationColor(notification.tipo)"
                         />
                       </div>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between gap-2 mb-1">
                           <p class="text-sm font-medium text-neutral">
-                            {{ notification.title }}
+                            {{ notification.titulo }}
                           </p>
                           <span 
-                            v-if="!notification.read"
+                            v-if="!notification.leido"
                             class="w-2 h-2 bg-primary rounded-full shrink-0 mt-1"
                           ></span>
                         </div>
                         <p class="text-xs text-secondary mb-1">
-                          {{ notification.message }}
+                          {{ notification.mensaje }}
                         </p>
                         <div class="flex items-center gap-1 text-xs text-tertiary">
                           <Clock class="w-3 h-3" />

@@ -140,7 +140,7 @@ const routes = [
           title: 'Dashboard - Socio'
         }
       },
-      /*{
+      {
         path: 'minas',
         name: 'SocioMinas',
         component: () => import('./views/socio/Minas.vue'),
@@ -148,7 +148,7 @@ const routes = [
           title: 'Mis Minas - Socio'
         }
       },
-      {
+      /*{
         path: 'lotes',
         name: 'SocioLotes',
         component: () => import('./views/socio/Lotes.vue'),

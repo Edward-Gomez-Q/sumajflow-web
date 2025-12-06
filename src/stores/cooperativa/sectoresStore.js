@@ -78,7 +78,7 @@ export const useSectoresStore = defineStore('sectores', () => {
     error.value = null
 
     try {
-      const response = await fetch(`${rutaApi}/api/sectores`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -104,7 +104,7 @@ export const useSectoresStore = defineStore('sectores', () => {
 
   const fetchEstadisticas = async () => {
     try {
-      const response = await fetch(`${rutaApi}/api/sectores/estadisticas`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores/estadisticas`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -128,7 +128,7 @@ export const useSectoresStore = defineStore('sectores', () => {
 
   const getSectorById = async (id) => {
     try {
-      const response = await fetch(`${rutaApi}/api/sectores/${id}`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores/${id}`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -158,7 +158,7 @@ export const useSectoresStore = defineStore('sectores', () => {
         throw new Error('El color seleccionado ya está en uso por otro sector')
       }
 
-      const response = await fetch(`${rutaApi}/api/sectores`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
@@ -199,7 +199,7 @@ export const useSectoresStore = defineStore('sectores', () => {
         throw new Error('El color seleccionado ya está en uso por otro sector')
       }
 
-      const response = await fetch(`${rutaApi}/api/sectores/${id}`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
@@ -238,7 +238,7 @@ export const useSectoresStore = defineStore('sectores', () => {
     error.value = null
 
     try {
-      const response = await fetch(`${rutaApi}/api/sectores/${id}`, {
+      const response = await fetch(`${rutaApi}/cooperativa/sectores/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,

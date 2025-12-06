@@ -3,6 +3,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useSocioStore } from '@/stores/cooperativa/socioStore'
 import { useNotificacionStore } from '@/stores/notificacionStore'
+import { useFilesStore } from '@/stores/filesStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
   Search,
@@ -23,6 +24,7 @@ import {
 
 const socioStore = useSocioStore()
 const notificacionStore = useNotificacionStore()
+const filesStore = useFilesStore()
 
 // State local
 const busquedaLocal = ref('')
@@ -183,6 +185,11 @@ const formatearFecha = (fecha) => {
     year: 'numeric'
   })
 }
+const previewFile = (url) => {
+  filesStore.openFile(url)
+}
+
+
 </script>
 
 <template>
@@ -638,17 +645,17 @@ const formatearFecha = (fecha) => {
             <div class="flex gap-3">
               <a 
                 v-if="socioSeleccionado.carnetIdentidadUrl"
-                :href="socioSeleccionado.carnetIdentidadUrl"
-                target="_blank"
-                class="btn-outline flex-1"
+                  @click="previewFile(socioSeleccionado.carnetIdentidadUrl)"
+                  class="btn-outline flex-1"
+                  :disabled="filesStore.loading"
               >
                 Ver Carnet de Identidad
               </a>
               <a 
                 v-if="socioSeleccionado.carnetAfiliacionUrl"
-                :href="socioSeleccionado.carnetAfiliacionUrl"
-                target="_blank"
+                @click="previewFile(socioSeleccionado.carnetAfiliacionUrl)"
                 class="btn-outline flex-1"
+                :disabled="filesStore.loading"
               >
                 Ver Carnet de Afiliación
               </a>

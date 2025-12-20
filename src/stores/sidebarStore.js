@@ -54,6 +54,26 @@ export const useSidebarStore = defineStore('sidebar', () => {
         ]
       },
       {
+        id: 'Transportistas',
+        label: 'Transportistas',
+        icon: Truck,
+        route: '/cooperativa/transportistas',
+        badge: null,
+        children:[
+          {
+            id: 'lista-transportistas',
+            label: 'Lista de Transportistas',
+            route: '/cooperativa/transportistas/lista'
+          },
+          {
+            id: 'invitaciones-transportistas',
+            label: 'Invitaciones a Transportistas',
+            route: '/cooperativa/transportistas/invitaciones',
+            badge: 2
+          }
+        ]
+      },
+      {
         id: 'sectores',
         label: 'Sectores',
         icon: Mountain,
@@ -72,13 +92,6 @@ export const useSidebarStore = defineStore('sidebar', () => {
         label: 'Balanza',
         icon: Scale,
         route: '/cooperativa/balanza',
-        badge: null
-      },
-      {
-        id: 'transportistas',
-        label: 'Transportistas',
-        icon: Truck,
-        route: '/cooperativa/transportistas',
         badge: null
       },
       {

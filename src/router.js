@@ -79,6 +79,27 @@ const routes = [
           title: 'Sectores - Cooperativa'
         }
       },
+      {
+        path: 'transportistas',
+        name: 'CooperativaTransportistas',
+        redirect: { name: 'CooperativaTransportistasLista' }
+      },
+      {
+        path: 'transportistas/lista',
+        name: 'CooperativaTransportistasLista',
+        component: () => import('./views/cooperativa/TransportistaLista.vue'),
+        meta: { 
+          title: 'Transportistas - Cooperativa'
+        }
+      },
+      {
+        path: 'transportistas/invitaciones',
+        name: 'CooperativaTransportistasInvitaciones',
+        component: () => import('./views/cooperativa/InvitacionesLista.vue'),
+        meta: { 
+          title: 'Invitaciones de Transportistas - Cooperativa'
+        }
+      }
       /*{
         path: 'lotes',
         name: 'CooperativaLotes',
@@ -95,14 +116,7 @@ const routes = [
           title: 'Balanza - Cooperativa'
         }
       },
-      {
-        path: 'transportistas',
-        name: 'CooperativaTransportistas',
-        component: () => import('./views/cooperativa/Transportistas.vue'),
-        meta: { 
-          title: 'Transportistas - Cooperativa'
-        }
-      },
+      
       {
         path: 'reportes',
         name: 'CooperativaReportes',

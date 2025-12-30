@@ -11,18 +11,14 @@ import {
   Truck,
   UserCheck,
   UserX,
-  Users,
-  Clock,
   ChevronLeft,
   ChevronRight,
   Eye,
   Loader2,
-  AlertCircle,
   RefreshCw,
   Plus,
   Power,
   PowerOff,
-  Navigation,
   Package
 } from 'lucide-vue-next'
 
@@ -30,47 +26,30 @@ const transportistaStore = useTransportistaStore()
 
 // State local
 const busquedaLocal = ref('')
-const estadoCuentaFiltro = ref('')
-const estadoTrazabilidadFiltro = ref('')
+const estadoFiltro = ref('')
 const mostrarModalInvitacion = ref(false)
 const mostrarModalDetalle = ref(false)
 const mostrarModalEstado = ref(false)
 const transportistaSeleccionado = ref(null)
-const accionEstado = ref('') // 'activar' o 'desactivar'
+const accionEstado = ref('')
 
 // Computed
-const estadisticas = computed(() => transportistaStore.estadisticas)
 const transportistas = computed(() => transportistaStore.transportistas)
 const isLoading = computed(() => transportistaStore.isLoading)
 const paginacion = computed(() => transportistaStore.paginacion)
 
-// Colores para badges de estado de cuenta
-const estadoCuentaColors = {
+// Colores para badges de estado
+const estadoColors = {
   activo: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   inactivo: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-  transportando: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-}
-
-// Colores para badges de estado de trazabilidad
-const estadoTrazabilidadColors = {
-  habilitado: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  asignado: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  en_ruta: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  de_regreso: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+  en_ruta: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
 }
 
 // Iconos para estados
-const estadoCuentaIcons = {
+const estadoIcons = {
   activo: UserCheck,
   inactivo: UserX,
-  transportando: Navigation
-}
-
-const estadoTrazabilidadIcons = {
-  habilitado: UserCheck,
-  asignado: Package,
-  en_ruta: Navigation,
-  de_regreso: Navigation
+  en_ruta: Truck
 }
 
 // Lifecycle
@@ -93,7 +72,6 @@ const cerrarModalInvitacion = () => {
 
 const handleInvitacionCreada = async () => {
   cerrarModalInvitacion()
-  // Recargar estadísticas para actualizar el contador de pendientes
   await cargarDatos()
 }
 
@@ -101,20 +79,14 @@ const buscar = async () => {
   await transportistaStore.buscarTransportista(busquedaLocal.value)
 }
 
-const aplicarFiltroEstadoCuenta = async (estado) => {
-  estadoCuentaFiltro.value = estado
-  await transportistaStore.aplicarFiltros({ estadoCuenta: estado })
-}
-
-const aplicarFiltroEstadoTrazabilidad = async (estado) => {
-  estadoTrazabilidadFiltro.value = estado
-  await transportistaStore.aplicarFiltros({ estadoTrazabilidad: estado })
+const aplicarFiltroEstado = async (estado) => {
+  estadoFiltro.value = estado
+  await transportistaStore.aplicarFiltros({ estado })
 }
 
 const limpiarFiltros = async () => {
   busquedaLocal.value = ''
-  estadoCuentaFiltro.value = ''
-  estadoTrazabilidadFiltro.value = ''
+  estadoFiltro.value = ''
   await transportistaStore.limpiarFiltros()
 }
 
@@ -153,19 +125,13 @@ const cambiarPagina = async (pagina) => {
   await transportistaStore.cambiarPagina(pagina)
 }
 
-const formatearFecha = (fecha) => {
-  if (!fecha) return '-'
-  const date = new Date(fecha)
-  return date.toLocaleDateString('es-BO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-const formatearNumero = (num) => {
-  if (!num) return '0'
-  return num.toLocaleString('es-BO')
+const getEstadoTexto = (estado) => {
+  const textos = {
+    activo: 'Activo',
+    inactivo: 'Inactivo',
+    en_ruta: 'En Ruta'
+  }
+  return textos[estado] || estado
 }
 </script>
 
@@ -189,96 +155,6 @@ const formatearNumero = (num) => {
         </button>
       </div>
 
-      <!-- Estadísticas 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="card-flat cursor-pointer hover:shadow-md transition-shadow" @click="aplicarFiltroEstadoCuenta('activo')">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
-              <UserCheck class="w-5 h-5 text-green-600 dark:text-green-300" />
-            </div>
-            <div>
-              <p class="text-sm text-secondary">Activos</p>
-              <p class="text-2xl font-bold text-neutral">{{ estadisticas.totalActivos }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-flat cursor-pointer hover:shadow-md transition-shadow" @click="aplicarFiltroEstadoCuenta('inactivo')">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <UserX class="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </div>
-            <div>
-              <p class="text-sm text-secondary">Inactivos</p>
-              <p class="text-2xl font-bold text-neutral">{{ estadisticas.totalInactivos }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-flat cursor-pointer hover:shadow-md transition-shadow" @click="aplicarFiltroEstadoCuenta('transportando')">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <Navigation class="w-5 h-5 text-blue-600 dark:text-blue-300" />
-            </div>
-            <div>
-              <p class="text-sm text-secondary">En Ruta</p>
-              <p class="text-2xl font-bold text-neutral">{{ estadisticas.totalTransportando }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-flat cursor-pointer hover:shadow-md transition-shadow">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
-              <Clock class="w-5 h-5 text-yellow-600 dark:text-yellow-300" />
-            </div>
-            <div>
-              <p class="text-sm text-secondary">Pendientes</p>
-              <p class="text-2xl font-bold text-neutral">{{ estadisticas.totalPendientes }}</p>
-            </div>
-          </div>
-        </div>
-      </div>-->
-
-      <!-- Estadísticas adicionales 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card-flat">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-secondary">Viajes Completados</p>
-              <p class="text-2xl font-bold text-neutral">{{ formatearNumero(estadisticas.viajesCompletadosTotal) }}</p>
-            </div>
-            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Package class="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </div>
-
-        <div class="card-flat">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-secondary">Toneladas Transportadas</p>
-              <p class="text-2xl font-bold text-neutral">{{ formatearNumero(estadisticas.tonaladasTransportadasTotal) }} t</p>
-            </div>
-            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Truck class="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </div>
-
-        <div class="card-flat">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-secondary">Kilómetros Recorridos</p>
-              <p class="text-2xl font-bold text-neutral">{{ formatearNumero(estadisticas.kilometrosRecorridosTotal) }} km</p>
-            </div>
-            <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Navigation class="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </div>
-      </div>-->
-
       <!-- Filtros y búsqueda -->
       <div class="card-flat">
         <div class="flex flex-col lg:flex-row gap-4">
@@ -289,7 +165,7 @@ const formatearNumero = (num) => {
               <input
                 v-model="busquedaLocal"
                 type="text"
-                placeholder="Buscar por nombre o placa..."
+                placeholder="Buscar por nombre, CI o placa..."
                 class="w-full pl-10"
                 @keyup.enter="buscar"
               />
@@ -318,15 +194,15 @@ const formatearNumero = (num) => {
           </div>
         </div>
 
-        <!-- Filtros por estado de cuenta -->
+        <!-- Filtros por estado -->
         <div class="mt-4">
-          <p class="text-sm font-medium text-secondary mb-2">Estado de Cuenta:</p>
+          <p class="text-sm font-medium text-secondary mb-2">Estado:</p>
           <div class="flex flex-wrap gap-2">
             <button
-              @click="aplicarFiltroEstadoCuenta('')"
+              @click="aplicarFiltroEstado('')"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoCuentaFiltro === '' 
+                estadoFiltro === '' 
                   ? 'bg-primary text-white' 
                   : 'bg-surface border border-border text-secondary hover:bg-hover'
               ]"
@@ -334,10 +210,10 @@ const formatearNumero = (num) => {
               Todos
             </button>
             <button
-              @click="aplicarFiltroEstadoCuenta('activo')"
+              @click="aplicarFiltroEstado('activo')"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoCuentaFiltro === 'activo' 
+                estadoFiltro === 'activo' 
                   ? 'bg-green-600 text-white' 
                   : 'bg-surface border border-border text-secondary hover:bg-hover'
               ]"
@@ -345,10 +221,10 @@ const formatearNumero = (num) => {
               Activos
             </button>
             <button
-              @click="aplicarFiltroEstadoCuenta('inactivo')"
+              @click="aplicarFiltroEstado('inactivo')"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoCuentaFiltro === 'inactivo' 
+                estadoFiltro === 'inactivo' 
                   ? 'bg-slate-600 text-white' 
                   : 'bg-surface border border-border text-secondary hover:bg-hover'
               ]"
@@ -356,77 +232,15 @@ const formatearNumero = (num) => {
               Inactivos
             </button>
             <button
-              @click="aplicarFiltroEstadoCuenta('transportando')"
+              @click="aplicarFiltroEstado('en_ruta')"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoCuentaFiltro === 'transportando' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-surface border border-border text-secondary hover:bg-hover'
-              ]"
-            >
-              Transportando
-            </button>
-          </div>
-        </div>
-
-        <!-- Filtros por estado de trazabilidad -->
-        <div class="mt-4">
-          <p class="text-sm font-medium text-secondary mb-2">Estado de Trazabilidad:</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              @click="aplicarFiltroEstadoTrazabilidad('')"
-              :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoTrazabilidadFiltro === '' 
-                  ? 'bg-primary text-white' 
-                  : 'bg-surface border border-border text-secondary hover:bg-hover'
-              ]"
-            >
-              Todos
-            </button>
-            <button
-              @click="aplicarFiltroEstadoTrazabilidad('habilitado')"
-              :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoTrazabilidadFiltro === 'habilitado' 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-surface border border-border text-secondary hover:bg-hover'
-              ]"
-            >
-              Habilitado
-            </button>
-            <button
-              @click="aplicarFiltroEstadoTrazabilidad('asignado')"
-              :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoTrazabilidadFiltro === 'asignado' 
-                  ? 'bg-yellow-600 text-white' 
-                  : 'bg-surface border border-border text-secondary hover:bg-hover'
-              ]"
-            >
-              Asignado
-            </button>
-            <button
-              @click="aplicarFiltroEstadoTrazabilidad('en_ruta')"
-              :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoTrazabilidadFiltro === 'en_ruta' 
+                estadoFiltro === 'en_ruta' 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-surface border border-border text-secondary hover:bg-hover'
               ]"
             >
               En Ruta
-            </button>
-            <button
-              @click="aplicarFiltroEstadoTrazabilidad('de_regreso')"
-              :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                estadoTrazabilidadFiltro === 'de_regreso' 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-surface border border-border text-secondary hover:bg-hover'
-              ]"
-            >
-              De Regreso
             </button>
           </div>
         </div>
@@ -446,10 +260,10 @@ const formatearNumero = (num) => {
           <Truck class="w-12 h-12 text-tertiary mx-auto mb-4" />
           <h3 class="text-lg font-semibold text-neutral mb-2">No se encontraron transportistas</h3>
           <p class="text-secondary mb-4">
-            {{ estadoCuentaFiltro || estadoTrazabilidadFiltro ? 'No hay transportistas con este filtro' : 'Comienza creando una invitación' }}
+            {{ estadoFiltro ? 'No hay transportistas con este filtro' : 'Comienza creando una invitación' }}
           </p>
           <button
-            v-if="!estadoCuentaFiltro && !estadoTrazabilidadFiltro"
+            v-if="!estadoFiltro"
             @click="abrirModalInvitacion"
             class="btn flex items-center gap-2 mx-auto"
           >
@@ -478,10 +292,7 @@ const formatearNumero = (num) => {
                   Viajes
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">
-                  Estado Cuenta
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">
-                  Trazabilidad
+                  Estado
                 </th>
                 <th class="px-6 py-3 text-right text-xs font-medium text-secondary uppercase tracking-wider">
                   Acciones
@@ -498,11 +309,11 @@ const formatearNumero = (num) => {
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                      {{ transportista.nombreCompleto.charAt(0) }}
+                      {{ transportista.nombreCompleto?.charAt(0) || '?' }}
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-neutral">
-                        {{ transportista.nombreCompleto }}
+                        {{ transportista.nombreCompleto || 'Sin nombre' }}
                       </div>
                       <div class="text-sm text-secondary">
                         CI: {{ transportista.ci }}
@@ -539,19 +350,11 @@ const formatearNumero = (num) => {
                   </div>
                 </td>
 
-                <!-- Estado Cuenta -->
+                <!-- Estado -->
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium', estadoCuentaColors[transportista.estadoCuenta]]">
-                    <component :is="estadoCuentaIcons[transportista.estadoCuenta]" class="w-3.5 h-3.5" />
-                    {{ transportista.estadoCuenta.charAt(0).toUpperCase() + transportista.estadoCuenta.slice(1) }}
-                  </span>
-                </td>
-
-                <!-- Trazabilidad -->
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium', estadoTrazabilidadColors[transportista.estadoTrazabilidad]]">
-                    <component :is="estadoTrazabilidadIcons[transportista.estadoTrazabilidad]" class="w-3.5 h-3.5" />
-                    {{ transportista.estadoTrazabilidad.replace('_', ' ').charAt(0).toUpperCase() + transportista.estadoTrazabilidad.replace('_', ' ').slice(1) }}
+                  <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium', estadoColors[transportista.estadoCuenta]]">
+                    <component :is="estadoIcons[transportista.estadoCuenta]" class="w-3.5 h-3.5" />
+                    {{ getEstadoTexto(transportista.estadoCuenta) }}
                   </span>
                 </td>
 
@@ -566,7 +369,7 @@ const formatearNumero = (num) => {
                       <Eye class="w-4 h-4" />
                     </button>
                     
-                    <template v-if="transportista.estadoCuenta !== 'transportando'">
+                    <template v-if="transportista.estadoCuenta !== 'en_ruta'">
                       <button
                         v-if="transportista.estadoCuenta === 'activo'"
                         @click="abrirModalCambioEstado(transportista, 'desactivar')"

@@ -317,7 +317,6 @@ defineExpose({
 
 <template>
   <div class="flex flex-col h-full relative">
-
     <div ref="mapContainer" class="w-full h-full"></div>
   </div>
 </template>

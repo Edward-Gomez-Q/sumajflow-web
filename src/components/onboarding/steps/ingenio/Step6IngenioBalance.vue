@@ -14,18 +14,18 @@ import BalanceConfig from '../../shared/BalanceConfig.vue'
 
 const onboardingStore = useOnboardingStore()
 
-const cooperativaData = computed({
-  get: () => onboardingStore.cooperativaData,
+const ingenioData = computed({
+  get: () => onboardingStore.ingenioData,
   set: (val) => {
-    onboardingStore.cooperativaData = val
+    onboardingStore.ingenioData = val
   }
 })
 
 const balanza = computed({
-  get: () => cooperativaData.value.balanza,
+  get: () => ingenioData.value.balanza,
   set: (val) => {
-    cooperativaData.value = {
-      ...cooperativaData.value,
+    ingenioData.value = {
+      ...ingenioData.value,
       balanza: val
     }
   }
@@ -78,7 +78,7 @@ const getNextCalibrationStatus = computed(() => {
         <h2 class="text-2xl font-semibold text-neutral">Configuración de Balanza</h2>
       </div>
       <p class="text-sm text-secondary leading-relaxed">
-        Registra la balanza principal de tu cooperativa. Este equipo es crítico para garantizar la precisión y trazabilidad en el pesaje de minerales.
+        Registra la balanza principal de tu ingenio. Este equipo es crítico para garantizar la precisión y trazabilidad en el pesaje de minerales.
       </p>
     </div>
 
@@ -102,7 +102,7 @@ const getNextCalibrationStatus = computed(() => {
       <BalanceConfig
         v-model="balanza"
         title="Datos de la Balanza Principal"
-        entity-name="cooperativa"
+        entity-name="ingenio"
       />
     </div>
 

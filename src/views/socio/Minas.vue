@@ -106,10 +106,10 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
 
         <!-- Estadísticas -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div class="card">
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 center">
-                <Mountain class="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500 center shrink-0">
+                <Mountain class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
                 <h3 class="text-xs sm:text-sm font-medium text-secondary">Mis Minas</h3>
@@ -120,29 +120,43 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
             </div>
           </div>
 
-          <div class="card">
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-100 dark:bg-green-900/30 center">
-                <Layers class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500 center shrink-0">
+                <Layers class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
                 <h3 class="text-xs sm:text-sm font-medium text-secondary">Sectores</h3>
-                <p class="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
+                <p class="text-xl sm:text-2xl font-bold text-neutral">
                   {{ sectoresStore.estadisticas.totalSectoresActivos }}
                 </p>
               </div>
             </div>
           </div>
 
-          <div v-if="minasStore.estadisticas.estadisticasGeograficas" class="card col-span-2">
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 center">
-                <MapPin class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-yellow-500 center shrink-0">
+                <MapPin class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h3 class="text-xs sm:text-sm font-medium text-secondary">Distancia Promedio</h3>
-                <p class="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {{ minasStore.estadisticas.estadisticasGeograficas.distanciaPromedioEntreMinasKm }} km
+                <h3 class="text-xs sm:text-sm font-medium text-secondary">Activas</h3>
+                <p class="text-xl sm:text-2xl font-bold text-neutral">
+                  {{ minasStore.minasActivas.length }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
+            <div class="flex items-center gap-2 sm:gap-3">
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gray-500 center shrink-0">
+                <Mountain class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <div>
+                <h3 class="text-xs sm:text-sm font-medium text-secondary">Inactivas</h3>
+                <p class="text-xl sm:text-2xl font-bold text-neutral">
+                  {{ minasStore.estadisticas.totalMinasActivas > 0 ? minasStore.minas.length - minasStore.minasActivas.length : 0 }}
                 </p>
               </div>
             </div>
@@ -197,7 +211,7 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
               v-for="mina in minasStore.minasActivas"
               :key="mina.id"
               @click="handleMinaClick(mina)"
-              class="bg-hover border border-border rounded-lg p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer"
+              class="bg-base border border-border rounded-xl p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer"
               :class="{ 'ring-2 ring-primary': selectedMina?.id === mina.id }"
             >
               <div class="flex items-start gap-2 sm:gap-3">
@@ -213,13 +227,13 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
                       :alt="mina.nombre"
                       class="w-full h-full object-cover"
                     />
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity center">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Eye class="w-4 h-4 text-white" />
                     </div>
                   </div>
                   <div 
                     v-else
-                    class="w-10 h-10 rounded-lg shadow-sm border-2 border-white dark:border-slate-800 center"
+                    class="w-10 h-10 rounded-lg shadow-sm border-2 border-white dark:border-slate-800 flex items-center justify-center"
                     :style="{ backgroundColor: mina.sectorColor }"
                   >
                     <Mountain class="w-5 h-5 text-white" />
@@ -231,10 +245,10 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
                   <div class="flex items-start justify-between gap-2">
                     <h4 class="font-semibold text-neutral truncate text-sm sm:text-base">{{ mina.nombre }}</h4>
                     <span 
-                      class="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
+                      class="px-2 py-1 rounded-lg text-xs font-medium shrink-0 text-white"
                       :class="{
-                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': mina.estado === 'activo',
-                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400': mina.estado === 'inactivo'
+                        'bg-green-500': mina.estado === 'activo',
+                        'bg-gray-500': mina.estado === 'inactivo'
                       }"
                     >
                       {{ mina.estado }}
@@ -254,23 +268,23 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
                     <span>{{ mina.latitud.toFixed(6) }}, {{ mina.longitud.toFixed(6) }}</span>
                   </div>
 
-                  <!-- Acciones -->
-                  <div class="flex gap-2 mt-3">
-                    <button
-                      @click.stop="openEditModal(mina)"
-                      class="flex-1 px-2 sm:px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Edit2 class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                      <span class="hidden sm:inline">Editar</span>
-                    </button>
-                    <button
-                      @click.stop="confirmDelete(mina)"
-                      class="flex-1 px-2 sm:px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-error text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Trash2 class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                      <span class="hidden sm:inline">Eliminar</span>
-                    </button>
-                  </div>
+<!-- Acciones -->
+<div class="flex gap-2 mt-3">
+  <button
+    @click.stop="openEditModal(mina)"
+    class="flex-1 px-2 sm:px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium transition-colors flex items-center justify-center gap-1"
+  >
+    <Edit2 class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+    <span class="hidden sm:inline">Editar</span>
+  </button>
+  <button
+    @click.stop="confirmDelete(mina)"
+    class="flex-1 px-2 sm:px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium transition-colors flex items-center justify-center gap-1"
+  >
+    <Trash2 class="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+    <span class="hidden sm:inline">Eliminar</span>
+  </button>
+</div>
                 </div>
               </div>
 
@@ -302,8 +316,8 @@ const minasParaMapa = computed(() => minasStore.minasActivas)
                 <Mountain class="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
               <p class="text-xs sm:text-sm text-secondary mb-3">No tienes minas registradas</p>
-              <button @click="openCreateModal" class="btn-outline text-xs sm:text-sm px-4 py-2">
-                <Plus class="w-4 h-4 inline mr-1" />
+              <button @click="openCreateModal" class="btn-outline text-xs sm:text-sm px-4 py-2 flex items-center justify-center gap-1 mx-auto">
+                <Plus class="w-4 h-4" />
                 Registrar primera mina
               </button>
             </div>

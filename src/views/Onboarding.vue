@@ -252,8 +252,8 @@ watch(() => onboardingStore.currentStep, async () => {
           {{ isLastStep ? 'Finalizar Registro' : 'Continuar' }}
         </button>
 
-        <!-- DEBUG: show data of Onboarding store (only in last step) 
-        <div v-if="isLastStep" class="mt-8">
+        <!-- DEBUG: show data of Onboarding store
+        <div class="mt-8">
           <h4 class="font-medium text-neutral mb-3">Datos ingresados (DEBUG)</h4>
           <pre class="bg-surface border border-border rounded-lg p-4 text-xs overflow-x-auto">
             {{ JSON.stringify(onboardingStore.$state, null, 2) }}

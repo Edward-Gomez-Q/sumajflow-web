@@ -71,6 +71,17 @@ const sectoresParaMapa = computed(() => {
     coordenadas: sector.coordenadas || []
   }))
 })
+
+// Función para obtener el color sólido del estado
+const getEstadoColorSolido = (estado) => {
+  if (estado === 'activo') {
+    return 'bg-green-500'
+  } else if (estado === 'inactivo') {
+    return 'bg-gray-500'
+  } else {
+    return 'bg-blue-500'
+  }
+}
 </script>
 
 <template>
@@ -87,7 +98,7 @@ const sectoresParaMapa = computed(() => {
           </div>
           <button
             @click="openCreateModal"
-            class="btn flex items-center gap-2 justify-center sm:w-auto"
+            class="btn flex items-center justify-center gap-2 sm:w-auto"
           >
             <Plus class="w-5 h-5" />
             <span class="hidden sm:inline">Nuevo Sector</span>
@@ -97,10 +108,10 @@ const sectoresParaMapa = computed(() => {
 
         <!-- Tarjetas de estadísticas -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div class="card">
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 center">
-                <Layers class="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+                <Layers class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
                 <h3 class="text-xs sm:text-sm font-medium text-secondary">Total Sectores</h3>
@@ -111,14 +122,14 @@ const sectoresParaMapa = computed(() => {
             </div>
           </div>
 
-          <div class="card">
+          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 center">
-                <Map class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500 flex items-center justify-center shrink-0">
+                <Map class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
                 <h3 class="text-xs sm:text-sm font-medium text-secondary">Área Total</h3>
-                <p class="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <p class="text-xl sm:text-2xl font-bold text-neutral">
                   {{ sectoresStore.estadisticas.areaTotalHectareas.toFixed(1) }} ha
                 </p>
               </div>
@@ -141,7 +152,7 @@ const sectoresParaMapa = computed(() => {
           <!-- Estado vacío -->
           <div v-else class="absolute inset-0 flex items-center justify-center p-4">
             <div class="text-center max-w-md">
-              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 center mx-auto mb-4">
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Map class="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
               </div>
               <h3 class="text-lg sm:text-xl font-semibold text-neutral mb-2">No hay sectores registrados</h3>
@@ -150,7 +161,7 @@ const sectoresParaMapa = computed(() => {
               </p>
               <button
                 @click="openCreateModal"
-                class="btn flex items-center gap-2 mx-auto"
+                class="btn flex items-center justify-center gap-2 mx-auto"
               >
                 <Plus class="w-4 h-4" />
                 Crear Primer Sector
@@ -180,7 +191,7 @@ const sectoresParaMapa = computed(() => {
               v-for="sector in sectoresStore.sectores"
               :key="sector.id"
               @click="handleSectorClick(sector)"
-              class="bg-hover border border-border rounded-lg p-3 sm:p-4 hover:shadow-md transition-all cursor-pointer"
+              class="bg-base rounded-xl p-3 sm:p-4 border border-border shadow-sm hover:shadow-md transition-all cursor-pointer"
               :class="{ 'ring-2 ring-primary': selectedSector?.id === sector.id }"
             >
               <div class="flex items-start gap-2 sm:gap-3">
@@ -195,11 +206,8 @@ const sectoresParaMapa = computed(() => {
                   <div class="flex items-start justify-between gap-2">
                     <h4 class="font-semibold text-neutral truncate text-sm sm:text-base">{{ sector.nombre }}</h4>
                     <span 
-                      class="px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
-                      :class="{
-                        'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400': sector.estado === 'activo',
-                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400': sector.estado === 'inactivo'
-                      }"
+                      class="px-2 py-0.5 rounded-full text-xs font-medium shrink-0 text-white"
+                      :class="getEstadoColorSolido(sector.estado)"
                     >
                       {{ sector.estado }}
                     </span>
@@ -253,7 +261,7 @@ const sectoresParaMapa = computed(() => {
 
             <!-- Estado vacío -->
             <div v-if="sectoresStore.sectores.length === 0 && !sectoresStore.loading" class="text-center py-12">
-              <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 center mx-auto mb-3">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                 <Layers class="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
               <p class="text-xs sm:text-sm text-secondary">No hay sectores registrados</p>
@@ -280,7 +288,7 @@ const sectoresParaMapa = computed(() => {
       >
         <div class="bg-surface rounded-xl shadow-2xl w-full max-w-md border border-border">
           <div class="p-4 sm:p-6">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-900/30 center mx-auto mb-4">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle class="w-5 h-5 sm:w-6 sm:h-6 text-error" />
             </div>
             

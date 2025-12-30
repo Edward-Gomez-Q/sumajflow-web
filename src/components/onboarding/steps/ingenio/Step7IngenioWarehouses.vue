@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useOnboardingStore } from '@/stores/onboardingStore'
-import { Warehouse, Package, TrendingUp, Maximize2, CheckCircle, AlertTriangle, Info, BookOpen, CheckSquare, Target } from 'lucide-vue-next'
+import { Warehouse, Package, TrendingUp, CheckCircle, AlertTriangle, Info, BookOpen } from 'lucide-vue-next'
 import WarehouseManager from '../../shared/WarehouseManager.vue'
 
 const onboardingStore = useOnboardingStore()
@@ -55,11 +55,11 @@ const totalArea = computed(() => {
         <div class="w-10 h-10 rounded-lg bg-primary/10 center">
           <Warehouse class="w-5 h-5 text-primary" />
         </div>
-        <h2 class="text-2xl font-semibold text-neutral">Configuración de Almacenes</h2>
+        <h2 class="text-2xl font-semibold text-neutral">Configuración de Almacén</h2>
       </div>
       
       <p class="text-sm text-secondary leading-relaxed">
-        Define los espacios de almacenamiento de tu ingenio para gestionar concentrados y materiales procesados.
+        Define el almacén principal de tu ingenio para gestionar concentrados y materiales procesados.
       </p>
     </div>
 
@@ -70,9 +70,9 @@ const totalArea = computed(() => {
           <Info class="w-4 h-4 text-blue-700 dark:text-blue-300" />
         </div>
         <div class="text-sm">
-          <p class="font-medium text-neutral mb-1">Gestión de almacenes en ingenios</p>
+          <p class="font-medium text-neutral mb-1">Almacén principal en ingenios</p>
           <p class="text-secondary leading-relaxed mb-2">
-            Los almacenes son fundamentales para la operación eficiente de tu ingenio:
+            El almacén es fundamental para la operación eficiente de tu ingenio:
           </p>
           <ul class="space-y-1 text-secondary leading-relaxed">
             <li class="flex items-start gap-2">
@@ -96,19 +96,18 @@ const totalArea = computed(() => {
       </div>
     </div>
 
-
     <!-- Contenido del formulario -->
     <div class="space-y-6">
       
-      <!-- Sección: Gestión de Almacenes -->
+      <!-- Sección: Gestión de Almacén -->
       <div class="space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-neutral mb-1 flex items-center gap-2">
             <Warehouse class="w-4 h-4 text-primary" />
-            Gestión de Almacenes
+            Almacén Principal
           </h3>
           <p class="text-sm text-secondary leading-relaxed">
-            Registra los almacenes de tu ingenio con su capacidad y características
+            Registra tu almacén principal con su capacidad y características
           </p>
         </div>
 
@@ -122,32 +121,31 @@ const totalArea = computed(() => {
 
     <!-- Estado de validación -->
     <div v-if="almacenes.length > 0">
-      <!-- ✅ Almacenes configurados correctamente -->
+      <!-- ✅ Almacén configurado correctamente -->
       <div v-if="hasValidWarehouses" class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-start gap-3">
           <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
             <CheckCircle class="w-4 h-4 text-green-700 dark:text-green-300" />
           </div>
           <div>
-            <p class="font-medium text-neutral mb-1">Almacenes configurados correctamente</p>
+            <p class="font-medium text-neutral mb-1">Almacén configurado correctamente</p>
             <p class="text-sm text-secondary leading-relaxed">
-              Has registrado {{ almacenes.length }} {{ almacenes.length === 1 ? 'almacén' : 'almacenes' }} 
-              con capacidad total de {{ totalCapacity.toFixed(2) }} toneladas
+              Tu almacén principal tiene una capacidad de {{ totalCapacity.toFixed(2) }} toneladas
             </p>
           </div>
         </div>
       </div>
 
-      <!-- ⚠️ Almacenes incompletos -->
+      <!-- ⚠️ Almacén incompleto -->
       <div v-else class="bg-orange-100/70 dark:bg-orange-900/40 border border-orange-400/60 dark:border-orange-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-orange-200/50 dark:bg-orange-800/50 center shrink-0">
             <AlertTriangle class="w-4 h-4 text-orange-700 dark:text-orange-300" />
           </div>
           <div>
-            <p class="font-medium text-neutral mb-1">Almacenes incompletos</p>
+            <p class="font-medium text-neutral mb-1">Almacén incompleto</p>
             <p class="text-sm text-secondary leading-relaxed">
-              Asegúrate de que cada almacén tenga nombre y capacidad definida
+              Asegúrate de que el almacén tenga nombre y capacidad definida
             </p>
           </div>
         </div>
@@ -201,13 +199,11 @@ const totalArea = computed(() => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
 
     <!-- Divider -->
     <div class="divider"></div>
-
 
     <!-- Resumen final -->
     <div v-if="hasValidWarehouses" class="border-l-4 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 rounded-r-lg p-4">
@@ -225,4 +221,3 @@ const totalArea = computed(() => {
 
   </div>
 </template>
-

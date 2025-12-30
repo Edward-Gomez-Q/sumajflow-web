@@ -99,8 +99,8 @@ const routes = [
         meta: { 
           title: 'Invitaciones de Transportistas - Cooperativa'
         }
-      }
-      /*{
+      },
+      {
         path: 'lotes',
         name: 'CooperativaLotes',
         component: () => import('./views/cooperativa/Lotes.vue'),
@@ -108,7 +108,15 @@ const routes = [
           title: 'Lotes - Cooperativa'
         }
       },
-      {
+            {
+        path: 'lotes/solicitudes',
+        name: 'CooperativaLotesAprobacion',
+        component: () => import('./views/cooperativa/LotesAprobacion.vue'),
+        meta: { 
+          title: 'Lotes Solicitudes - Cooperativa'
+        }
+      },
+      /*{
         path: 'balanza',
         name: 'CooperativaBalanza',
         component: () => import('./views/cooperativa/Balanza.vue'),
@@ -162,7 +170,7 @@ const routes = [
           title: 'Mis Minas - Socio'
         }
       },
-      /*{
+      {
         path: 'lotes',
         name: 'SocioLotes',
         component: () => import('./views/socio/Lotes.vue'),
@@ -170,7 +178,7 @@ const routes = [
           title: 'Mis Lotes - Socio'
         }
       },
-      {
+      /*{
         path: 'liquidaciones',
         name: 'SocioLiquidaciones',
         component: () => import('./views/socio/Liquidaciones.vue'),

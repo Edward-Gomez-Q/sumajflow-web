@@ -25,8 +25,7 @@ export const useTransportistaStore = defineStore('transportista', () => {
     busqueda: ''
   })
   const filtros = ref({
-    estadoCuenta: '',
-    estadoTrazabilidad: '',
+    estado: '', // Simplificado: solo un filtro de estado
     busqueda: '',
     ordenarPor: 'createdAt',
     direccion: 'desc'
@@ -194,17 +193,13 @@ export const useTransportistaStore = defineStore('transportista', () => {
         direccion: params.direccion ?? filtros.value.direccion
       })
 
-      if (params.estadoCuenta || filtros.value.estadoCuenta) {
-        queryParams.append('estadoCuenta', params.estadoCuenta ?? filtros.value.estadoCuenta)
-      }
+      // Estado (puede ser vacío)
+      const estado = params.estado ?? filtros.value.estado ?? ''
+      queryParams.append('estado', estado)
 
-      if (params.estadoTrazabilidad || filtros.value.estadoTrazabilidad) {
-        queryParams.append('estadoTrazabilidad', params.estadoTrazabilidad ?? filtros.value.estadoTrazabilidad)
-      }
-
-      if (params.busqueda || filtros.value.busqueda) {
-        queryParams.append('busqueda', params.busqueda ?? filtros.value.busqueda)
-      }
+      // Búsqueda (puede ser vacío)
+      const busqueda = params.busqueda ?? filtros.value.busqueda ?? ''
+      queryParams.append('busqueda', busqueda)
 
       const response = await fetch(
         `${API_URL}/cooperativa/transportistas?${queryParams}`,
@@ -316,6 +311,7 @@ export const useTransportistaStore = defineStore('transportista', () => {
         throw new Error(data.message || 'Error al cambiar estado')
       }
 
+      // Actualizar localmente
       const transportistaIndex = transportistas.value.findIndex(
         t => t.id === transportistaId
       )
@@ -324,6 +320,7 @@ export const useTransportistaStore = defineStore('transportista', () => {
         transportistas.value[transportistaIndex].estadoCuenta = nuevoEstado
       }
 
+      // Recargar lista
       await fetchTransportistas({ pagina: paginacion.value.paginaActual })
 
       return { success: true, message: data.message }
@@ -367,8 +364,7 @@ export const useTransportistaStore = defineStore('transportista', () => {
    */
   const limpiarFiltros = async () => {
     filtros.value = {
-      estadoCuenta: '',
-      estadoTrazabilidad: '',
+      estado: '',
       busqueda: '',
       ordenarPor: 'createdAt',
       direccion: 'desc'
@@ -407,8 +403,7 @@ export const useTransportistaStore = defineStore('transportista', () => {
       busqueda: ''
     }
     filtros.value = {
-      estadoCuenta: '',
-      estadoTrazabilidad: '',
+      estado: '',
       busqueda: '',
       ordenarPor: 'createdAt',
       direccion: 'desc'

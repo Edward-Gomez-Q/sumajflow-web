@@ -85,7 +85,19 @@ export const useSidebarStore = defineStore('sidebar', () => {
         label: 'Lotes',
         icon: Package,
         route: '/cooperativa/lotes',
-        badge: null
+        badge: null,
+        children: [
+          {
+            id: 'lista-lotes',
+            label: 'Lista de Lotes',
+            route: '/cooperativa/lotes'
+          },
+          {
+            id: 'solicitudes-lotes',
+            label: 'Solicitudes de Lotes',
+            route: '/cooperativa/lotes/solicitudes',
+          },
+        ]
       },
       {
         id: 'balanza',

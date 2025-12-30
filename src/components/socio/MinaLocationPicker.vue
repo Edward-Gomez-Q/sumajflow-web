@@ -81,13 +81,11 @@ const initMap = () => {
     let centerLng = -65.75
     let zoom = 6
 
-    // Si hay una ubicación inicial, centrar ahí
     if (props.initialLocation && props.initialLocation.latitud && props.initialLocation.longitud) {
       centerLat = props.initialLocation.latitud
       centerLng = props.initialLocation.longitud
       zoom = 14
     } 
-    // Si no, centrar en los sectores disponibles
     else if (props.sectores.length > 0) {
       const allCoords = props.sectores.flatMap(s => s.coordenadas || [])
       if (allCoords.length > 0) {
@@ -104,19 +102,15 @@ const initMap = () => {
       preferCanvas: true
     })
 
-    // Añadir capa base
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map.value)
 
-    // Dibujar sectores
     drawSectores()
 
-    // Añadir evento de clic en el mapa (no en los polígonos)
     map.value.on('click', handleMapClick)
 
-    // Si hay ubicación inicial, colocar marcador
     if (props.initialLocation && props.initialLocation.latitud && props.initialLocation.longitud) {
       const sector = props.sectores.find(s => s.id === props.initialSectorId)
       if (sector) {
@@ -134,7 +128,6 @@ const initMap = () => {
 const drawSectores = () => {
   if (!map.value || !window.L) return
 
-  // Limpiar polígonos existentes
   polygons.value.forEach(p => {
     try {
       map.value.removeLayer(p)
@@ -149,13 +142,12 @@ const drawSectores = () => {
       const latlngs = sector.coordenadas.map(c => [c.latitud, c.longitud])
       const color = sector.color || '#1E3A8A'
       
-      // Crear polígono sin interactividad para que los clics pasen al mapa
       const polygon = window.L.polygon(latlngs, {
         color: color,
         fillColor: color,
         fillOpacity: 0.15,
         weight: 2,
-        interactive: false // CLAVE: Deshabilitar interactividad
+        interactive: false
       }).addTo(map.value)
 
       polygons.value.push(polygon)
@@ -166,7 +158,6 @@ const drawSectores = () => {
     }
   })
 
-  // Ajustar vista solo si no hay ubicación inicial
   if (allBounds.length > 0 && !props.initialLocation) {
     const bounds = window.L.latLngBounds(allBounds)
     map.value.fitBounds(bounds, { padding: [50, 50] })
@@ -176,7 +167,6 @@ const drawSectores = () => {
 const handleMapClick = (e) => {
   const { lat, lng } = e.latlng
   
-  // Validar que esté en Bolivia
   if (lat < -23 || lat > -9 || lng < -71 || lng > -57) {
     placeMarker(lat, lng, true, 'Fuera de Bolivia')
     emit('location-selected', null)
@@ -184,7 +174,6 @@ const handleMapClick = (e) => {
     return
   }
 
-  // Buscar en qué sector está el punto
   const sector = findSectorForPoint(lat, lng)
   
   if (!sector) {
@@ -196,7 +185,6 @@ const handleMapClick = (e) => {
     return
   }
 
-  // Punto válido dentro de un sector
   selectedSector.value = sector
   selectedLocation.value = { latitud: lat, longitud: lng }
   
@@ -235,7 +223,6 @@ const isPointInPolygon = (lat, lng, coords) => {
 const placeMarker = (lat, lng, isInvalid = false, errorType = '') => {
   if (!map.value || !window.L) return
 
-  // Remover marcador anterior
   if (currentMarker.value) {
     map.value.removeLayer(currentMarker.value)
   }
@@ -344,8 +331,6 @@ defineExpose({
   <div class="relative w-full h-full">
     <div ref="mapContainer" class="absolute inset-0 rounded-lg overflow-hidden"></div>
     
-
-    <!-- Ayuda inicial -->
     <Transition name="fade">
       <div v-if="!selectedLocation" class="absolute bottom-4 left-4 right-4 bg-primary text-white rounded-lg p-4 shadow-lg z-1000 text-center">
         <div class="flex items-center justify-center gap-2 mb-1">
@@ -358,7 +343,6 @@ defineExpose({
       </div>
     </Transition>
 
-    <!-- Estado de carga -->
     <div v-if="!isMapReady" class="absolute inset-0 bg-white dark:bg-slate-900 flex items-center justify-center z-2000">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-3"></div>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Warehouse, Plus, Edit2, Trash2, X, MapPin, Package, Maximize2, CheckCircle } from 'lucide-vue-next'
+import { Warehouse, Edit2, MapPin, Package, Maximize2, CheckCircle } from 'lucide-vue-next'
 import AddressForm from './AddressForm.vue'
 import MapPicker from './MapPicker.vue'
 import { usePublicDataStore } from '@/stores/publicDataStore'
@@ -22,7 +22,7 @@ const props = defineProps({
   }
 })
 
-//Obtener los minerales desde el store por el id que se pasa en availableMinerals
+// Obtener los minerales desde el store
 const minerals = computed(() => {
   return publicDataStore.minerales.filter(mineral => 
     props.availableMinerals.includes(mineral.id)
@@ -38,8 +38,6 @@ const warehouses = computed({
 
 // Estado del modal
 const showModal = ref(false)
-const isEditing = ref(false)
-const editingIndex = ref(-1)
 const showMapPicker = ref(false)
 
 // Tipos de almacén con colores
@@ -73,16 +71,15 @@ const warehouseForm = ref({
   longitud: null
 })
 
-const openModal = (warehouse = null, index = -1) => {
-  if (warehouse) {
-    // Editar
-    isEditing.value = true
-    editingIndex.value = index
-    warehouseForm.value = { ...warehouse }
+// Verificar si ya existe un almacén
+const hasWarehouse = computed(() => warehouses.value.length > 0)
+
+const openModal = () => {
+  if (hasWarehouse.value) {
+    // Editar el almacén existente
+    warehouseForm.value = { ...warehouses.value[0] }
   } else {
-    // Nuevo
-    isEditing.value = false
-    editingIndex.value = -1
+    // Crear nuevo almacén
     warehouseForm.value = {
       nombre: '',
       tipo: '',
@@ -123,23 +120,10 @@ const saveWarehouse = () => {
 
   const warehouseData = { ...warehouseForm.value }
 
-  if (isEditing.value) {
-    // Actualizar almacén existente
-    const updated = [...warehouses.value]
-    updated[editingIndex.value] = warehouseData
-    warehouses.value = updated
-  } else {
-    // Agregar nuevo almacén
-    warehouses.value = [...warehouses.value, warehouseData]
-  }
+  // Siempre reemplazar el almacén (solo puede haber uno)
+  warehouses.value = [warehouseData]
 
   closeModal()
-}
-
-const deleteWarehouse = (index) => {
-  if (confirm('¿Estás seguro de eliminar este almacén?')) {
-    warehouses.value = warehouses.value.filter((_, i) => i !== index)
-  }
 }
 
 const toggleMineral = (mineral) => {
@@ -183,40 +167,37 @@ const getTypeConfig = (type) => {
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-neutral">Almacenes</h3>
+      <h3 class="text-lg font-semibold text-neutral">Almacén Principal</h3>
       <button
+        v-if="!hasWarehouse"
         @click="openModal()"
         type="button"
         class="btn-outline inline-flex items-center gap-2"
       >
-        <Plus class="w-4 h-4" />
-        <span>Agregar Almacén</span>
+        <Package class="w-4 h-4" />
+        <span>Configurar Almacén</span>
       </button>
     </div>
 
-    <!-- Lista de almacenes -->
-    <div v-if="warehouses.length > 0" class="space-y-3">
-      <div
-        v-for="(warehouse, index) in warehouses"
-        :key="index"
-        class="border border-border rounded-lg p-5 hover:border-primary/50 transition-all hover:shadow-md"
-      >
+    <!-- Almacén único -->
+    <div v-if="hasWarehouse" class="space-y-3">
+      <div class="border border-border rounded-lg p-5 hover:border-primary/50 transition-all hover:shadow-md">
         <div class="flex items-start gap-4">
-          <!-- Icono sin fondo de color -->
+          <!-- Icono -->
           <div class="w-12 h-12 rounded-lg border-2 center shrink-0"
             :class="{
-              '': warehouse.tipo === 'concentrado',
-              '': warehouse.tipo === 'complejo',
-              'border-primary': !warehouse.tipo
+              'border-blue-500': warehouses[0].tipo === 'concentrado',
+              'border-purple-500': warehouses[0].tipo === 'complejo',
+              'border-primary': !warehouses[0].tipo
             }"
           >
             <component 
-              :is="getTypeConfig(warehouse.tipo).icon"
+              :is="getTypeConfig(warehouses[0].tipo).icon"
               class="w-6 h-6"
               :class="{
-                'text-blue-600 dark:text-blue-400': warehouse.tipo === 'concentrado',
-                'text-purple-600 dark:text-purple-400': warehouse.tipo === 'complejo',
-                'text-primary': !warehouse.tipo
+                'text-blue-600 dark:text-blue-400': warehouses[0].tipo === 'concentrado',
+                'text-purple-600 dark:text-purple-400': warehouses[0].tipo === 'complejo',
+                'text-primary': !warehouses[0].tipo
               }"
             />
           </div>
@@ -224,16 +205,16 @@ const getTypeConfig = (type) => {
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between gap-3 mb-4">
-              <h4 class="font-semibold text-neutral text-lg">{{ warehouse.nombre }}</h4>
+              <h4 class="font-semibold text-neutral text-lg">{{ warehouses[0].nombre }}</h4>
               <div 
-                v-if="showType && warehouse.tipo" 
+                v-if="showType && warehouses[0].tipo" 
                 class="px-3 py-1.5 rounded-full text-xs font-semibold border-2 whitespace-nowrap"
                 :class="{
-                  ' text-blue-700 ': warehouse.tipo === 'concentrado',
-                  ' text-purple-700': warehouse.tipo === 'complejo'
+                  'text-blue-700 border-blue-500': warehouses[0].tipo === 'concentrado',
+                  'text-purple-700 border-purple-500': warehouses[0].tipo === 'complejo'
                 }"
               >
-                {{ getTypeConfig(warehouse.tipo).label }}
+                {{ getTypeConfig(warehouses[0].tipo).label }}
               </div>
             </div>
 
@@ -246,47 +227,38 @@ const getTypeConfig = (type) => {
                   </div>
                   <div>
                     <span class="text-tertiary text-xs block leading-tight">Capacidad</span>
-                    <span class="font-semibold text-neutral">{{ warehouse.capacidad_maxima }} ton</span>
+                    <span class="font-semibold text-neutral">{{ warehouses[0].capacidad_maxima }} ton</span>
                   </div>
                 </div>
                 
-                <div v-if="warehouse.area" class="flex items-center gap-2.5">
+                <div v-if="warehouses[0].area" class="flex items-center gap-2.5">
                   <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/20 center shrink-0">
                     <Maximize2 class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <span class="text-tertiary text-xs block leading-tight">Área</span>
-                    <span class="font-semibold text-neutral">{{ warehouse.area }} m²</span>
+                    <span class="font-semibold text-neutral">{{ warehouses[0].area }} m²</span>
                   </div>
                 </div>
               </div>
 
-
               <!-- Ubicación -->
-              <div v-if="warehouse.direccion" class="flex items-start gap-2 pt-1 text-sm text-secondary">
+              <div v-if="warehouses[0].direccion" class="flex items-start gap-2 pt-1 text-sm text-secondary">
                 <MapPin class="w-4 h-4 shrink-0 mt-0.5 text-tertiary" />
-                <span class="leading-relaxed">{{ warehouse.direccion }}, {{ warehouse.municipio }}</span>
+                <span class="leading-relaxed">{{ warehouses[0].direccion }}, {{ warehouses[0].municipio }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Acciones -->
+          <!-- Acción de editar -->
           <div class="flex gap-2">
             <button
-              @click="openModal(warehouse, index)"
+              @click="openModal()"
               type="button"
               class="w-9 h-9 rounded-lg border border-border hover:border-primary hover:bg-primary/5 center transition-all"
               title="Editar"
             >
               <Edit2 class="w-4 h-4 text-secondary" />
-            </button>
-            <button
-              @click="deleteWarehouse(index)"
-              type="button"
-              class="w-9 h-9 rounded-lg border border-border hover:border-error hover:bg-error/5 center transition-all"
-              title="Eliminar"
-            >
-              <Trash2 class="w-4 h-4 text-error" />
             </button>
           </div>
         </div>
@@ -298,17 +270,17 @@ const getTypeConfig = (type) => {
       <div class="w-16 h-16 rounded-full bg-primary/10 center mx-auto mb-4">
         <Warehouse class="w-8 h-8 text-primary" />
       </div>
-      <h4 class="font-semibold text-neutral mb-2">No hay almacenes registrados</h4>
+      <h4 class="font-semibold text-neutral mb-2">No hay almacén configurado</h4>
       <p class="text-sm text-secondary mb-4 max-w-md mx-auto">
-        Registra los almacenes donde guardas minerales o concentrados
+        Configura el almacén principal donde guardas minerales o concentrados
       </p>
       <button
         @click="openModal()"
         type="button"
         class="btn inline-flex items-center gap-2"
       >
-        <Plus class="w-4 h-4" />
-        <span>Agregar Primer Almacén</span>
+        <Package class="w-4 h-4" />
+        <span>Configurar Almacén</span>
       </button>
     </div>
 
@@ -328,10 +300,10 @@ const getTypeConfig = (type) => {
               </div>
               <div>
                 <h3 class="text-xl font-semibold text-neutral">
-                  {{ isEditing ? 'Editar Almacén' : 'Nuevo Almacén' }}
+                  {{ hasWarehouse ? 'Editar Almacén' : 'Configurar Almacén' }}
                 </h3>
                 <p class="text-sm text-secondary mt-1">
-                  Registra la información del almacén
+                  {{ hasWarehouse ? 'Actualiza la información del almacén' : 'Registra la información del almacén principal' }}
                 </p>
               </div>
             </div>
@@ -483,7 +455,7 @@ const getTypeConfig = (type) => {
               class="btn inline-flex items-center gap-2"
             >
               <CheckCircle class="w-4 h-4" />
-              <span>{{ isEditing ? 'Guardar Cambios' : 'Crear Almacén' }}</span>
+              <span>{{ hasWarehouse ? 'Guardar Cambios' : 'Configurar Almacén' }}</span>
             </button>
           </div>
         </div>

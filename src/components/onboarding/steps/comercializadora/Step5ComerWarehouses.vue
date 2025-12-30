@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useOnboardingStore } from '@/stores/onboardingStore'
-import { Warehouse, Package, TrendingUp, Maximize2, CheckCircle, AlertTriangle, Info, BookOpen, Shield, DollarSign, Target } from 'lucide-vue-next'
+import { Warehouse, Package, TrendingUp, CheckCircle, AlertTriangle, BookOpen } from 'lucide-vue-next'
 import WarehouseManager from '../../shared/WarehouseManager.vue'
 
 const onboardingStore = useOnboardingStore()
@@ -55,21 +55,65 @@ const estimatedValue = computed(() => {
 
 <template>
   <div class="space-y-8">
+    <!-- Header -->
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-lg bg-primary/10 center">
+          <Warehouse class="w-5 h-5 text-primary" />
+        </div>
+        <h2 class="text-2xl font-semibold text-neutral">Configuración de Almacén</h2>
+      </div>
+      
+      <p class="text-sm text-secondary leading-relaxed">
+        Define el almacén principal de tu comercializadora para gestionar concentrados.
+      </p>
+    </div>
 
-
+    <!-- Información contextual -->
+    <div class="bg-blue-100/70 dark:bg-blue-900/40 border border-blue-400/60 dark:border-blue-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-200/50 dark:bg-blue-800/50 center shrink-0">
+          <Package class="w-4 h-4 text-blue-700 dark:text-blue-300" />
+        </div>
+        <div class="text-sm">
+          <p class="font-medium text-neutral mb-1">Almacén principal en comercializadoras</p>
+          <p class="text-secondary leading-relaxed mb-2">
+            El almacén es esencial para las operaciones comerciales:
+          </p>
+          <ul class="space-y-1 text-secondary leading-relaxed">
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+              <span>Almacenar concentrados antes de la exportación</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+              <span>Control estricto de inventario y calidad</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+              <span>Seguridad y trazabilidad del producto</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 dark:text-blue-400 mt-0.5">•</span>
+              <span>Cumplimiento de normativas de almacenamiento</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
     <!-- Contenido del formulario -->
     <div class="space-y-6">
       
-      <!-- Sección: Gestión de Almacenes -->
+      <!-- Sección: Gestión de Almacén -->
       <div class="space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-neutral mb-1 flex items-center gap-2">
             <Warehouse class="w-4 h-4 text-primary" />
-            Gestión de Almacenes
+            Almacén Principal
           </h3>
           <p class="text-sm text-secondary leading-relaxed">
-            Registra los almacenes de tu comercializadora con su capacidad y características
+            Registra tu almacén principal con su capacidad y características
           </p>
         </div>
 
@@ -83,32 +127,31 @@ const estimatedValue = computed(() => {
 
     <!-- Estado de validación -->
     <div v-if="almacenes.length > 0">
-      <!-- ✅ Almacenes configurados correctamente -->
+      <!-- ✅ Almacén configurado correctamente -->
       <div v-if="hasValidWarehouses" class="bg-green-100/70 dark:bg-green-900/40 border border-green-400/60 dark:border-green-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-start gap-3">
           <div class="w-8 h-8 rounded-full bg-green-200/50 dark:bg-green-800/50 center shrink-0">
             <CheckCircle class="w-4 h-4 text-green-700 dark:text-green-300" />
           </div>
           <div>
-            <p class="font-medium text-neutral mb-1">Almacenes configurados correctamente</p>
+            <p class="font-medium text-neutral mb-1">Almacén configurado correctamente</p>
             <p class="text-sm text-secondary leading-relaxed">
-              Has registrado {{ almacenes.length }} {{ almacenes.length === 1 ? 'almacén' : 'almacenes' }} 
-              con capacidad total de {{ totalCapacity.toFixed(2) }} toneladas
+              Tu almacén principal tiene una capacidad de {{ totalCapacity.toFixed(2) }} toneladas
             </p>
           </div>
         </div>
       </div>
 
-      <!-- ⚠️ Almacenes incompletos -->
+      <!-- ⚠️ Almacén incompleto -->
       <div v-else class="bg-orange-100/70 dark:bg-orange-900/40 border border-orange-400/60 dark:border-orange-700 rounded-lg p-4 shadow-sm backdrop-blur-[2px] transition-all duration-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-orange-200/50 dark:bg-orange-800/50 center shrink-0">
             <AlertTriangle class="w-4 h-4 text-orange-700 dark:text-orange-300" />
           </div>
           <div>
-            <p class="font-medium text-neutral mb-1">Almacenes incompletos</p>
+            <p class="font-medium text-neutral mb-1">Almacén incompleto</p>
             <p class="text-sm text-secondary leading-relaxed">
-              Asegúrate de que cada almacén tenga nombre y capacidad definida
+              Asegúrate de que el almacén tenga nombre y capacidad definida
             </p>
           </div>
         </div>
@@ -165,6 +208,22 @@ const estimatedValue = computed(() => {
       </div>
     </div>
 
+    <!-- Divider -->
+    <div class="divider"></div>
+
+    <!-- Resumen final -->
+    <div v-if="hasValidWarehouses" class="border-l-4 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 rounded-r-lg p-4">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 center shrink-0">
+          <CheckCircle class="w-4 h-4 text-green-600 dark:text-green-400" />
+        </div>
+        <p class="text-sm text-neutral leading-relaxed">
+          <span class="font-semibold">¡Configuración completa!</span> Has completado toda la información 
+          de tu comercializadora. Al hacer clic en "Finalizar Registro" crearemos tu cuenta y podrás comenzar 
+          a operar en SumajFlow.
+        </p>
+      </div>
+    </div>
 
   </div>
 </template>

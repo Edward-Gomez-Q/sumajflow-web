@@ -71,7 +71,6 @@ const loadMinaData = async () => {
       
       selectedSector.value = sectoresStore.sectoresActivos.find(s => s.id === mina.sectorId)
       
-      // Establecer ubicación inicial para el mapa
       initialLocation.value = {
         latitud: mina.latitud,
         longitud: mina.longitud
@@ -168,19 +167,19 @@ const handleClose = () => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col border border-border">
         <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-border">
+        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-primary/10 center">
-              <Mountain class="w-5 h-5 text-primary" />
+            <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+              <Mountain class="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 class="text-xl font-semibold text-neutral">{{ modalTitle }}</h3>
-              <p class="text-sm text-secondary mt-1">
+              <p class="text-sm text-secondary mt-0.5">
                 {{ isEditMode ? 'Modifica los datos de tu mina' : 'Ubica tu mina dentro de un sector en el mapa' }}
               </p>
             </div>
           </div>
-          <button @click="handleClose" class="w-10 h-10 rounded-lg hover:bg-hover center transition-colors">
+          <button @click="handleClose" class="w-10 h-10 rounded-lg hover:bg-hover flex items-center justify-center transition-colors">
             <X class="w-5 h-5 text-tertiary" />
           </button>
         </div>
@@ -202,7 +201,7 @@ const handleClose = () => {
               <!-- Estado vacío -->
               <div v-else class="absolute inset-0 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
                 <div class="text-center max-w-sm">
-                  <div class="w-20 h-20 rounded-full bg-primary/10 center mx-auto mb-4">
+                  <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <MapPin class="w-10 h-10 text-primary" />
                   </div>
                   <h3 class="text-lg font-semibold text-neutral mb-2">No hay sectores disponibles</h3>
@@ -215,7 +214,7 @@ const handleClose = () => {
 
             <!-- Formulario (2/5) -->
             <div class="lg:col-span-2 flex flex-col">
-              <div class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-custom">
+              <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-custom">
                 <!-- Error general -->
                 <div v-if="errors.general" class="bg-error/10 border border-error/30 rounded-lg p-4">
                   <div class="flex items-start gap-2">
@@ -259,7 +258,7 @@ const handleClose = () => {
                     >
                       <div class="flex items-start gap-3">
                         <div 
-                          class="w-10 h-10 rounded-full center shrink-0"
+                          class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                           :class="{
                             'bg-green-100 dark:bg-green-900/30': hasCoordinates && selectedSector,
                             'bg-error/10': errors.coordenadas || errors.sectorId,
@@ -314,7 +313,7 @@ const handleClose = () => {
               </div>
 
               <!-- Footer con botones -->
-              <div class="flex items-center justify-end gap-3 p-6 border-t border-border bg-hover">
+              <div class="flex items-center justify-end gap-3 p-4 sm:p-6 border-t border-border bg-hover shrink-0">
                 <button 
                   type="button" 
                   @click="handleClose" 
@@ -326,7 +325,7 @@ const handleClose = () => {
                 <button 
                   @click="handleSubmit" 
                   :disabled="loading || !hasCoordinates || !selectedSector" 
-                  class="btn px-6 flex items-center gap-2"
+                  class="btn px-6 flex items-center justify-center gap-2"
                 >
                   <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
                   <Save v-else class="w-4 h-4" />

@@ -5,6 +5,7 @@ import { useLotesStore } from '@/stores/socio/lotesStore'
 import { useMinasStore } from '@/stores/socio/minasStore'
 import { useDestinosStore } from '@/stores/socio/destinosStore'
 import { usePublicDataStore } from '@/stores/publicDataStore'
+import { useCooperativaInfoStore } from '@/stores/socio/cooperativaInfoStore'
 import { X, Save, PackageCheck, Truck, MapPin, AlertCircle, Map as MapIcon } from 'lucide-vue-next'
 import RouteMapViewer from './RouteMapViewer.vue'
 
@@ -14,11 +15,11 @@ const lotesStore = useLotesStore()
 const minasStore = useMinasStore()
 const destinosStore = useDestinosStore()
 const publicDataStore = usePublicDataStore()
+const cooperativaInfoStore = useCooperativaInfoStore()
 
 const loading = ref(false)
 const errors = ref({})
 const successMessage = ref('')
-const showMap = ref(true) // Mostrar mapa por defecto
 
 // Form data
 const formData = ref({
@@ -72,9 +73,20 @@ const destinoMapa = computed(() => {
   return {
     id: destinoSeleccionado.value.id,
     razonSocial: destinoSeleccionado.value.razonSocial,
-    latitud: destinoSeleccionado.value.latitud,
-    longitud: destinoSeleccionado.value.longitud,
+    latitudAlmacen: destinoSeleccionado.value.latitudAlmacen,
+    longitudAlmacen: destinoSeleccionado.value.longitudAlmacen,
+    latitudBalanza: destinoSeleccionado.value.latitudBalanza,
+    longitudBalanza: destinoSeleccionado.value.longitudBalanza,
     municipio: destinoSeleccionado.value.municipio
+  }
+})
+
+const balanzaCoopMapa = computed(() => {
+  if (!cooperativaInfoStore.cooperativaInfo) return null
+  return {
+    razonSocial: cooperativaInfoStore.cooperativaInfo.razonSocial,
+    latitudBalanza: cooperativaInfoStore.cooperativaInfo.latitudBalanza,
+    longitudBalanza: cooperativaInfoStore.cooperativaInfo.longitudBalanza
   }
 })
 
@@ -99,7 +111,8 @@ onMounted(async () => {
     minasStore.fetchMinas(),
     destinosStore.fetchIngenios(),
     destinosStore.fetchComercializadoras(),
-    publicDataStore.fetchMinerales()
+    publicDataStore.fetchMinerales(),
+    cooperativaInfoStore.fetchCooperativaInfo()
   ])
 })
 
@@ -407,6 +420,7 @@ const isMineralSelected = (mineralId) => {
                 <RouteMapViewer
                   :origen="origenMapa"
                   :destino="destinoMapa"
+                  :balanza-coop="balanzaCoopMapa"
                   :tipo-destino="formData.tipoOperacion === 'procesamiento_planta' ? 'ingenio' : 'comercializadora'"
                   class="h-full rounded-lg overflow-hidden shadow-lg"
                 />

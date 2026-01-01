@@ -167,6 +167,20 @@ export const useSidebarStore = defineStore('sidebar', () => {
         badge: null
       },
       {
+        id: 'almacen',
+        label: 'Almacén',
+        icon: Building2,
+        route: '/ingenio/almacen',
+        badge: null
+      },
+      {
+        id: 'balanza',
+        label: 'Balanza',
+        icon: Scale,
+        route: '/ingenio/balanza',
+        badge: null
+      },
+      {
         id: 'recepciones',
         label: 'Recepciones',
         icon: ClipboardList,
@@ -208,6 +222,20 @@ export const useSidebarStore = defineStore('sidebar', () => {
         label: 'Dashboard',
         icon: LayoutDashboard,
         route: '/comercializadora',
+        badge: null
+      },
+      {
+        id: 'almacen',
+        label: 'Almacén',
+        icon: Building2,
+        route: '/comercializadora/almacen',
+        badge: null
+      },
+      {
+        id: 'balanza',
+        label: 'Balanza',
+        icon: Scale,
+        route: '/comercializadora/balanza',
         badge: null
       },
       {

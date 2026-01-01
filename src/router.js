@@ -116,16 +116,16 @@ const routes = [
           title: 'Lotes Solicitudes - Cooperativa'
         }
       },
-      /*{
+      {
         path: 'balanza',
         name: 'CooperativaBalanza',
-        component: () => import('./views/cooperativa/Balanza.vue'),
+        component: () => import('./views/cooperativa/BalanzaCooperativa.vue'),
         meta: { 
           title: 'Balanza - Cooperativa'
         }
       },
       
-      {
+      /*{
         path: 'reportes',
         name: 'CooperativaReportes',
         component: () => import('./views/cooperativa/Reportes.vue'),
@@ -215,6 +215,22 @@ const routes = [
           title: 'Dashboard - Ingenio'
         }
       },
+      {
+        path: 'almacen',
+        name: 'IngenioAlmacen',
+        component: () => import('./views/ingenio/AlmacenIngenio.vue'),
+        meta: { 
+          title: 'Almacén - Ingenio'
+        }
+      },
+      {
+        path: 'balanza',
+        name: 'IngenioBalanza',
+        component: () => import('./views/ingenio/BalanzaIngenio.vue'),
+        meta: { 
+          title: 'Balanza - Ingenio'
+        }
+      }
       /*{
         path: 'recepciones',
         name: 'IngenioRecepciones',
@@ -276,6 +292,22 @@ const routes = [
           title: 'Dashboard - Comercializadora'
         }
       },
+      {
+        path: 'almacen',
+        name: 'ComercializadoraAlmacen',
+        component: () => import('./views/comercializadora/AlmacenComercializadora.vue'),
+        meta: { 
+          title: 'Almacén - Comercializadora'
+        }
+      },
+      {
+        path: 'balanza',
+        name: 'ComercializadoraBalanza',
+        component: () => import('./views/comercializadora/BalanzaComercializadora.vue'),
+        meta: { 
+          title: 'Balanza - Comercializadora'
+        }
+      }
       /*{
         path: 'compras',
         name: 'ComercializadoraCompras',

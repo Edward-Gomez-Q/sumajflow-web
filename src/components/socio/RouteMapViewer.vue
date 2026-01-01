@@ -1,19 +1,23 @@
 <!-- src/components/socio/RouteMapViewer.vue -->
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue'
-import { MapPin, Navigation, Clock, Route as RouteIcon, AlertCircle } from 'lucide-vue-next'
+import { MapPin, Navigation, Route as RouteIcon, AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps({
   origen: {
-    type: Object, // { id, nombre, latitud, longitud, sectorColor }
+    type: Object,
     default: null
   },
   destino: {
-    type: Object, // { id, razonSocial, latitud, longitud, municipio }
+    type: Object,
+    default: null
+  },
+  balanzaCoop: {
+    type: Object,
     default: null
   },
   tipoDestino: {
-    type: String, // 'ingenio' o 'comercializadora'
+    type: String,
     default: 'ingenio'
   }
 })
@@ -21,24 +25,24 @@ const props = defineProps({
 const mapContainer = ref(null)
 const map = ref(null)
 const isMapReady = ref(false)
-const originMarker = ref(null)
-const destinationMarker = ref(null)
-const routeLine = ref(null)
+const markers = ref([])
+const routeLines = ref([])
 
 // Datos de la ruta
 const routeData = ref({
-  distance: null, // en km
-  duration: null, // en minutos
-  geometry: null,
+  distance: null,
+  duration: null,
   loading: false,
   error: null
 })
 
 // Computed
 const hasCompleteData = computed(() => {
-  return props.origen && props.destino && 
+  return props.origen && props.destino && props.balanzaCoop &&
          props.origen.latitud && props.origen.longitud &&
-         props.destino.latitud && props.destino.longitud
+         props.destino.latitudAlmacen && props.destino.longitudAlmacen &&
+         props.destino.latitudBalanza && props.destino.longitudBalanza &&
+         props.balanzaCoop.latitudBalanza && props.balanzaCoop.longitudBalanza
 })
 
 const distanceFormatted = computed(() => {
@@ -69,8 +73,7 @@ onBeforeUnmount(() => {
   }
 })
 
-// Watch para actualizar el mapa cuando cambien origen/destino
-watch([() => props.origen, () => props.destino], async () => {
+watch([() => props.origen, () => props.destino, () => props.balanzaCoop], async () => {
   if (isMapReady.value && hasCompleteData.value) {
     await drawRoute()
   } else if (isMapReady.value) {
@@ -109,7 +112,6 @@ const initMap = () => {
   if (!window.L || !mapContainer.value || map.value) return
 
   try {
-    // Centro de Bolivia por defecto
     let centerLat = -19.583333
     let centerLng = -65.75
     let zoom = 6
@@ -121,7 +123,6 @@ const initMap = () => {
       preferCanvas: true
     })
 
-    // Capa de mapa
     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
@@ -129,7 +130,6 @@ const initMap = () => {
 
     isMapReady.value = true
 
-    // Si ya hay datos, dibujar la ruta
     if (hasCompleteData.value) {
       drawRoute()
     }
@@ -139,27 +139,27 @@ const initMap = () => {
 }
 
 const clearRoute = () => {
-  // Limpiar marcadores
-  if (originMarker.value) {
-    map.value.removeLayer(originMarker.value)
-    originMarker.value = null
-  }
-  if (destinationMarker.value) {
-    map.value.removeLayer(destinationMarker.value)
-    destinationMarker.value = null
-  }
+  markers.value.forEach(marker => {
+    if (marker) {
+      try {
+        map.value.removeLayer(marker)
+      } catch (e) {}
+    }
+  })
+  markers.value = []
   
-  // Limpiar línea de ruta
-  if (routeLine.value) {
-    map.value.removeLayer(routeLine.value)
-    routeLine.value = null
-  }
+  routeLines.value.forEach(line => {
+    if (line) {
+      try {
+        map.value.removeLayer(line)
+      } catch (e) {}
+    }
+  })
+  routeLines.value = []
 
-  // Reset datos
   routeData.value = {
     distance: null,
     duration: null,
-    geometry: null,
     loading: false,
     error: null
   }
@@ -173,118 +173,213 @@ const drawRoute = async () => {
   routeData.value.error = null
 
   try {
-    // 1. Obtener la ruta desde OSRM
-    const route = await fetchRoute(
-      props.origen.latitud, 
-      props.origen.longitud,
-      props.destino.latitud,
-      props.destino.longitud
-    )
+    // Definir los puntos de la ruta en orden
+    const waypoints = [
+      { lat: props.origen.latitud, lng: props.origen.longitud },
+      { lat: props.balanzaCoop.latitudBalanza, lng: props.balanzaCoop.longitudBalanza },
+      { lat: props.destino.latitudBalanza, lng: props.destino.longitudBalanza },
+      { lat: props.destino.latitudAlmacen, lng: props.destino.longitudAlmacen }
+    ]
+
+    // Obtener la ruta completa pasando por todos los puntos
+    const route = await fetchRouteWithWaypoints(waypoints)
 
     if (!route) {
       throw new Error('No se pudo calcular la ruta')
     }
 
-    routeData.value.distance = route.distance / 1000 // convertir a km
-    routeData.value.duration = route.duration / 60 // convertir a minutos
-    routeData.value.geometry = route.geometry
+    routeData.value.distance = route.distance / 1000
+    routeData.value.duration = route.duration / 60
 
-    // 2. Dibujar marcador de origen
+    // Dibujar cada segmento de la ruta con su color
+    const routeCoordinates = decodePolyline(route.geometry)
+    
+    // Segmento completo en azul
+    const routeLine = window.L.polyline(routeCoordinates, {
+      color: '#3B82F6',
+      weight: 5,
+      opacity: 0.8,
+      smoothFactor: 1
+    }).addTo(map.value)
+    routeLines.value.push(routeLine)
+
+    // Dibujar marcadores
     const originColor = props.origen.sectorColor || '#1E3A8A'
-    originMarker.value = createMarker(
+    const destinationColor = props.tipoDestino === 'ingenio' ? '#059669' : '#DC2626'
+    
+    markers.value.push(createMarker(
       props.origen.latitud,
       props.origen.longitud,
       originColor,
-      'origen',
-      props.origen.nombre
-    )
+      'mina',
+      props.origen.nombre,
+      '1. Punto de partida',
+      1000
+    ))
 
-    // 3. Dibujar marcador de destino
-    const destinationColor = props.tipoDestino === 'ingenio' ? '#059669' : '#DC2626'
-    destinationMarker.value = createMarker(
-      props.destino.latitud,
-      props.destino.longitud,
-      destinationColor,
-      'destino',
+    markers.value.push(createMarker(
+      props.balanzaCoop.latitudBalanza,
+      props.balanzaCoop.longitudBalanza,
+      '#F59E0B',
+      'balanza-coop',
+      props.balanzaCoop.razonSocial,
+      '2. Pesaje en cooperativa',
+      900
+    ))
+
+    markers.value.push(createMarker(
+      props.destino.latitudBalanza,
+      props.destino.longitudBalanza,
+      '#F59E0B',
+      'balanza-destino',
       props.destino.razonSocial,
-      props.destino.municipio
-    )
+      '3. Pesaje en destino',
+      800
+    ))
 
-    // 4. Dibujar línea de ruta
-    const routeCoordinates = decodePolyline(route.geometry)
-    routeLine.value = window.L.polyline(routeCoordinates, {
-      color: '#3B82F6',
-      weight: 4,
-      opacity: 0.7,
-      smoothFactor: 1
-    }).addTo(map.value)
+    markers.value.push(createMarker(
+      props.destino.latitudAlmacen,
+      props.destino.longitudAlmacen,
+      destinationColor,
+      'almacen',
+      props.destino.razonSocial,
+      `4. Almacén ${props.tipoDestino === 'ingenio' ? 'Ingenio' : 'Comercializadora'}`,
+      700
+    ))
 
-    // 5. Ajustar vista del mapa para mostrar toda la ruta
+    // Ajustar vista
     const bounds = window.L.latLngBounds([
       [props.origen.latitud, props.origen.longitud],
-      [props.destino.latitud, props.destino.longitud]
+      [props.balanzaCoop.latitudBalanza, props.balanzaCoop.longitudBalanza],
+      [props.destino.latitudBalanza, props.destino.longitudBalanza],
+      [props.destino.latitudAlmacen, props.destino.longitudAlmacen]
     ])
     map.value.fitBounds(bounds, { padding: [60, 60] })
 
   } catch (error) {
     console.error('Error al dibujar ruta:', error)
     routeData.value.error = error.message || 'Error al calcular la ruta'
-    
-    // Aún así mostrar los puntos sin ruta
-    const originColor = props.origen.sectorColor || '#1E3A8A'
-    originMarker.value = createMarker(
-      props.origen.latitud,
-      props.origen.longitud,
-      originColor,
-      'origen',
-      props.origen.nombre
-    )
-
-    const destinationColor = props.tipoDestino === 'ingenio' ? '#059669' : '#DC2626'
-    destinationMarker.value = createMarker(
-      props.destino.latitud,
-      props.destino.longitud,
-      destinationColor,
-      'destino',
-      props.destino.razonSocial,
-      props.destino.municipio
-    )
-
-    // Dibujar línea directa como fallback
-    const straightLine = window.L.polyline([
-      [props.origen.latitud, props.origen.longitud],
-      [props.destino.latitud, props.destino.longitud]
-    ], {
-      color: '#9CA3AF',
-      weight: 2,
-      opacity: 0.5,
-      dashArray: '10, 10'
-    }).addTo(map.value)
-    routeLine.value = straightLine
-
-    // Calcular distancia en línea recta
-    const distance = calculateStraightDistance(
-      props.origen.latitud, 
-      props.origen.longitud,
-      props.destino.latitud,
-      props.destino.longitud
-    )
-    routeData.value.distance = distance
-
-    const bounds = window.L.latLngBounds([
-      [props.origen.latitud, props.origen.longitud],
-      [props.destino.latitud, props.destino.longitud]
-    ])
-    map.value.fitBounds(bounds, { padding: [60, 60] })
-
+    await drawFallbackRoute()
   } finally {
     routeData.value.loading = false
   }
 }
 
-const fetchRoute = async (originLat, originLng, destLat, destLng) => {
+const drawFallbackRoute = async () => {
+  const originColor = props.origen.sectorColor || '#1E3A8A'
+  const destinationColor = props.tipoDestino === 'ingenio' ? '#059669' : '#DC2626'
+
+  // Líneas directas punteadas entre cada punto
+  const segment1 = window.L.polyline([
+    [props.origen.latitud, props.origen.longitud],
+    [props.balanzaCoop.latitudBalanza, props.balanzaCoop.longitudBalanza]
+  ], {
+    color: '#9CA3AF',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '10, 10'
+  }).addTo(map.value)
+  routeLines.value.push(segment1)
+
+  const segment2 = window.L.polyline([
+    [props.balanzaCoop.latitudBalanza, props.balanzaCoop.longitudBalanza],
+    [props.destino.latitudBalanza, props.destino.longitudBalanza]
+  ], {
+    color: '#9CA3AF',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '10, 10'
+  }).addTo(map.value)
+  routeLines.value.push(segment2)
+
+  const segment3 = window.L.polyline([
+    [props.destino.latitudBalanza, props.destino.longitudBalanza],
+    [props.destino.latitudAlmacen, props.destino.longitudAlmacen]
+  ], {
+    color: '#9CA3AF',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '10, 10'
+  }).addTo(map.value)
+  routeLines.value.push(segment3)
+
+  // Marcadores
+  markers.value.push(createMarker(
+    props.origen.latitud,
+    props.origen.longitud,
+    originColor,
+    'mina',
+    props.origen.nombre,
+    '1. Punto de partida',
+    1000
+  ))
+
+  markers.value.push(createMarker(
+    props.balanzaCoop.latitudBalanza,
+    props.balanzaCoop.longitudBalanza,
+    '#F59E0B',
+    'balanza-coop',
+    props.balanzaCoop.razonSocial,
+    '2. Pesaje en cooperativa',
+    900
+  ))
+
+  markers.value.push(createMarker(
+    props.destino.latitudBalanza,
+    props.destino.longitudBalanza,
+    '#F59E0B',
+    'balanza-destino',
+    props.destino.razonSocial,
+    '3. Pesaje en destino',
+    800
+  ))
+
+  markers.value.push(createMarker(
+    props.destino.latitudAlmacen,
+    props.destino.longitudAlmacen,
+    destinationColor,
+    'almacen',
+    props.destino.razonSocial,
+    `4. Almacén ${props.tipoDestino === 'ingenio' ? 'Ingenio' : 'Comercializadora'}`,
+    700
+  ))
+
+  // Calcular distancia total en línea recta
+  const d1 = calculateStraightDistance(
+    props.origen.latitud, 
+    props.origen.longitud,
+    props.balanzaCoop.latitudBalanza,
+    props.balanzaCoop.longitudBalanza
+  )
+  const d2 = calculateStraightDistance(
+    props.balanzaCoop.latitudBalanza,
+    props.balanzaCoop.longitudBalanza,
+    props.destino.latitudBalanza,
+    props.destino.longitudBalanza
+  )
+  const d3 = calculateStraightDistance(
+    props.destino.latitudBalanza,
+    props.destino.longitudBalanza,
+    props.destino.latitudAlmacen,
+    props.destino.longitudAlmacen
+  )
+  
+  routeData.value.distance = d1 + d2 + d3
+
+  const bounds = window.L.latLngBounds([
+    [props.origen.latitud, props.origen.longitud],
+    [props.balanzaCoop.latitudBalanza, props.balanzaCoop.longitudBalanza],
+    [props.destino.latitudBalanza, props.destino.longitudBalanza],
+    [props.destino.latitudAlmacen, props.destino.longitudAlmacen]
+  ])
+  map.value.fitBounds(bounds, { padding: [60, 60] })
+}
+
+const fetchRouteWithWaypoints = async (waypoints) => {
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=full&geometries=polyline`
+    // Construir la URL con todos los waypoints
+    const coords = waypoints.map(wp => `${wp.lng},${wp.lat}`).join(';')
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=polyline`
     
     const response = await fetch(url)
     const data = await response.json()
@@ -304,16 +399,37 @@ const fetchRoute = async (originLat, originLng, destLat, destLng) => {
   }
 }
 
-const createMarker = (lat, lng, color, type, name, subtitle = '') => {
-  const isOrigin = type === 'origen'
+const createMarker = (lat, lng, color, type, name, subtitle = '', zIndexOffset = 1000) => {
+  let iconSvg = ''
+  
+  if (type === 'mina') {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
+    </svg>`
+  } else if (type === 'balanza-coop' || type === 'balanza-destino') {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+      <path d="M7 21h10"></path>
+      <path d="M12 3v18"></path>
+      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path>
+    </svg>`
+  } else {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"></path>
+      <path d="M6 18h12"></path>
+      <path d="M6 14h12"></path>
+      <rect width="12" height="12" x="6" y="10"></rect>
+    </svg>`
+  }
   
   const icon = window.L.divIcon({
     className: 'custom-route-marker',
     html: `
       <div style="
         position: relative;
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -323,54 +439,53 @@ const createMarker = (lat, lng, color, type, name, subtitle = '') => {
         border: 4px solid white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       ">
-        ${isOrigin ? `
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
-          </svg>
-        ` : `
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
-        `}
+        ${iconSvg}
       </div>
       <div style="
         position: absolute;
-        top: -32px;
+        top: -30px;
         left: 50%;
         transform: translateX(-50%);
         background: white;
         color: #1E293B;
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 4px 10px;
+        border-radius: 6px;
         white-space: nowrap;
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 11px;
+        font-weight: 700;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         border: 2px solid ${color};
-      ">${isOrigin ? 'ORIGEN' : 'DESTINO'}</div>
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      ">${subtitle.split('.')[0]}</div>
     `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 44],
-    popupAnchor: [0, -48]
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -44]
   })
 
   const marker = window.L.marker([lat, lng], {
     icon: icon,
-    zIndexOffset: isOrigin ? 1000 : 900
+    zIndexOffset: zIndexOffset
   }).addTo(map.value)
+
+  let typeLabel = ''
+  if (type === 'mina') typeLabel = '📍 Mina de Origen'
+  else if (type === 'balanza-coop') typeLabel = '⚖️ Balanza Cooperativa'
+  else if (type === 'balanza-destino') typeLabel = '⚖️ Balanza Destino'
+  else typeLabel = '🏭 Almacén Final'
 
   const popupContent = `
     <div style="text-align: center; min-width: 200px; padding: 6px;">
       <div style="width: 36px; height: 36px; background-color: ${color}; border-radius: 50%; margin: 0 auto 10px; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.2);"></div>
       <strong style="font-size: 15px; color: #1E293B; display: block; margin-bottom: 4px;">${name}</strong>
-      ${subtitle ? `<span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 8px;">${subtitle}</span>` : ''}
+      <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 8px;">${subtitle}</span>
       <div style="margin: 8px 0; padding: 6px; background: #f1f5f9; border-radius: 6px;">
         <span style="font-size: 11px; color: #64748b; display: block;">Lat: ${lat.toFixed(6)}</span>
         <span style="font-size: 11px; color: #64748b; display: block; margin-top: 2px;">Lng: ${lng.toFixed(6)}</span>
       </div>
-      <div style="color: ${color}; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-        ${isOrigin ? '📍 Punto de partida' : '🎯 Destino'}
+      <div style="color: ${color}; font-size: 12px; font-weight: 600;">
+        ${typeLabel}
       </div>
     </div>
   `
@@ -379,7 +494,6 @@ const createMarker = (lat, lng, color, type, name, subtitle = '') => {
   return marker
 }
 
-// Decodificar polyline de OSRM
 const decodePolyline = (encoded) => {
   if (!encoded) return []
   
@@ -420,9 +534,8 @@ const decodePolyline = (encoded) => {
   return coordinates
 }
 
-// Calcular distancia en línea recta (Haversine)
 const calculateStraightDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371 // Radio de la Tierra en km
+  const R = 6371
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
   const a = 
@@ -444,11 +557,9 @@ defineExpose({
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- Mapa -->
     <div class="relative flex-1 min-h-0">
       <div ref="mapContainer" class="absolute inset-0 rounded-lg overflow-hidden"></div>
       
-      <!-- Loading overlay -->
       <Transition name="fade">
         <div v-if="routeData.loading" class="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-1000 rounded-lg">
           <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-2xl">
@@ -458,7 +569,6 @@ defineExpose({
         </div>
       </Transition>
 
-      <!-- Placeholder cuando no hay datos -->
       <Transition name="fade">
         <div v-if="!hasCompleteData && !routeData.loading" class="absolute inset-0 bg-surface/50 backdrop-blur-sm flex items-center justify-center z-1000 rounded-lg">
           <div class="text-center px-6">
@@ -467,13 +577,12 @@ defineExpose({
             </div>
             <p class="text-lg font-semibold text-neutral mb-2">Selecciona origen y destino</p>
             <p class="text-sm text-secondary max-w-sm">
-              Elige una mina y un destino para visualizar la ruta y calcular distancia y tiempo estimado
+              Elige una mina y un destino para visualizar la ruta completa del transporte
             </p>
           </div>
         </div>
       </Transition>
 
-      <!-- Error message -->
       <Transition name="slide-up">
         <div v-if="routeData.error && hasCompleteData" class="absolute top-4 left-4 right-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg p-4 shadow-lg z-1000">
           <div class="flex gap-3">
@@ -491,11 +600,9 @@ defineExpose({
       </Transition>
     </div>
 
-    <!-- Info de ruta -->
     <Transition name="slide-up">
       <div v-if="hasCompleteData && !routeData.loading" class="shrink-0 bg-hover border-t-2 border-border p-4">
         <div class="grid grid-cols-2 gap-4">
-          <!-- Distancia -->
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
               <RouteIcon class="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -506,24 +613,24 @@ defineExpose({
             </div>
           </div>
 
-          <!-- Tiempo estimado -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3" v-if="routeData.duration && !routeData.error">
             <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-              <Clock class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-emerald-600 dark:text-emerald-400">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
             </div>
             <div>
-              <p class="text-xs text-tertiary uppercase tracking-wide">Tiempo estimado</p>
-              <p class="text-lg font-bold text-neutral">
-                {{ routeData.duration ? durationFormatted : 'N/A' }}
-              </p>
+              <p class="text-xs text-tertiary uppercase tracking-wide">Tiempo</p>
+              <p class="text-lg font-bold text-neutral">{{ durationFormatted }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Nota si es línea recta -->
-        <div v-if="routeData.error" class="mt-3 pt-3 border-t border-border">
+        <div class="mt-3 pt-3 border-t border-border">
           <p class="text-xs text-tertiary text-center">
-            * Distancia calculada en línea recta
+            <span v-if="routeData.error">* Distancia calculada en línea recta</span>
+            <span v-else>Ruta completa pasando por todos los puntos</span>
           </p>
         </div>
       </div>

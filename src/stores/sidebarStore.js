@@ -48,8 +48,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
           {
             id: 'solicitudes',
             label: 'Solicitudes Pendientes',
-            route: '/cooperativa/socios/solicitudes',
-            badge: 4
+            route: '/cooperativa/socios/solicitudes'
           }
         ]
       },
@@ -68,8 +67,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
           {
             id: 'invitaciones-transportistas',
             label: 'Invitaciones a Transportistas',
-            route: '/cooperativa/transportistas/invitaciones',
-            badge: 2
+            route: '/cooperativa/transportistas/invitaciones'
           }
         ]
       },

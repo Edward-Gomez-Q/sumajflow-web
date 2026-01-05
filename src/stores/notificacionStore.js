@@ -7,14 +7,28 @@ import rutaApi from '../assets/rutaApi.js'
 import { useSessionStore } from './sessionStore'
 
 export const useNotificacionStore = defineStore('notificacion', () => {
+  const sessionStore = useSessionStore()
+
+  // State
   const notificaciones = ref([])
-  const isLoading = ref(false)
+  const paginacion = ref({
+    totalElementos: 0,
+    totalPaginas: 0,
+    paginaActual: 0,
+    elementosPorPagina: 20,
+    tieneSiguiente: false,
+    tieneAnterior: false
+  })
+  const filtros = ref({
+    soloNoLeidas: false,
+    tipo: null,
+    page: 0,
+    size: 20
+  })
+  const loading = ref(false)
   const error = ref(null)
   const stompClient = ref(null)
   const isConnected = ref(false)
-
-  const API_URL = rutaApi
-  const WS_URL = rutaApi
 
   // Computed
   const unreadCount = computed(() => 
@@ -25,18 +39,24 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     notificaciones.value.slice(0, 3)
   )
 
+  // Ruta base dinámica según el rol
+  const getBaseUrl = () => {
+    const userRole = sessionStore.userRole
+    if (!userRole) {
+      throw new Error('Rol de usuario no definido')
+    }
+    return `${rutaApi}/${userRole}/notificaciones`
+  }
+
   /**
    * Conectar al WebSocket
    */
   const connectWebSocket = () => {
-    const sessionStore = useSessionStore()
-    
     if (!sessionStore.isAuthenticated || !sessionStore.user?.id) {
       console.warn('Usuario no autenticado, no se conectará WebSocket')
       return
     }
 
-    // Si ya está conectado, no reconectar
     if (isConnected.value && stompClient.value?.connected) {
       console.log('WebSocket ya está conectado')
       return
@@ -45,14 +65,9 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     console.log('🔌 Conectando al WebSocket...')
 
     try {
-      // Crear cliente STOMP
       const client = new Client({
-        webSocketFactory: () => new SockJS(`${WS_URL}/ws`),
+        webSocketFactory: () => new SockJS(`${rutaApi}/ws`),
         
-        connectHeaders: {
-          // Puedes agregar headers si necesitas autenticación
-        },
-
         debug: (str) => {
           console.log('STOMP: ' + str)
         },
@@ -65,7 +80,6 @@ export const useNotificacionStore = defineStore('notificacion', () => {
           console.log('✅ WebSocket conectado')
           isConnected.value = true
           
-          // Suscribirse al canal de notificaciones del usuario
           const userId = sessionStore.user.id
           
           client.subscribe(`/user/${userId}/queue/notificaciones`, (message) => {
@@ -73,11 +87,8 @@ export const useNotificacionStore = defineStore('notificacion', () => {
             
             try {
               const notificacion = JSON.parse(message.body)
-              
-              // Agregar al inicio del array
               notificaciones.value.unshift(notificacion)
               
-              // Mostrar notificación nativa del navegador (opcional)
               if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(notificacion.titulo, {
                   body: notificacion.mensaje,
@@ -92,7 +103,6 @@ export const useNotificacionStore = defineStore('notificacion', () => {
 
         onStompError: (frame) => {
           console.error('❌ Error STOMP:', frame.headers['message'])
-          console.error('Detalles:', frame.body)
           isConnected.value = false
         },
 
@@ -124,21 +134,31 @@ export const useNotificacionStore = defineStore('notificacion', () => {
   }
 
   /**
-   * Obtener todas las notificaciones
+   * Obtener notificaciones paginadas con filtros
    */
-  const fetchNotificaciones = async (soloNoLeidas = false) => {
-    isLoading.value = true
+  const fetchNotificaciones = async (nuevosFiltros = {}) => {
+    loading.value = true
     error.value = null
 
+    // Actualizar filtros si se pasaron nuevos
+    if (Object.keys(nuevosFiltros).length > 0) {
+      filtros.value = { ...filtros.value, ...nuevosFiltros }
+    }
+
     try {
-      const sessionStore = useSessionStore()
-      const params = soloNoLeidas ? '?soloNoLeidas=true' : ''
+      const baseUrl = getBaseUrl()
       
-      const response = await fetch(`${API_URL}/notificaciones${params}`, {
-        method: 'GET',
+      // Construir query params
+      const params = new URLSearchParams()
+      if (filtros.value.soloNoLeidas) params.append('soloNoLeidas', 'true')
+      if (filtros.value.tipo) params.append('tipo', filtros.value.tipo)
+      params.append('page', filtros.value.page)
+      params.append('size', filtros.value.size)
+
+      const response = await fetch(`${baseUrl}?${params.toString()}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStore.token}`
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
         }
       })
 
@@ -148,15 +168,54 @@ export const useNotificacionStore = defineStore('notificacion', () => {
         throw new Error(data.message || 'Error al obtener notificaciones')
       }
 
-      notificaciones.value = data.data || []
+      notificaciones.value = data.data.notificaciones
+      paginacion.value = {
+        totalElementos: data.data.totalElementos,
+        totalPaginas: data.data.totalPaginas,
+        paginaActual: data.data.paginaActual,
+        elementosPorPagina: data.data.elementosPorPagina,
+        tieneSiguiente: data.data.tieneSiguiente,
+        tieneAnterior: data.data.tieneAnterior
+      }
+
       return { success: true, data: data.data }
+
     } catch (err) {
       error.value = err.message
       console.error('Error al obtener notificaciones:', err)
       return { success: false, error: err.message }
     } finally {
-      isLoading.value = false
+      loading.value = false
     }
+  }
+
+  /**
+   * Cambiar página
+   */
+  const cambiarPagina = async (nuevaPagina) => {
+    filtros.value.page = nuevaPagina
+    await fetchNotificaciones()
+  }
+
+  /**
+   * Aplicar filtros
+   */
+  const aplicarFiltros = async (nuevosFiltros) => {
+    filtros.value = { ...filtros.value, ...nuevosFiltros, page: 0 }
+    await fetchNotificaciones()
+  }
+
+  /**
+   * Limpiar filtros
+   */
+  const limpiarFiltros = async () => {
+    filtros.value = {
+      soloNoLeidas: false,
+      tipo: null,
+      page: 0,
+      size: 20
+    }
+    await fetchNotificaciones()
   }
 
   /**
@@ -164,13 +223,12 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const fetchUnreadCount = async () => {
     try {
-      const sessionStore = useSessionStore()
+      const baseUrl = getBaseUrl()
       
-      const response = await fetch(`${API_URL}/notificaciones/no-leidas/count`, {
-        method: 'GET',
+      const response = await fetch(`${baseUrl}/count`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStore.token}`
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
         }
       })
 
@@ -191,13 +249,13 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const marcarComoLeida = async (notificacionId) => {
     try {
-      const sessionStore = useSessionStore()
+      const baseUrl = getBaseUrl()
       
-      const response = await fetch(`${API_URL}/notificaciones/${notificacionId}/leer`, {
+      const response = await fetch(`${baseUrl}/${notificacionId}/leer`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStore.token}`
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
         }
       })
 
@@ -225,13 +283,13 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const marcarTodasComoLeidas = async () => {
     try {
-      const sessionStore = useSessionStore()
+      const baseUrl = getBaseUrl()
       
-      const response = await fetch(`${API_URL}/notificaciones/leer-todas`, {
+      const response = await fetch(`${baseUrl}/leer-todas`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStore.token}`
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
         }
       })
 
@@ -256,13 +314,13 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const eliminarNotificacion = async (notificacionId) => {
     try {
-      const sessionStore = useSessionStore()
+      const baseUrl = getBaseUrl()
       
-      const response = await fetch(`${API_URL}/notificaciones/${notificacionId}`, {
+      const response = await fetch(`${baseUrl}/${notificacionId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStore.token}`
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
         }
       })
 
@@ -272,8 +330,8 @@ export const useNotificacionStore = defineStore('notificacion', () => {
         throw new Error(data.message || 'Error al eliminar notificación')
       }
 
-      // Eliminar localmente
-      notificaciones.value = notificaciones.value.filter(n => n.id !== notificacionId)
+      // Eliminar localmente y recargar
+      await fetchNotificaciones()
 
       return { success: true }
     } catch (err) {
@@ -298,6 +356,20 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const reset = () => {
     notificaciones.value = []
+    paginacion.value = {
+      totalElementos: 0,
+      totalPaginas: 0,
+      paginaActual: 0,
+      elementosPorPagina: 20,
+      tieneSiguiente: false,
+      tieneAnterior: false
+    }
+    filtros.value = {
+      soloNoLeidas: false,
+      tipo: null,
+      page: 0,
+      size: 20
+    }
     error.value = null
     disconnectWebSocket()
   }
@@ -305,7 +377,9 @@ export const useNotificacionStore = defineStore('notificacion', () => {
   return {
     // State
     notificaciones,
-    isLoading,
+    paginacion,
+    filtros,
+    loading,
     error,
     isConnected,
     
@@ -317,6 +391,9 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     connectWebSocket,
     disconnectWebSocket,
     fetchNotificaciones,
+    cambiarPagina,
+    aplicarFiltros,
+    limpiarFiltros,
     fetchUnreadCount,
     marcarComoLeida,
     marcarTodasComoLeidas,

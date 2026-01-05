@@ -124,6 +124,22 @@ const routes = [
           title: 'Balanza - Cooperativa'
         }
       },
+      {
+        path: 'perfil',
+        name: 'CooperativaPerfil',
+        component: () => import('./views/Profile.vue'),
+        meta: { 
+          title: 'Mi Perfil - Cooperativa'
+        }
+      },
+      {
+        path: 'notificaciones',
+        name: 'CooperativaNotificaciones',
+        component: () => import('./views/Notificaciones.vue'),
+        meta: { 
+          title: 'Notificaciones - Cooperativa'
+        }
+      }
       
       /*{
         path: 'reportes',
@@ -178,6 +194,22 @@ const routes = [
           title: 'Mis Lotes - Socio'
         }
       },
+      {
+        path: 'perfil',
+        name: 'SocioPerfil',
+        component: () => import('./views/Profile.vue'),
+        meta: { 
+          title: 'Mi Perfil - Socio'
+        }
+      },
+      {
+        path: 'notificaciones',
+        name: 'SocioNotificaciones',
+        component: () => import('./views/Notificaciones.vue'),
+        meta: { 
+          title: 'Notificaciones - Socio'
+        }
+      }
       /*{
         path: 'liquidaciones',
         name: 'SocioLiquidaciones',
@@ -230,7 +262,23 @@ const routes = [
         meta: { 
           title: 'Balanza - Ingenio'
         }
-      }
+      },
+      {
+        path: 'perfil',
+        name: 'IngenioPerfil',
+        component: () => import('./views/Profile.vue'),
+        meta: { 
+          title: 'Mi Perfil - Ingenio'
+        }
+      },
+      {
+        path: 'notificaciones',
+        name: 'IngenioNotificaciones',
+        component: () => import('./views/Notificaciones.vue'),
+        meta: { 
+          title: 'Notificaciones - Ingenio'
+        }
+      },
       /*{
         path: 'recepciones',
         name: 'IngenioRecepciones',
@@ -306,6 +354,22 @@ const routes = [
         component: () => import('./views/comercializadora/BalanzaComercializadora.vue'),
         meta: { 
           title: 'Balanza - Comercializadora'
+        }
+      },
+      {
+        path: 'perfil',
+        name: 'ComercializadoraPerfil',
+        component: () => import('./views/Profile.vue'),
+        meta: { 
+          title: 'Mi Perfil - Comercializadora'
+        }
+      },
+      {
+        path: 'notificaciones',
+        name: 'ComercializadoraNotificaciones',
+        component: () => import('./views/Notificaciones.vue'),
+        meta: { 
+          title: 'Notificaciones - Comercializadora'
         }
       }
       /*{

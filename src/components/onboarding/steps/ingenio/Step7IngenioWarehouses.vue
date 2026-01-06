@@ -155,55 +155,6 @@ const totalArea = computed(() => {
     <!-- Divider -->
     <div class="divider"></div>
 
-    <!-- Tipos de almacenes recomendados -->
-    <div class="space-y-4">
-      <div>
-        <h3 class="text-sm font-semibold text-neutral mb-1 flex items-center gap-2">
-          <BookOpen class="w-4 h-4 text-primary" />
-          Tipos de Almacenes Recomendados
-        </h3>
-        <p class="text-sm text-secondary leading-relaxed">
-          Conoce los diferentes tipos de almacenes según tus necesidades operativas
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Almacén de Concentrados -->
-        <div class="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg center shrink-0">
-              <Package class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div class="flex-1">
-              <h5 class="font-medium text-neutral text-sm mb-1">Almacén de Concentrados</h5>
-              <p class="text-xs text-secondary leading-relaxed">
-                Para concentrados finales listos para comercialización. 
-                Debe ser cerrado y seguro con control de acceso.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Almacén de Complejo -->
-        <div class="border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg center shrink-0">
-              <TrendingUp class="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div class="flex-1">
-              <h5 class="font-medium text-neutral text-sm mb-1">Almacén de Complejo</h5>
-              <p class="text-xs text-secondary leading-relaxed">
-                Para minerales mixtos o con múltiples elementos. 
-                Requiere separación por tipo para evitar mezclas.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Divider -->
-    <div class="divider"></div>
 
     <!-- Resumen final -->
     <div v-if="hasValidWarehouses" class="border-l-4 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20 rounded-r-lg p-4">

@@ -271,11 +271,11 @@ const userInitials = computed(() => {
 
     <!-- Contenido Principal -->
     <AppLayout v-else>
-      <div class="space-y-6">
+      <div class="space-y-4">
         <!-- Header -->
         <div>
-          <h1 class="text-3xl font-bold text-neutral">Mi Perfil</h1>
-          <p class="text-secondary mt-2">
+          <h1 class="text-2xl font-bold text-neutral">Mi Perfil</h1>
+          <p class="text-secondary text-sm mt-1">
             Gestiona tu información personal y configuración de cuenta
           </p>
         </div>
@@ -291,10 +291,10 @@ const userInitials = computed(() => {
         >
           <div
             v-if="showSuccessMessage"
-            class="bg-green-500 rounded-lg p-4 shadow-sm"
+            class="bg-green-500 rounded-lg p-3 shadow-sm"
           >
-            <div class="flex items-center gap-3">
-              <CheckCircle2 class="w-5 h-5 text-white" />
+            <div class="flex items-center gap-2">
+              <CheckCircle2 class="w-4 h-4 text-white flex-shrink-0" />
               <p class="text-sm font-medium text-white">
                 {{ successMessage }}
               </p>
@@ -305,10 +305,10 @@ const userInitials = computed(() => {
         <!-- Error Message -->
         <div
           v-if="localError || profileStore.error"
-          class="bg-red-500 rounded-lg p-4 shadow-sm"
+          class="bg-red-500 rounded-lg p-3 shadow-sm"
         >
-          <div class="flex items-center gap-3">
-            <AlertCircle class="w-5 h-5 text-white" />
+          <div class="flex items-center gap-2">
+            <AlertCircle class="w-4 h-4 text-white flex-shrink-0" />
             <p class="text-sm font-medium text-white">
               {{ localError || profileStore.error }}
             </p>
@@ -318,28 +318,28 @@ const userInitials = computed(() => {
         <!-- Profile Card -->
         <div class="card">
           <!-- Profile Header -->
-          <div class="px-6 py-6 border-b border-border">
-            <div class="flex items-center gap-4">
-              <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <span class="text-2xl font-bold text-primary">{{ userInitials }}</span>
+          <div class="px-4 py-4 border-b border-border">
+            <div class="flex items-center gap-3">
+              <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <span class="text-lg font-bold text-primary">{{ userInitials }}</span>
               </div>
-              <div>
-                <h2 class="text-2xl font-bold text-neutral">
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg font-bold text-neutral truncate">
                   {{ profileStore.nombreCompleto || 'Usuario' }}
                 </h2>
-                <p class="text-sm text-secondary mt-1">
+                <p class="text-xs text-secondary mt-0.5 truncate">
                   {{ profileStore.emailData.correo }}
                 </p>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white mt-2 capitalize">
-                {{ profileStore.userRole }}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white mt-1 capitalize">
+                  {{ profileStore.userRole }}
                 </span>
               </div>
             </div>
           </div>
 
           <!-- Tabs -->
-          <div class="border-b border-border">
-            <nav class="flex -mb-px px-6" aria-label="Tabs">
+          <div class="border-b border-border overflow-x-auto">
+            <nav class="flex -mb-px px-4" aria-label="Tabs">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -348,7 +348,7 @@ const userInitials = computed(() => {
                   activeTab === tab.id
                     ? 'border-primary text-primary'
                     : 'border-transparent text-secondary hover:text-neutral hover:border-border',
-                  'group inline-flex items-center py-4 px-4 border-b-2 font-medium text-sm transition-colors'
+                  'group inline-flex items-center py-3 px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap'
                 ]"
               >
                 <component
@@ -357,7 +357,7 @@ const userInitials = computed(() => {
                     activeTab === tab.id
                       ? 'text-primary'
                       : 'text-tertiary group-hover:text-secondary',
-                    '-ml-0.5 mr-2 w-5 h-5'
+                    '-ml-0.5 mr-1.5 w-4 h-4'
                   ]"
                 />
                 <span>{{ tab.name }}</span>
@@ -366,82 +366,74 @@ const userInitials = computed(() => {
           </div>
 
           <!-- Tab Content -->
-          <div class="px-6 py-8">
+          <div class="px-4 py-4">
             <!-- TAB: Datos Personales -->
-            <div v-if="activeTab === 'personal'" class="space-y-6">
+            <div v-if="activeTab === 'personal'" class="space-y-4">
               <!-- Advertencia para transportistas -->
               <div
                 v-if="profileStore.isTransportista"
-                class="bg-blue-500 rounded-lg p-4 shadow-sm"
+                class="bg-blue-500 rounded-lg p-3 shadow-sm"
               >
-                <div class="flex items-start gap-3">
-                  <Info class="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                  <div class="text-sm text-white">
-                    <p class="font-semibold mb-1">Restricciones para transportistas</p>
+                <div class="flex items-start gap-2">
+                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <div class="text-xs text-white">
+                    <p class="font-semibold mb-0.5">Restricciones para transportistas</p>
                     <p>
                       Por seguridad en la trazabilidad, los transportistas no pueden modificar su CI ni número de celular.
-                      Si necesitas actualizar estos datos, contacta al administrador.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <form @submit.prevent="handleUpdatePersonalData" class="space-y-6">
-                <!-- Nombre Legal -->
-                <div class="space-y-4">
-                  <h3 class="text-lg font-semibold text-neutral">Nombre legal</h3>
+              <form @submit.prevent="handleUpdatePersonalData" class="space-y-4">
+                <!-- Nombres -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label for="nombres" class="block text-xs font-medium text-secondary mb-1">
+                      Nombre(s) <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="nombres"
+                      type="text"
+                      v-model="profileStore.personalData.nombres"
+                      placeholder="Nombres"
+                      required
+                      class="text-sm"
+                    />
+                  </div>
 
-                  <div class="grid grid-cols-1 gap-4">
-                    <div>
-                      <label for="nombres" class="block text-sm font-medium text-secondary mb-1">
-                        Nombre(s) <span class="text-red-500">*</span>
-                      </label>
-                      <input
-                        id="nombres"
-                        type="text"
-                        v-model="profileStore.personalData.nombres"
-                        placeholder="Nombres"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label for="primer_apellido" class="block text-xs font-medium text-secondary mb-1">
+                      Apellido Paterno <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="primer_apellido"
+                      type="text"
+                      v-model="profileStore.personalData.primerApellido"
+                      placeholder="Primer Apellido"
+                      required
+                      class="text-sm"
+                    />
+                  </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label for="primer_apellido" class="block text-sm font-medium text-secondary mb-1">
-                          Apellido Paterno <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          id="primer_apellido"
-                          type="text"
-                          v-model="profileStore.personalData.primerApellido"
-                          placeholder="Primer Apellido"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label for="segundo_apellido" class="block text-sm font-medium text-secondary mb-1">
-                          Apellido Materno
-                        </label>
-                        <input
-                          id="segundo_apellido"
-                          type="text"
-                          v-model="profileStore.personalData.segundoApellido"
-                          placeholder="Segundo Apellido"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label for="segundo_apellido" class="block text-xs font-medium text-secondary mb-1">
+                      Apellido Materno
+                    </label>
+                    <input
+                      id="segundo_apellido"
+                      type="text"
+                      v-model="profileStore.personalData.segundoApellido"
+                      placeholder="Segundo Apellido"
+                      class="text-sm"
+                    />
                   </div>
                 </div>
 
-                <div class="border-t border-border"></div>
-
-                <!-- Documento de Identidad -->
-                <div class="space-y-4">
-                  <h3 class="text-lg font-semibold text-neutral">Documento de identidad</h3>
-
+                <!-- CI y Fecha de Nacimiento -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label for="ci" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="ci" class="block text-xs font-medium text-secondary mb-1">
                       Carnet de Identidad <span class="text-red-500">*</span>
                     </label>
                     <div class="flex gap-2">
@@ -451,28 +443,28 @@ const userInitials = computed(() => {
                         v-model="ciNumero"
                         placeholder="1234567"
                         :disabled="!profileStore.canEditCI"
-                        class="flex-1"
+                        class="flex-1 text-sm"
                         maxlength="9"
                         required
                       />
-                      <div class="relative min-w-[80px]">
+                      <div class="relative min-w-[70px]">
                         <select
                           v-model="ciExtension"
                           @change="onCIExtensionChange"
                           :disabled="!profileStore.canEditCI"
-                          class="appearance-none w-full pl-3 pr-8"
+                          class="appearance-none w-full pl-2 pr-7 text-sm"
                         >
                           <option v-for="ext in ciExtensions" :key="ext.code" :value="ext.code">
                             {{ ext.code }}
                           </option>
                         </select>
-                        <ChevronDown class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary pointer-events-none" />
+                        <ChevronDown class="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-tertiary pointer-events-none" />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label for="fecha_nacimiento" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="fecha_nacimiento" class="block text-xs font-medium text-secondary mb-1">
                       Fecha de Nacimiento <span class="text-red-500">*</span>
                     </label>
                     <input
@@ -480,33 +472,30 @@ const userInitials = computed(() => {
                       type="date"
                       v-model="profileStore.personalData.fechaNacimiento"
                       required
+                      class="text-sm"
                     />
                   </div>
                 </div>
 
-                <div class="border-t border-border"></div>
-
-                <!-- Información de Contacto -->
-                <div class="space-y-4">
-                  <h3 class="text-lg font-semibold text-neutral">Información de contacto</h3>
-
+                <!-- Celular y Género -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label for="numero_celular" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="numero_celular" class="block text-xs font-medium text-secondary mb-1">
                       Número de Celular <span class="text-red-500">*</span>
                     </label>
                     <div class="flex gap-2">
-                      <div class="relative min-w-[140px]">
+                      <div class="relative min-w-[110px]">
                         <select
                           v-model="phoneCode"
                           @change="onPhoneCodeChange"
                           :disabled="!profileStore.canEditPhone"
-                          class="appearance-none w-full pl-3 pr-8"
+                          class="appearance-none w-full pl-2 pr-7 text-sm"
                         >
                           <option v-for="code in phoneCodes" :key="code.code" :value="code.code">
                             {{ code.flag }} {{ code.code }}
                           </option>
                         </select>
-                        <ChevronDown class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary pointer-events-none" />
+                        <ChevronDown class="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-tertiary pointer-events-none" />
                       </div>
                       <input
                         id="numero_celular"
@@ -514,7 +503,7 @@ const userInitials = computed(() => {
                         v-model="phoneNumber"
                         placeholder="71234567"
                         :disabled="!profileStore.canEditPhone"
-                        class="flex-1"
+                        class="flex-1 text-sm"
                         maxlength="15"
                         required
                       />
@@ -522,12 +511,13 @@ const userInitials = computed(() => {
                   </div>
 
                   <div>
-                    <label for="genero" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="genero" class="block text-xs font-medium text-secondary mb-1">
                       Género
                     </label>
                     <select
                       id="genero"
                       v-model="profileStore.personalData.genero"
+                      class="text-sm"
                     >
                       <option value="">Seleccionar</option>
                       <option v-for="genero in generos" :key="genero" :value="genero">
@@ -538,11 +528,11 @@ const userInitials = computed(() => {
                 </div>
 
                 <!-- Botón de guardar -->
-                <div class="flex justify-end pt-6 border-t border-border">
+                <div class="flex justify-end pt-3 border-t border-border">
                   <button
                     type="submit"
                     :disabled="savingPersonal"
-                    class="btn flex items-center gap-2"
+                    class="btn flex items-center gap-2 text-sm"
                   >
                     <Save class="w-4 h-4" />
                     <span v-if="savingPersonal">Guardando...</span>
@@ -553,19 +543,19 @@ const userInitials = computed(() => {
             </div>
 
             <!-- TAB: Correo Electrónico -->
-            <div v-else-if="activeTab === 'email'" class="space-y-6">
-              <div class="bg-blue-500 rounded-lg p-4 shadow-sm">
-                <div class="flex items-start gap-3">
-                  <Info class="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                  <p class="text-sm text-white">
+            <div v-else-if="activeTab === 'email'" class="space-y-4">
+              <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
+                <div class="flex items-start gap-2">
+                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <p class="text-xs text-white">
                     Por seguridad, necesitas ingresar tu contraseña actual para cambiar tu correo electrónico.
                   </p>
                 </div>
               </div>
 
-              <form @submit.prevent="handleUpdateEmail" class="space-y-6">
+              <form @submit.prevent="handleUpdateEmail" class="space-y-4">
                 <div>
-                  <label for="correo_nuevo" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="correo_nuevo" class="block text-xs font-medium text-secondary mb-1">
                     Nuevo Correo Electrónico <span class="text-red-500">*</span>
                   </label>
                   <input
@@ -574,11 +564,12 @@ const userInitials = computed(() => {
                     v-model="profileStore.emailData.correo"
                     placeholder="nuevo@ejemplo.com"
                     required
+                    class="text-sm"
                   />
                 </div>
 
                 <div>
-                  <label for="contrasena_actual_email" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="contrasena_actual_email" class="block text-xs font-medium text-secondary mb-1">
                     Contraseña Actual <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
@@ -587,24 +578,26 @@ const userInitials = computed(() => {
                       :type="showEmailPassword ? 'text' : 'password'"
                       v-model="profileStore.emailData.contrasenaActual"
                       placeholder="Contraseña actual"
+                      autocomplete="new-password"
                       required
+                      class="text-sm pr-10"
                     />
                     <button
                       type="button"
                       @click="showEmailPassword = !showEmailPassword"
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
                     >
-                      <Eye v-if="showEmailPassword" class="w-5 h-5" />
-                      <EyeOff v-else class="w-5 h-5" />
+                      <Eye v-if="showEmailPassword" class="w-4 h-4" />
+                      <EyeOff v-else class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <div class="flex justify-end pt-6 border-t border-border">
+                <div class="flex justify-end pt-3 border-t border-border">
                   <button
                     type="submit"
                     :disabled="savingEmail"
-                    class="btn flex items-center gap-2"
+                    class="btn flex items-center gap-2 text-sm"
                   >
                     <Save class="w-4 h-4" />
                     <span v-if="savingEmail">Guardando...</span>
@@ -615,25 +608,20 @@ const userInitials = computed(() => {
             </div>
 
             <!-- TAB: Contraseña -->
-            <div v-else-if="activeTab === 'password'" class="space-y-6">
-              <div class="bg-blue-500 rounded-lg p-4 shadow-sm">
-                <div class="flex items-start gap-3">
-                  <Info class="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                  <div class="text-sm text-white">
-                    <p class="font-semibold mb-2">Recomendaciones de seguridad:</p>
-                    <ul class="list-disc list-inside space-y-1">
-                      <li>Usa al menos 8 caracteres</li>
-                      <li>Combina mayúsculas y minúsculas</li>
-                      <li>Incluye números y símbolos</li>
-                      <li>No uses información personal</li>
-                    </ul>
+            <div v-else-if="activeTab === 'password'" class="space-y-4">
+              <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
+                <div class="flex items-start gap-2">
+                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <div class="text-xs text-white">
+                    <p class="font-semibold mb-1">Requisitos de seguridad:</p>
+                    <p>Mínimo 8 caracteres, combina mayúsculas, minúsculas, números y símbolos.</p>
                   </div>
                 </div>
               </div>
 
-              <form @submit.prevent="handleUpdatePassword" class="space-y-6">
+              <form @submit.prevent="handleUpdatePassword" class="space-y-4">
                 <div>
-                  <label for="contrasena_actual" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="contrasena_actual" class="block text-xs font-medium text-secondary mb-1">
                     Contraseña Actual <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
@@ -642,21 +630,23 @@ const userInitials = computed(() => {
                       :type="showCurrentPassword ? 'text' : 'password'"
                       v-model="profileStore.passwordData.contrasenaActual"
                       placeholder="Contraseña actual"
+                      autocomplete="current-password"
                       required
+                      class="text-sm pr-10"
                     />
                     <button
                       type="button"
                       @click="showCurrentPassword = !showCurrentPassword"
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
                     >
-                      <Eye v-if="showCurrentPassword" class="w-5 h-5" />
-                      <EyeOff v-else class="w-5 h-5" />
+                      <Eye v-if="showCurrentPassword" class="w-4 h-4" />
+                      <EyeOff v-else class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label for="nueva_contrasena" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="nueva_contrasena" class="block text-xs font-medium text-secondary mb-1">
                     Nueva Contraseña <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
@@ -665,15 +655,17 @@ const userInitials = computed(() => {
                       :type="showNewPassword ? 'text' : 'password'"
                       v-model="profileStore.passwordData.nuevaContrasena"
                       placeholder="Nueva contraseña"
+                      autocomplete="new-password"
                       required
+                      class="text-sm pr-10"
                     />
                     <button
                       type="button"
                       @click="showNewPassword = !showNewPassword"
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
                     >
-                      <Eye v-if="showNewPassword" class="w-5 h-5" />
-                      <EyeOff v-else class="w-5 h-5" />
+                      <Eye v-if="showNewPassword" class="w-4 h-4" />
+                      <EyeOff v-else class="w-4 h-4" />
                     </button>
                   </div>
                   
@@ -685,7 +677,7 @@ const userInitials = computed(() => {
                         {{ passwordStrength.text }}
                       </span>
                     </div>
-                    <div class="w-full bg-border h-2 rounded-full overflow-hidden">
+                    <div class="w-full bg-border h-1.5 rounded-full overflow-hidden">
                       <div
                         class="h-full transition-all duration-300"
                         :class="passwordStrength.color"
@@ -696,7 +688,7 @@ const userInitials = computed(() => {
                 </div>
 
                 <div>
-                  <label for="confirmar_contrasena" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="confirmar_contrasena" class="block text-xs font-medium text-secondary mb-1">
                     Confirmar Nueva Contraseña <span class="text-red-500">*</span>
                   </label>
                   <div class="relative">
@@ -705,33 +697,35 @@ const userInitials = computed(() => {
                       :type="showConfirmPassword ? 'text' : 'password'"
                       v-model="profileStore.passwordData.confirmarContrasena"
                       placeholder="Confirmar contraseña"
+                      autocomplete="new-password"
                       required
+                      class="text-sm pr-10"
                     />
                     <button
                       type="button"
                       @click="showConfirmPassword = !showConfirmPassword"
-                      class="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
                     >
-                      <Eye v-if="showConfirmPassword" class="w-5 h-5" />
-                      <EyeOff v-else class="w-5 h-5" />
+                      <Eye v-if="showConfirmPassword" class="w-4 h-4" />
+                      <EyeOff v-else class="w-4 h-4" />
                     </button>
                   </div>
 
                   <!-- Validación de coincidencia -->
-                  <div v-if="passwordsMatch !== null" class="mt-2 flex items-center gap-2">
-                    <CheckCircle2 v-if="passwordsMatch" class="w-4 h-4 text-green-500" />
-                    <AlertCircle v-else class="w-4 h-4 text-red-500" />
+                  <div v-if="passwordsMatch !== null" class="mt-1.5 flex items-center gap-1.5">
+                    <CheckCircle2 v-if="passwordsMatch" class="w-3.5 h-3.5 text-green-500" />
+                    <AlertCircle v-else class="w-3.5 h-3.5 text-red-500" />
                     <span class="text-xs" :class="passwordsMatch ? 'text-green-500' : 'text-red-500'">
                       {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
                     </span>
                   </div>
                 </div>
 
-                <div class="flex justify-end pt-6 border-t border-border">
+                <div class="flex justify-end pt-3 border-t border-border">
                   <button
                     type="submit"
                     :disabled="savingPassword || passwordsMatch === false"
-                    class="btn flex items-center gap-2"
+                    class="btn flex items-center gap-2 text-sm"
                   >
                     <Save class="w-4 h-4" />
                     <span v-if="savingPassword">Guardando...</span>
@@ -742,75 +736,79 @@ const userInitials = computed(() => {
             </div>
 
             <!-- TAB: Dirección -->
-            <div v-else-if="activeTab === 'address'" class="space-y-6">
-              <div class="bg-blue-500 rounded-lg p-4 shadow-sm">
-                <div class="flex items-start gap-3">
-                  <Info class="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                  <p class="text-sm text-white">
+            <div v-else-if="activeTab === 'address'" class="space-y-4">
+              <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
+                <div class="flex items-start gap-2">
+                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <p class="text-xs text-white">
                     Esta información será utilizada para correspondencia y documentación oficial.
                   </p>
                 </div>
               </div>
 
-              <form @submit.prevent="handleUpdateAddress" class="space-y-6">
-                <div>
-                  <label for="departamento" class="block text-sm font-medium text-secondary mb-1">
-                    Departamento
-                  </label>
-                  <select
-                    id="departamento"
-                    v-model="profileStore.personalData.departamento"
-                  >
-                    <option value="">Seleccionar departamento</option>
-                    <option v-for="depto in departamentos" :key="depto" :value="depto">
-                      {{ depto }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form @submit.prevent="handleUpdateAddress" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label for="provincia" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="departamento" class="block text-xs font-medium text-secondary mb-1">
+                      Departamento
+                    </label>
+                    <select
+                      id="departamento"
+                      v-model="profileStore.personalData.departamento"
+                      class="text-sm"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option v-for="depto in departamentos" :key="depto" :value="depto">
+                        {{ depto }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="provincia" class="block text-xs font-medium text-secondary mb-1">
                       Provincia
                     </label>
                     <input
                       id="provincia"
                       type="text"
                       v-model="profileStore.personalData.provincia"
-                      placeholder="Nombre de la provincia"
+                      placeholder="Provincia"
+                      class="text-sm"
                     />
                   </div>
 
                   <div>
-                    <label for="municipio" class="block text-sm font-medium text-secondary mb-1">
+                    <label for="municipio" class="block text-xs font-medium text-secondary mb-1">
                       Municipio
                     </label>
                     <input
                       id="municipio"
                       type="text"
                       v-model="profileStore.personalData.municipio"
-                      placeholder="Nombre del municipio"
+                      placeholder="Municipio"
+                      class="text-sm"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label for="direccion" class="block text-sm font-medium text-secondary mb-1">
+                  <label for="direccion" class="block text-xs font-medium text-secondary mb-1">
                     Dirección Completa
                   </label>
                   <textarea
                     id="direccion"
                     v-model="profileStore.personalData.direccion"
-                    rows="3"
+                    rows="2"
                     placeholder="Calle, número, zona..."
+                    class="text-sm"
                   ></textarea>
                 </div>
 
-                <div class="flex justify-end pt-6 border-t border-border">
+                <div class="flex justify-end pt-3 border-t border-border">
                   <button
                     type="submit"
                     :disabled="savingAddress"
-                    class="btn flex items-center gap-2"
+                    class="btn flex items-center gap-2 text-sm"
                   >
                     <Save class="w-4 h-4" />
                     <span v-if="savingAddress">Guardando...</span>

@@ -53,6 +53,12 @@ const warehouseTypes = [
     label: 'Complejo',
     color: 'purple',
     icon: Warehouse
+  },
+  {
+    value: 'mixto',
+    label: 'Mixto',
+    color: 'green',
+    icon: Maximize2
   }
 ]
 
@@ -108,10 +114,6 @@ const saveWarehouse = () => {
     return
   }
 
-  if (props.showType && !warehouseForm.value.tipo) {
-    alert('Por favor selecciona un tipo de almacén')
-    return
-  }
 
   if (!warehouseForm.value.capacidad_maxima || warehouseForm.value.capacidad_maxima <= 0) {
     alert('Por favor ingresa una capacidad válida')
@@ -154,8 +156,7 @@ const handleMapUpdate = (coordinates) => {
 
 const isFormValid = computed(() => {
   return warehouseForm.value.nombre.trim() !== '' &&
-         warehouseForm.value.capacidad_maxima > 0 &&
-         (!props.showType || warehouseForm.value.tipo !== '')
+         warehouseForm.value.capacidad_maxima > 0
 })
 
 // Obtener configuración del tipo
@@ -204,19 +205,6 @@ const getTypeConfig = (type) => {
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between gap-3 mb-4">
-              <h4 class="font-semibold text-neutral text-lg">{{ warehouses[0].nombre }}</h4>
-              <div 
-                v-if="showType && warehouses[0].tipo" 
-                class="px-3 py-1.5 rounded-full text-xs font-semibold border-2 whitespace-nowrap"
-                :class="{
-                  'text-blue-700 border-blue-500': warehouses[0].tipo === 'concentrado',
-                  'text-purple-700 border-purple-500': warehouses[0].tipo === 'complejo'
-                }"
-              >
-                {{ getTypeConfig(warehouses[0].tipo).label }}
-              </div>
-            </div>
 
             <div class="space-y-3">
               <!-- Capacidad y Área -->
@@ -336,24 +324,6 @@ const getTypeConfig = (type) => {
                 </p>
               </div>
 
-              <div v-if="showType" class="input-group">
-                <label class="input-label">
-                  Tipo de Almacén <span class="text-error">*</span>
-                </label>
-                <select
-                  v-model="warehouseForm.tipo"
-                  class="w-full"
-                  required
-                >
-                  <option value="">Seleccionar tipo</option>
-                  <option v-for="type in warehouseTypes" :key="type.value" :value="type.value">
-                    {{ type.label }}
-                  </option>
-                </select>
-                <p class="input-helper">
-                  Categoría según su uso
-                </p>
-              </div>
             </div>
 
             <!-- Minerales -->

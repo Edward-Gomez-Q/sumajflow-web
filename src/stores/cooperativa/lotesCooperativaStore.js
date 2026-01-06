@@ -74,7 +74,7 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
     error.value = null
 
     try {
-      const response = await fetch(`${rutaApi}/cooperativa/lotes/${loteId}/detalle`, {
+      const response = await fetch(`${rutaApi}/cooperativa/lotes/pendientes/${loteId}/detalle`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'

@@ -1,7 +1,7 @@
-<!-- src/components/socio/LoteDetalleModal.vue -->
+<!-- src/components/cooperativa/LoteDetalleGeneralModal.vue -->
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useLotesStore } from '@/stores/socio/lotesStore'
+import { useLotesCooperativaGeneralStore } from '@/stores/cooperativa/lotesCooperativaGeneralStore'
 import {
   X,
   PackageCheck,
@@ -18,7 +18,7 @@ import {
   Info,
   Map as MapIcon
 } from 'lucide-vue-next'
-import RouteMapViewer from './RouteMapViewer.vue'
+import RouteMapViewer from '@/components/socio/RouteMapViewer.vue'
 
 const props = defineProps({
   loteId: {
@@ -29,7 +29,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const lotesStore = useLotesStore()
+const lotesStore = useLotesCooperativaGeneralStore()
 const tabActual = ref('general')
 
 onMounted(async () => {
@@ -52,7 +52,7 @@ const origenMapa = computed(() => {
     nombre: lote.value.minaNombre,
     latitud: lote.value.minaLatitud,
     longitud: lote.value.minaLongitud,
-    sectorColor: '#1E3A8A' // Color por defecto, puedes ajustarlo según el sector
+    sectorColor: lote.value.sectorColor || '#1E3A8A'
   }
 })
 
@@ -80,7 +80,7 @@ const balanzaCoopMapa = computed(() => {
       !lote.value.cooperativaBalanzaLongitud) return null
   
   return {
-    razonSocial: 'Cooperativa', // Puedes ajustar esto si tienes el nombre
+    razonSocial: 'Cooperativa',
     latitudBalanza: lote.value.cooperativaBalanzaLatitud,
     longitudBalanza: lote.value.cooperativaBalanzaLongitud
   }
@@ -249,6 +249,21 @@ const formatDateShort = (dateString) => {
 
               <!-- Grid de información -->
               <div class="grid md:grid-cols-2 gap-4">
+                <!-- Socio Propietario -->
+                <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
+                  <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
+                      <User class="w-5 h-5 text-white" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-sm font-medium text-secondary mb-2">Socio Propietario</h3>
+                      <p class="font-semibold text-neutral">{{ lote.socioNombres }} {{ lote.socioApellidos }}</p>
+                      <p class="text-sm text-secondary mt-1">CI: {{ lote.socioCi }}</p>
+                      <p v-if="lote.socioTelefono" class="text-sm text-secondary">Tel: {{ lote.socioTelefono }}</p>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Mina de Origen -->
                 <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
                   <div class="flex items-start gap-3">
@@ -288,23 +303,6 @@ const formatDateShort = (dateString) => {
                   </div>
                 </div>
 
-                <!-- Operación y Mineral -->
-                <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
-                  <h3 class="text-sm font-medium text-secondary mb-3">Tipo de Operación</h3>
-                  <div class="space-y-2">
-                    <div class="flex justify-between items-center">
-                      <span class="text-sm text-secondary">Operación:</span>
-                      <span class="text-sm font-medium text-neutral">
-                        {{ lote.tipoOperacion === 'procesamiento_planta' ? 'Procesamiento' : 'Venta Directa' }}
-                      </span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                      <span class="text-sm text-secondary">Tipo Mineral:</span>
-                      <span class="text-sm font-medium text-neutral capitalize">{{ lote.tipoMineral }}</span>
-                    </div>
-                  </div>
-                </div>
-
                 <!-- Camiones -->
                 <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
                   <div class="flex items-start gap-3">
@@ -324,6 +322,23 @@ const formatDateShort = (dateString) => {
                           : 'Pendiente de asignación' }}
                       </p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Operación y Mineral -->
+              <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
+                <h3 class="text-sm font-medium text-secondary mb-3">Tipo de Operación</h3>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-secondary">Operación:</span>
+                    <span class="text-sm font-medium text-neutral">
+                      {{ lote.tipoOperacion === 'procesamiento_planta' ? 'Procesamiento' : 'Venta Directa' }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-secondary">Tipo Mineral:</span>
+                    <span class="text-sm font-medium text-neutral capitalize">{{ lote.tipoMineral }}</span>
                   </div>
                 </div>
               </div>
@@ -404,19 +419,6 @@ const formatDateShort = (dateString) => {
               <div v-if="lote.observaciones" class="bg-base rounded-xl p-4 border border-border shadow-sm">
                 <h3 class="text-sm font-medium text-secondary mb-2">Observaciones</h3>
                 <p class="text-sm text-neutral whitespace-pre-wrap">{{ lote.observaciones }}</p>
-              </div>
-
-              <!-- Socio Propietario -->
-              <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
-                    <User class="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 class="text-sm font-medium text-secondary">Socio Propietario</h3>
-                    <p class="font-medium text-neutral">{{ lote.socioNombres }} {{ lote.socioApellidos }}</p>
-                  </div>
-                </div>
               </div>
             </div>
 

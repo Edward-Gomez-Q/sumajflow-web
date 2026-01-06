@@ -15,8 +15,10 @@ import {
   CheckCircle2,
   XCircle,
   Info,
-  Loader2
+  Loader2,
+  Map as MapIcon
 } from 'lucide-vue-next'
+import RouteMapViewer from '../socio/RouteMapViewer.vue'
 
 const props = defineProps({
   loteId: {
@@ -40,6 +42,53 @@ watch(() => props.loteId, async (newId) => {
 })
 
 const lote = computed(() => lotesStore.loteDetalle)
+
+// Computed properties para el mapa (reutilizando la misma estructura)
+const origenMapa = computed(() => {
+  if (!lote.value || !lote.value.minaLatitud || !lote.value.minaLongitud) return null
+  return {
+    id: lote.value.minaId,
+    nombre: lote.value.minaNombre,
+    latitud: lote.value.minaLatitud,
+    longitud: lote.value.minaLongitud,
+    sectorColor: '#1E3A8A' // Color por defecto
+  }
+})
+
+const destinoMapa = computed(() => {
+  if (!lote.value || 
+      !lote.value.destinoBalanzaLatitud || 
+      !lote.value.destinoBalanzaLongitud ||
+      !lote.value.destinoAlmacenLatitud ||
+      !lote.value.destinoAlmacenLongitud) return null
+  
+  return {
+    id: lote.value.destinoId,
+    razonSocial: lote.value.destinoNombre,
+    latitudAlmacen: lote.value.destinoAlmacenLatitud,
+    longitudAlmacen: lote.value.destinoAlmacenLongitud,
+    latitudBalanza: lote.value.destinoBalanzaLatitud,
+    longitudBalanza: lote.value.destinoBalanzaLongitud,
+    municipio: lote.value.destinoDireccion // Usando dirección como fallback
+  }
+})
+
+const balanzaCoopMapa = computed(() => {
+  if (!lote.value || 
+      !lote.value.cooperativaBalanzaLatitud || 
+      !lote.value.cooperativaBalanzaLongitud) return null
+  
+  return {
+    razonSocial: 'Cooperativa',
+    latitudBalanza: lote.value.cooperativaBalanzaLatitud,
+    longitudBalanza: lote.value.cooperativaBalanzaLongitud
+  }
+})
+
+const tipoDestinoMapa = computed(() => {
+  if (!lote.value) return 'ingenio'
+  return lote.value.destinoTipo === 'comercializadora' ? 'comercializadora' : 'ingenio'
+})
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
@@ -80,7 +129,7 @@ const handleRechazar = () => {
       class="fixed inset-0 z-10000 flex items-center justify-center bg-neutral-900/20 backdrop-blur-sm p-4"
       @click.self="emit('close')"
     >
-      <div class="bg-surface rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] border border-border flex flex-col">
+      <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
           <div class="flex items-center gap-3">
@@ -113,20 +162,44 @@ const handleRechazar = () => {
         <!-- Content -->
         <div v-else-if="lote" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6 space-y-6">
-<!-- Estado Actual -->
-<div class="bg-yellow-500 rounded-lg p-4 shadow-sm">
-  <div class="flex items-start gap-3">
-    <Info class="w-6 h-6 text-white shrink-0 mt-0.5" />
-    <div class="flex-1">
-      <h3 class="font-semibold text-white text-base">
-        Estado: {{ lote.estado }}
-      </h3>
-      <p class="text-sm text-white/95 mt-1.5">
-        Este lote está esperando tu aprobación para continuar con el proceso
-      </p>
-    </div>
-  </div>
-</div>
+            <!-- Estado Actual -->
+            <div class="bg-yellow-500 rounded-lg p-4 shadow-sm">
+              <div class="flex items-start gap-3">
+                <Info class="w-6 h-6 text-white shrink-0 mt-0.5" />
+                <div class="flex-1">
+                  <h3 class="font-semibold text-white text-base">
+                    Estado: {{ lote.estado }}
+                  </h3>
+                  <p class="text-sm text-white/95 mt-1.5">
+                    Este lote está esperando tu aprobación para continuar con el proceso
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mapa de Ruta -->
+            <div class="bg-base rounded-xl border border-border shadow-sm overflow-hidden">
+              <div class="p-4 border-b border-border bg-hover">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <MapIcon class="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-semibold text-neutral">Mapa de Ruta</h3>
+                    <p class="text-xs text-tertiary">Visualiza el recorrido completo del lote</p>
+                  </div>
+                </div>
+              </div>
+              <div class="h-[400px]">
+                <RouteMapViewer
+                  :origen="origenMapa"
+                  :destino="destinoMapa"
+                  :balanza-coop="balanzaCoopMapa"
+                  :tipo-destino="tipoDestinoMapa"
+                  class="h-full"
+                />
+              </div>
+            </div>
 
             <!-- Grid de información principal -->
             <div class="grid md:grid-cols-2 gap-4">
@@ -175,9 +248,12 @@ const handleRechazar = () => {
                       {{ lote.destinoTipo === 'ingenio' ? 'Ingenio Minero' : 'Comercializadora' }}
                     </h3>
                     <p class="font-semibold text-neutral truncate">{{ lote.destinoNombre }}</p>
-                    <p class="text-sm text-secondary mt-1">NIT: {{ lote.destinoNIT }}</p>
+                    <p class="text-sm text-secondary mt-1">NIT: {{ lote.destinoNit }}</p>
                     <p class="text-xs text-tertiary mt-1">
                       {{ lote.destinoDireccion }}
+                    </p>
+                    <p v-if="lote.destinoContacto" class="text-xs text-tertiary mt-1">
+                      {{ lote.destinoContacto }}
                     </p>
                   </div>
                 </div>
@@ -268,31 +344,6 @@ const handleRechazar = () => {
           <p class="text-sm text-secondary">{{ lotesStore.error }}</p>
         </div>
 
-        <!-- Footer con Acciones -->
-        <div v-if="lote" class="p-4 sm:p-6 border-t border-border bg-hover shrink-0">
-          <div class="flex gap-3">
-            <button
-              @click="emit('close')"
-              class="flex-1 btn-secondary"
-            >
-              Cerrar
-            </button>
-            <button
-              @click="handleRechazar"
-              class="flex-1 btn bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2"
-            >
-              <XCircle class="w-4 h-4" />
-              <span>Rechazar</span>
-            </button>
-            <button
-              @click="handleAprobar"
-              class="flex-1 btn bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-            >
-              <CheckCircle2 class="w-4 h-4" />
-              <span>Aprobar Lote</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </Teleport>

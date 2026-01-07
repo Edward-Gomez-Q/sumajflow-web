@@ -279,6 +279,14 @@ const routes = [
           title: 'Notificaciones - Ingenio'
         }
       },
+      {
+        path : 'lotes',
+        name : 'IngenioLotes',
+        component : () => import('./views/ingenio/Lotes.vue'),
+        meta : {
+          title : 'Lotes - Ingenio'
+        }
+      }
       /*{
         path: 'recepciones',
         name: 'IngenioRecepciones',
@@ -370,6 +378,14 @@ const routes = [
         component: () => import('./views/Notificaciones.vue'),
         meta: { 
           title: 'Notificaciones - Comercializadora'
+        }
+      },
+      {
+        path : 'lotes',
+        name : 'ComercializadoraLotes',
+        component : () => import('./views/comercializadora/Lotes.vue'),
+        meta : {
+          title : 'Lotes - Comercializadora'
         }
       }
       /*{

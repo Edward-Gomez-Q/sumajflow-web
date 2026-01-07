@@ -179,6 +179,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
         badge: null
       },
       {
+        id: 'lotes',
+        label: 'Lotes',
+        icon: Package,
+        route: '/ingenio/lotes',
+        badge: null
+      },
+      {
         id: 'recepciones',
         label: 'Recepciones',
         icon: ClipboardList,
@@ -234,6 +241,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
         label: 'Balanza',
         icon: Scale,
         route: '/comercializadora/balanza',
+        badge: null
+      },
+      {
+        id: 'lotes',
+        label: 'Lotes',
+        icon: Package,
+        route: '/comercializadora/lotes',
         badge: null
       },
       {

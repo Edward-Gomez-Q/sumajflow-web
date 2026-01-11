@@ -1,10 +1,12 @@
 // src/stores/socio/lotesStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useLotesStore = defineStore('lotes', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
@@ -31,8 +33,6 @@ export const useLotesStore = defineStore('lotes', () => {
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
-  const loading = ref(false)
-  const loadingDetalle = ref(false)
   const error = ref(null)
 
   // Computed
@@ -60,7 +60,7 @@ export const useLotesStore = defineStore('lotes', () => {
    * Fetch lotes con paginación y filtros
    */
   const fetchLotes = async (nuevosFiltros = {}) => {
-    loading.value = true
+    uiStore.showLoading('Cargando lotes...')
     error.value = null
 
     // Actualizar filtros si se pasaron nuevos
@@ -105,9 +105,11 @@ export const useLotesStore = defineStore('lotes', () => {
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar Lotes')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -124,7 +126,7 @@ export const useLotesStore = defineStore('lotes', () => {
    */
   const cambiarTamanoPagina = async (nuevoTamano) => {
     filtros.value.size = nuevoTamano
-    filtros.value.page = 0 // Resetear a primera página
+    filtros.value.page = 0
     await fetchLotes()
   }
 
@@ -160,7 +162,7 @@ export const useLotesStore = defineStore('lotes', () => {
    * Obtener detalle completo del lote
    */
   const fetchLoteDetalle = async (id) => {
-    loadingDetalle.value = true
+    uiStore.showLoading('Cargando detalle del lote...')
     error.value = null
 
     try {
@@ -182,9 +184,11 @@ export const useLotesStore = defineStore('lotes', () => {
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
+
     } finally {
-      loadingDetalle.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -199,7 +203,7 @@ export const useLotesStore = defineStore('lotes', () => {
    * Crear lote
    */
   const createLote = async (loteData) => {
-    loading.value = true
+    uiStore.showLoading('Creando lote...')
     error.value = null
 
     try {
@@ -218,16 +222,22 @@ export const useLotesStore = defineStore('lotes', () => {
         throw new Error(data.message || 'Error al crear lote')
       }
 
-      // Recargar la lista actual
       await fetchLotes()
+
+      uiStore.showSuccess(
+        data.message || 'Lote creado exitosamente',
+        'Lote Creado'
+      )
 
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Crear Lote')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -265,8 +275,6 @@ export const useLotesStore = defineStore('lotes', () => {
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
-    loading.value = false
-    loadingDetalle.value = false
     error.value = null
   }
 
@@ -276,8 +284,6 @@ export const useLotesStore = defineStore('lotes', () => {
     loteDetalle,
     paginacion,
     filtros,
-    loading,
-    loadingDetalle,
     error,
     
     // Computed

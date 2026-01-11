@@ -1,13 +1,16 @@
+// src/stores/comercializadora/balanzaComercializadoraStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '@/assets/rutaApi.js'
-import { useSessionStore } from '../sessionStore.js'
 
 export const useBalanzaComercializadoraStore = defineStore('balanzaComercializadora', () => {
+  const uiStore = useUIStore()
+  const sessionStore = useSessionStore()
+
   const balanza = ref(null)
-  const loading = ref(false)
   const error = ref(null)
-    const sessionStore = useSessionStore()
 
   const estadoCalibracion = computed(() => {
     if (!balanza.value) return null
@@ -43,14 +46,13 @@ export const useBalanzaComercializadoraStore = defineStore('balanzaComercializad
   })
 
   const fetchBalanza = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando información de balanza...')
     error.value = null
 
     try {
-      const token = sessionStore.token;
       const response = await fetch(`${rutaApi}/comercializadora/balanza`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -62,24 +64,27 @@ export const useBalanzaComercializadoraStore = defineStore('balanzaComercializad
       }
 
       balanza.value = data.data
+      return { success: true, data: data.data }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al cargar balanza:', err)
+      uiStore.showError(err.message, 'Error al Cargar Balanza')
+      return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
   const updateBalanza = async (updateData) => {
-    loading.value = true
+    uiStore.showLoading('Actualizando balanza...')
     error.value = null
 
     try {
-      const token = sessionStore.token;
       const response = await fetch(`${rutaApi}/comercializadora/balanza`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(updateData)
@@ -92,22 +97,35 @@ export const useBalanzaComercializadoraStore = defineStore('balanzaComercializad
       }
 
       balanza.value = data.data
-      return { success: true, message: 'Balanza actualizada exitosamente' }
+
+      uiStore.showSuccess(
+        data.message || 'Balanza actualizada exitosamente',
+        'Balanza Actualizada'
+      )
+
+      return { success: true, message: data.message }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar balanza:', err)
+      uiStore.showError(err.message, 'Error al Actualizar Balanza')
       return { success: false, message: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
+  }
+
+  const reset = () => {
+    balanza.value = null
+    error.value = null
   }
 
   return {
     balanza,
-    loading,
     error,
     estadoCalibracion,
     fetchBalanza,
-    updateBalanza
+    updateBalanza,
+    reset
   }
 })

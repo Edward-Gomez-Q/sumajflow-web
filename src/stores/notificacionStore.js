@@ -3,10 +3,12 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
-import rutaApi from '../assets/rutaApi.js'
+import { useUIStore } from './uiStore'
 import { useSessionStore } from './sessionStore'
+import rutaApi from '../assets/rutaApi.js'
 
 export const useNotificacionStore = defineStore('notificacion', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
 
   // State
@@ -25,7 +27,6 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     page: 0,
     size: 20
   })
-  const loading = ref(false)
   const error = ref(null)
   const stompClient = ref(null)
   const isConnected = ref(false)
@@ -62,7 +63,7 @@ export const useNotificacionStore = defineStore('notificacion', () => {
       return
     }
 
-    console.log('🔌 Conectando al WebSocket...')
+    console.log('Conectando al WebSocket...')
 
     try {
       const client = new Client({
@@ -77,13 +78,13 @@ export const useNotificacionStore = defineStore('notificacion', () => {
         heartbeatOutgoing: 4000,
 
         onConnect: () => {
-          console.log('✅ WebSocket conectado')
+          console.log('WebSocket conectado')
           isConnected.value = true
           
           const userId = sessionStore.user.id
           
           client.subscribe(`/user/${userId}/queue/notificaciones`, (message) => {
-            console.log('📬 Nueva notificación recibida:', message.body)
+            console.log('Nueva notificacion recibida:', message.body)
             
             try {
               const notificacion = JSON.parse(message.body)
@@ -96,18 +97,18 @@ export const useNotificacionStore = defineStore('notificacion', () => {
                 })
               }
             } catch (e) {
-              console.error('Error al parsear notificación:', e)
+              console.error('Error al parsear notificacion:', e)
             }
           })
         },
 
         onStompError: (frame) => {
-          console.error('❌ Error STOMP:', frame.headers['message'])
+          console.error('Error STOMP:', frame.headers['message'])
           isConnected.value = false
         },
 
         onDisconnect: () => {
-          console.log('🔌 WebSocket desconectado')
+          console.log('WebSocket desconectado')
           isConnected.value = false
         }
       })
@@ -126,7 +127,7 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    */
   const disconnectWebSocket = () => {
     if (stompClient.value) {
-      console.log('🔌 Desconectando WebSocket...')
+      console.log('Desconectando WebSocket...')
       stompClient.value.deactivate()
       stompClient.value = null
       isConnected.value = false
@@ -137,7 +138,7 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    * Obtener notificaciones paginadas con filtros
    */
   const fetchNotificaciones = async (nuevosFiltros = {}) => {
-    loading.value = true
+    uiStore.showLoading('Cargando notificaciones...')
     error.value = null
 
     // Actualizar filtros si se pasaron nuevos
@@ -182,10 +183,11 @@ export const useNotificacionStore = defineStore('notificacion', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener notificaciones:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -248,6 +250,8 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    * Marcar notificación como leída
    */
   const marcarComoLeida = async (notificacionId) => {
+    error.value = null
+
     try {
       const baseUrl = getBaseUrl()
       
@@ -272,8 +276,9 @@ export const useNotificacionStore = defineStore('notificacion', () => {
       }
 
       return { success: true }
+
     } catch (err) {
-      console.error('Error al marcar como leída:', err)
+      error.value = err.message
       return { success: false, error: err.message }
     }
   }
@@ -282,6 +287,9 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    * Marcar todas como leídas
    */
   const marcarTodasComoLeidas = async () => {
+    uiStore.showLoading('Marcando notificaciones como leidas...')
+    error.value = null
+
     try {
       const baseUrl = getBaseUrl()
       
@@ -302,10 +310,20 @@ export const useNotificacionStore = defineStore('notificacion', () => {
       // Actualizar localmente
       notificaciones.value.forEach(n => n.leido = true)
 
+      uiStore.showSuccess(
+        data.message || 'Notificaciones marcadas como leidas',
+        'Actualizado Exitosamente'
+      )
+
       return { success: true }
+
     } catch (err) {
-      console.error('Error al marcar todas como leídas:', err)
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Actualizar')
       return { success: false, error: err.message }
+
+    } finally {
+      uiStore.hideLoading()
     }
   }
 
@@ -313,6 +331,15 @@ export const useNotificacionStore = defineStore('notificacion', () => {
    * Eliminar notificación
    */
   const eliminarNotificacion = async (notificacionId) => {
+    const confirmed = await uiStore.showDeleteConfirm('esta notificacion')
+    
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Eliminando notificacion...')
+    error.value = null
+
     try {
       const baseUrl = getBaseUrl()
       
@@ -333,10 +360,20 @@ export const useNotificacionStore = defineStore('notificacion', () => {
       // Eliminar localmente y recargar
       await fetchNotificaciones()
 
+      uiStore.showSuccess(
+        data.message || 'Notificacion eliminada exitosamente',
+        'Eliminada Exitosamente'
+      )
+
       return { success: true }
+
     } catch (err) {
-      console.error('Error al eliminar notificación:', err)
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Eliminar')
       return { success: false, error: err.message }
+
+    } finally {
+      uiStore.hideLoading()
     }
   }
 
@@ -379,7 +416,6 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     notificaciones,
     paginacion,
     filtros,
-    loading,
     error,
     isConnected,
     

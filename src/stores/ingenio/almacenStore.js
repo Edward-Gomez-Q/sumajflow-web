@@ -1,15 +1,19 @@
 // src/stores/ingenio/almacenStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '@/assets/rutaApi.js'
 
 export const useAlmacenIngenioStore = defineStore('almacenIngenio', () => {
-  const almacen = ref(null)
-  const loading = ref(false)
-  const error = ref(null)
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
 
+  // State
+  const almacen = ref(null)
+  const error = ref(null)
+
+  // Computed
   const estadoCapacidad = computed(() => {
     if (!almacen.value) return null
     
@@ -51,44 +55,48 @@ export const useAlmacenIngenioStore = defineStore('almacenIngenio', () => {
     }
   })
 
+  // GET - Fetch almacén
   const fetchAlmacen = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando almacen...')
     error.value = null
 
     try {
-      const token = sessionStore.token
       const response = await fetch(`${rutaApi}/ingenio/almacen`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
         }
       })
 
       const data = await response.json()
 
-      if (!data.success) {
+      if (!response.ok) {
         throw new Error(data.message || 'Error al cargar el almacén')
       }
 
       almacen.value = data.data
+      return { success: true, data: data.data }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al cargar almacén:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
+      return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
+  // PUT - Actualizar almacén
   const updateAlmacen = async (updateData) => {
-    loading.value = true
+    uiStore.showLoading('Actualizando almacen...')
     error.value = null
 
     try {
-      const token = sessionStore.token
       const response = await fetch(`${rutaApi}/ingenio/almacen`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(updateData)
@@ -96,26 +104,38 @@ export const useAlmacenIngenioStore = defineStore('almacenIngenio', () => {
 
       const data = await response.json()
 
-      if (!data.success) {
+      if (!response.ok) {
         throw new Error(data.message || 'Error al actualizar el almacén')
       }
 
       almacen.value = data.data
-      return { success: true, message: 'Almacén actualizado exitosamente' }
+
+      uiStore.showSuccess(
+        data.message || 'Almacen actualizado exitosamente',
+        'Actualizado Exitosamente'
+      )
+
+      return { success: true, message: data.message }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar almacén:', err)
-      return { success: false, message: err.message }
+      uiStore.showError(err.message, 'Error al Actualizar')
+      return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
   return {
+    // State
     almacen,
-    loading,
     error,
+
+    // Computed
     estadoCapacidad,
+
+    // Actions
     fetchAlmacen,
     updateAlmacen
   }

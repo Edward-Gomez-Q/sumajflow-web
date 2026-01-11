@@ -1,11 +1,15 @@
 // src/stores/cooperativa/socioStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
+import { useNotificacionStore } from '../notificacionStore'
 import rutaApi from '../../assets/rutaApi.js'
-import { useSessionStore } from '../sessionStore.js'
-import { useNotificacionStore } from '../notificacionStore.js'
 
 export const useSocioStore = defineStore('socio', () => {
+  const uiStore = useUIStore()
+  const sessionStore = useSessionStore()
+
   // State
   const socios = ref([])
   const estadisticas = ref({
@@ -26,11 +30,8 @@ export const useSocioStore = defineStore('socio', () => {
     ordenarPor: 'fechaAfiliacion',
     direccion: 'desc'
   })
-  const isLoading = ref(false)
   const error = ref(null)
   const lastFetch = ref(null)
-
-  const API_URL = rutaApi
 
   // Computed
   const sociosPendientes = computed(() => 
@@ -49,12 +50,10 @@ export const useSocioStore = defineStore('socio', () => {
    * Fetch socios con paginación y filtros
    */
   const fetchSocios = async (params = {}) => {
-    isLoading.value = true
+    uiStore.showLoading('Cargando socios...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       // Construir query params
       const queryParams = new URLSearchParams({
         pagina: params.pagina ?? paginacion.value.paginaActual,
@@ -72,7 +71,7 @@ export const useSocioStore = defineStore('socio', () => {
         queryParams.append('busqueda', params.busqueda ?? filtros.value.busqueda)
       }
 
-      const response = await fetch(`${API_URL}/cooperativa/socios?${queryParams}`, {
+      const response = await fetch(`${rutaApi}/cooperativa/socios?${queryParams}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -114,10 +113,10 @@ export const useSocioStore = defineStore('socio', () => {
       }
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener socios:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -126,9 +125,7 @@ export const useSocioStore = defineStore('socio', () => {
    */
   const fetchEstadisticas = async () => {
     try {
-      const sessionStore = useSessionStore()
-
-      const response = await fetch(`${API_URL}/cooperativa/socios/estadisticas`, {
+      const response = await fetch(`${rutaApi}/cooperativa/socios/estadisticas`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -154,14 +151,12 @@ export const useSocioStore = defineStore('socio', () => {
    * Obtener detalle de un socio
    */
   const fetchSocioDetalle = async (cooperativaSocioId) => {
-    isLoading.value = true
+    uiStore.showLoading('Cargando detalle del socio...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const response = await fetch(
-        `${API_URL}/cooperativa/socios/${cooperativaSocioId}`,
+        `${rutaApi}/cooperativa/socios/${cooperativaSocioId}`,
         {
           method: 'GET',
           headers: {
@@ -180,10 +175,10 @@ export const useSocioStore = defineStore('socio', () => {
       return { success: true, data: data.data }
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener detalle del socio:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -191,13 +186,21 @@ export const useSocioStore = defineStore('socio', () => {
    * Procesar solicitud (aprobar/rechazar)
    */
   const procesarSolicitud = async (cooperativaSocioId, estado, observaciones = '') => {
-    isLoading.value = true
+    const accion = estado === 'aprobado' ? 'aprobar' : 'rechazar'
+    const confirmed = await uiStore.showConfirm(
+      `Esta seguro que desea ${accion} esta solicitud de socio?`,
+      `Confirmar ${accion.charAt(0).toUpperCase() + accion.slice(1)}`
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading(`Procesando solicitud...`)
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
-      const response = await fetch(`${API_URL}/cooperativa/socios/procesar`, {
+      const response = await fetch(`${rutaApi}/cooperativa/socios/procesar`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -229,13 +232,18 @@ export const useSocioStore = defineStore('socio', () => {
       // Actualizar estadísticas
       await fetchEstadisticas()
 
+      uiStore.showSuccess(
+        data.message || 'Solicitud procesada exitosamente',
+        'Procesado Exitosamente'
+      )
+
       return { success: true, message: data.message }
     } catch (err) {
       error.value = err.message
-      console.error('Error al procesar solicitud:', err)
+      uiStore.showError(err.message, 'Error al Procesar')
       return { success: false, error: err.message }
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -287,7 +295,7 @@ export const useSocioStore = defineStore('socio', () => {
     if (notificacion.metadata?.tipo === 'nueva_solicitud_socio') {
       const nuevoSocio = {
         id: notificacion.metadata.socioId,
-        usuarioId: null, // No lo tenemos desde la notificación
+        usuarioId: null,
         cooperativaSocioId: notificacion.metadata.cooperativaSocioId,
         nombres: notificacion.metadata.nombres,
         primerApellido: notificacion.metadata.primerApellido,
@@ -310,7 +318,7 @@ export const useSocioStore = defineStore('socio', () => {
       estadisticas.value.totalSocios++
       paginacion.value.totalElementos++
 
-      console.log('✅ Nuevo socio agregado a la lista:', nuevoSocio)
+      console.log('Nuevo socio agregado a la lista:', nuevoSocio)
     }
   }
 
@@ -325,7 +333,7 @@ export const useSocioStore = defineStore('socio', () => {
     const originalFetch = notificacionStore.fetchNotificaciones
     
     // No modificamos el store de notificaciones, solo lo usamos
-    console.log('📡 Listener de WebSocket configurado para nuevos socios')
+    console.log('Listener de WebSocket configurado para nuevos socios')
   }
 
   /**
@@ -361,7 +369,6 @@ export const useSocioStore = defineStore('socio', () => {
     estadisticas,
     paginacion,
     filtros,
-    isLoading,
     error,
     lastFetch,
 

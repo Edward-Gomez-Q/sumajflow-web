@@ -3,6 +3,7 @@ import { computed, watch, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOnboardingStore } from '@/stores/onboardingStore'
 import LeftInfoView from '@/components/common/LeftInfoView.vue'
+
 // Steps comunes
 import Step1PersonalData from '@/components/onboarding/steps/Step1PersonalData.vue'
 import Step2UserCredentials from '@/components/onboarding/steps/Step2UserCredentials.vue'
@@ -32,16 +33,15 @@ const router = useRouter()
 const onboardingStore = useOnboardingStore()
 
 const rightSidePanel = ref(null)
+
 const currentComponent = computed(() => {
   const step = onboardingStore.currentStep
   const role = onboardingStore.selectedRole
 
-  // Steps comunes (1-3)
   if (step === 1) return Step1PersonalData
   if (step === 2) return Step2UserCredentials
   if (step === 3) return Step3RoleSelection
 
-  // Steps específicos por rol (4+)
   if (role === 'cooperativa') {
     if (step === 4) return Step4CoopBasicInfo
     if (step === 5) return Step5CoopSectors
@@ -166,18 +166,14 @@ const handleNext = async () => {
     const result = await onboardingStore.submitOnboarding()
     
     if (result.success) {
-      onboardingStore.resetOnboarding(false)
-      alert('Registro completado con éxito. Por favor, inicia sesión.')
+      onboardingStore.resetOnboarding()
       router.push('/login')
-    } else {
-      alert('Error al registrar: ' + result.error)
     }
   } else {
     onboardingStore.nextStep()
   }
 }
 
-// Watch para detectar cuando se selecciona un rol
 watch(() => onboardingStore.selectedRole, (newRole) => {
   if (newRole && onboardingStore.currentStep === 3) {
     setTimeout(() => {
@@ -186,23 +182,19 @@ watch(() => onboardingStore.selectedRole, (newRole) => {
   }
 })
 
-// Watch para hacer scroll al cambiar de paso
 watch(() => onboardingStore.currentStep, async () => {
   await nextTick()
   
-  // Intentar con el elemento ref
   if (rightSidePanel.value) { 
     rightSidePanel.value.scrollTop = 0
   }
   
-  // También intentar con window por si acaso
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
 </script>
 
 <template>
   <div class="auth-container">
-    <!-- Left Side - Info Panel (Fixed) -->
     <LeftInfoView
       v-bind="leftInfoContent"
       :show-footer="onboardingStore.currentStep <= 3"
@@ -213,10 +205,8 @@ watch(() => onboardingStore.currentStep, async () => {
       ]"
     />
 
-    <!-- Right Side - Form (Scrollable) -->
     <div class="auth-form-panel smooth-scroll" ref="rightSidePanel">
       <div class="auth-form-container">
-        <!-- Mobile Logo -->
         <div class="lg:hidden flex items-center justify-center mb-10">
           <img 
             src="@/assets/logo/logo-light.png" 
@@ -230,7 +220,6 @@ watch(() => onboardingStore.currentStep, async () => {
           />
         </div>
 
-        <!-- Progress Bar (Stripe style) -->
         <div class="mb-8">
           <div class="h-1 bg-border rounded-full overflow-hidden">
             <div 
@@ -240,10 +229,8 @@ watch(() => onboardingStore.currentStep, async () => {
           </div>
         </div>
 
-        <!-- Form Content -->
         <component :is="currentComponent" />
 
-        <!-- Continue Button -->
         <button
           @click="handleNext"
           :disabled="!onboardingStore.canGoNext"
@@ -252,15 +239,6 @@ watch(() => onboardingStore.currentStep, async () => {
           {{ isLastStep ? 'Finalizar Registro' : 'Continuar' }}
         </button>
 
-        <!-- DEBUG: show data of Onboarding store
-        <div class="mt-8">
-          <h4 class="font-medium text-neutral mb-3">Datos ingresados (DEBUG)</h4>
-          <pre class="bg-surface border border-border rounded-lg p-4 text-xs overflow-x-auto">
-            {{ JSON.stringify(onboardingStore.$state, null, 2) }}
-          </pre>
-        </div>-->
-
-        <!-- Back Button -->
         <button
           v-if="onboardingStore.currentStep > 1"
           @click="onboardingStore.prevStep()"
@@ -269,7 +247,6 @@ watch(() => onboardingStore.currentStep, async () => {
           Volver
         </button>
 
-        <!-- Login link -->
         <p class="text-center text-sm text-secondary mt-6">
           ¿Ya tienes cuenta? 
           <router-link 

@@ -1,17 +1,17 @@
 // src/stores/destino/lotesDestinoStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useLotesDestinoStore = defineStore('lotesDestino', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
   const lotesPendientes = ref([])
   const loteDetalle = ref(null)
-  const loading = ref(false)
-  const loadingDetalle = ref(false)
   const error = ref(null)
   const tipoDestino = ref(null) // 'ingenio' o 'comercializadora'
 
@@ -54,7 +54,7 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
    * Obtener lotes pendientes de aprobación
    */
   const fetchLotesPendientes = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando lotes pendientes...')
     error.value = null
 
     try {
@@ -77,10 +77,11 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lotes pendientes:', err)
+      uiStore.showError(err.message, 'Error al Cargar Lotes Pendientes')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -88,7 +89,7 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
    * Obtener detalle completo de un lote
    */
   const fetchLoteDetalle = async (loteId) => {
-    loadingDetalle.value = true
+    uiStore.showLoading('Cargando detalle del lote...')
     error.value = null
 
     try {
@@ -111,10 +112,11 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lote detalle:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
+
     } finally {
-      loadingDetalle.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -122,7 +124,16 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
    * Aprobar lote
    */
   const aprobarLote = async (loteId, aprobacionData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      '¿Estás seguro de aprobar este lote? Esta acción permitirá continuar con el proceso.',
+      'Confirmar Aprobación'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Aprobando lote...')
     error.value = null
 
     try {
@@ -142,17 +153,22 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
         throw new Error(data.message || 'Error al aprobar lote')
       }
 
-      // Actualizar lista de pendientes
       await fetchLotesPendientes()
+
+      uiStore.showSuccess(
+        data.message || 'Lote aprobado exitosamente',
+        'Lote Aprobado'
+      )
 
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error aprobando lote:', err)
+      uiStore.showError(err.message, 'Error al Aprobar Lote')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -160,7 +176,16 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
    * Rechazar lote
    */
   const rechazarLote = async (loteId, rechazoData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      `¿Estás seguro de rechazar este lote? ${rechazoData.motivo ? 'Motivo: ' + rechazoData.motivo : ''}`,
+      'Confirmar Rechazo'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Rechazando lote...')
     error.value = null
 
     try {
@@ -180,17 +205,22 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
         throw new Error(data.message || 'Error al rechazar lote')
       }
 
-      // Actualizar lista de pendientes
       await fetchLotesPendientes()
+
+      uiStore.showSuccess(
+        data.message || 'Lote rechazado exitosamente',
+        'Lote Rechazado'
+      )
 
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error rechazando lote:', err)
+      uiStore.showError(err.message, 'Error al Rechazar Lote')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -207,8 +237,6 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
   const reset = () => {
     lotesPendientes.value = []
     loteDetalle.value = null
-    loading.value = false
-    loadingDetalle.value = false
     error.value = null
     tipoDestino.value = null
   }
@@ -217,8 +245,6 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
     // State
     lotesPendientes,
     loteDetalle,
-    loading,
-    loadingDetalle,
     error,
     tipoDestino,
     

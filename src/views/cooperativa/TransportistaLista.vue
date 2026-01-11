@@ -5,7 +5,6 @@ import { useTransportistaStore } from '@/stores/cooperativa/transportistaStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TransportistaInvitacionModal from '@/components/cooperativa/TransportistaInvitacionModal.vue'
 import TransportistaDetalleModal from '@/components/cooperativa/TransportistaDetalleModal.vue'
-import TransportistaEstadoModal from '@/components/cooperativa/TransportistaEstadoModal.vue'
 import {
   Search,
   Truck,
@@ -14,7 +13,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  Loader2,
   RefreshCw,
   Plus,
   Power,
@@ -29,13 +27,10 @@ const busquedaLocal = ref('')
 const estadoFiltro = ref('')
 const mostrarModalInvitacion = ref(false)
 const mostrarModalDetalle = ref(false)
-const mostrarModalEstado = ref(false)
 const transportistaSeleccionado = ref(null)
-const accionEstado = ref('')
 
 // Computed
 const transportistas = computed(() => transportistaStore.transportistas)
-const isLoading = computed(() => transportistaStore.isLoading)
 const paginacion = computed(() => transportistaStore.paginacion)
 
 // Colores para badges de estado
@@ -104,21 +99,12 @@ const cerrarModalDetalle = () => {
   transportistaSeleccionado.value = null
 }
 
-const abrirModalCambioEstado = (transportista, accion) => {
-  transportistaSeleccionado.value = transportista
-  accionEstado.value = accion
-  mostrarModalEstado.value = true
-}
-
-const cerrarModalEstado = () => {
-  mostrarModalEstado.value = false
-  transportistaSeleccionado.value = null
-  accionEstado.value = ''
-}
-
-const handleEstadoCambiado = async () => {
-  cerrarModalEstado()
-  await cargarDatos()
+const cambiarEstadoTransportista = async (transportista, nuevoEstado) => {
+  const result = await transportistaStore.cambiarEstado(transportista.id, nuevoEstado)
+  
+  if (result.success) {
+    await cargarDatos()
+  }
 }
 
 const cambiarPagina = async (pagina) => {
@@ -174,20 +160,12 @@ const getEstadoTexto = (estado) => {
 
           <!-- Botones -->
           <div class="flex gap-2">
-            <button
-              @click="buscar"
-              class="btn"
-              :disabled="isLoading"
-            >
+            <button @click="buscar" class="btn">
               <Search class="w-4 h-4" />
               Buscar
             </button>
 
-            <button
-              @click="limpiarFiltros"
-              class="btn-outline"
-              :disabled="isLoading"
-            >
+            <button @click="limpiarFiltros" class="btn-outline">
               <RefreshCw class="w-4 h-4" />
               Limpiar
             </button>
@@ -246,16 +224,8 @@ const getEstadoTexto = (estado) => {
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="isLoading" class="card-flat flex items-center justify-center py-12">
-        <div class="text-center">
-          <Loader2 class="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-          <p class="text-secondary">Cargando transportistas...</p>
-        </div>
-      </div>
-
       <!-- Empty State -->
-      <div v-else-if="transportistas.length === 0" class="card-flat flex items-center justify-center py-12">
+      <div v-if="transportistas.length === 0" class="card-flat flex items-center justify-center py-12">
         <div class="text-center">
           <Truck class="w-12 h-12 text-tertiary mx-auto mb-4" />
           <h3 class="text-lg font-semibold text-neutral mb-2">No se encontraron transportistas</h3>
@@ -372,7 +342,7 @@ const getEstadoTexto = (estado) => {
                     <template v-if="transportista.estadoCuenta !== 'en_ruta'">
                       <button
                         v-if="transportista.estadoCuenta === 'activo'"
-                        @click="abrirModalCambioEstado(transportista, 'desactivar')"
+                        @click="cambiarEstadoTransportista(transportista, 'inactivo')"
                         class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-red-600 dark:text-red-400"
                         title="Desactivar"
                       >
@@ -380,7 +350,7 @@ const getEstadoTexto = (estado) => {
                       </button>
                       <button
                         v-else-if="transportista.estadoCuenta === 'inactivo'"
-                        @click="abrirModalCambioEstado(transportista, 'activar')"
+                        @click="cambiarEstadoTransportista(transportista, 'activo')"
                         class="p-2 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 transition-colors text-green-600 dark:text-green-400"
                         title="Activar"
                       >
@@ -451,14 +421,6 @@ const getEstadoTexto = (estado) => {
       v-if="mostrarModalDetalle && transportistaSeleccionado"
       :transportista="transportistaSeleccionado"
       @close="cerrarModalDetalle"
-    />
-
-    <TransportistaEstadoModal
-      v-if="mostrarModalEstado && transportistaSeleccionado"
-      :transportista="transportistaSeleccionado"
-      :accion="accionEstado"
-      @close="cerrarModalEstado"
-      @estado-cambiado="handleEstadoCambiado"
     />
   </AppLayout>
 </template>

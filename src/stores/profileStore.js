@@ -1,15 +1,16 @@
 // src/stores/profileStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from './sessionStore.js'
+import { useUIStore } from './uiStore'
+import { useSessionStore } from './sessionStore'
 import rutaApi from '../assets/rutaApi.js'
 
 export const useProfileStore = defineStore('profile', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
   const profileData = ref(null)
-  const loading = ref(false)
   const error = ref(null)
 
   // Datos del formulario de datos personales
@@ -72,7 +73,7 @@ export const useProfileStore = defineStore('profile', () => {
    * Obtener perfil completo del usuario
    */
   const fetchProfile = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando perfil...')
     error.value = null
 
     try {
@@ -118,10 +119,11 @@ export const useProfileStore = defineStore('profile', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al cargar perfil:', err)
+      uiStore.showError(err.message, 'Error al Cargar Perfil')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -129,7 +131,7 @@ export const useProfileStore = defineStore('profile', () => {
    * Actualizar datos personales
    */
   const updatePersonalData = async () => {
-    loading.value = true
+    uiStore.showLoading('Actualizando datos personales...')
     error.value = null
 
     try {
@@ -163,17 +165,22 @@ export const useProfileStore = defineStore('profile', () => {
         throw new Error(data.message || 'Error al actualizar datos personales')
       }
 
-      // Recargar perfil
       await fetchProfile()
+
+      uiStore.showSuccess(
+        data.message || 'Datos personales actualizados exitosamente',
+        'Datos Actualizados'
+      )
 
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar datos personales:', err)
+      uiStore.showError(err.message, 'Error al Actualizar Datos')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -181,7 +188,7 @@ export const useProfileStore = defineStore('profile', () => {
    * Actualizar correo electrónico
    */
   const updateEmail = async () => {
-    loading.value = true
+    uiStore.showLoading('Actualizando correo electrónico...')
     error.value = null
 
     try {
@@ -205,20 +212,24 @@ export const useProfileStore = defineStore('profile', () => {
         throw new Error(data.message || 'Error al actualizar el correo')
       }
 
-      // Recargar perfil
       await fetchProfile()
 
-      // Limpiar contraseña
       emailData.value.contrasenaActual = ''
+
+      uiStore.showSuccess(
+        data.message || 'Correo electrónico actualizado exitosamente',
+        'Correo Actualizado'
+      )
 
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar correo:', err)
+      uiStore.showError(err.message, 'Error al Actualizar Correo')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -226,13 +237,14 @@ export const useProfileStore = defineStore('profile', () => {
    * Actualizar contraseña
    */
   const updatePassword = async () => {
-    loading.value = true
     error.value = null
 
     try {
       if (passwordData.value.nuevaContrasena !== passwordData.value.confirmarContrasena) {
         throw new Error('Las contraseñas nuevas no coinciden')
       }
+
+      uiStore.showLoading('Actualizando contraseña...')
 
       const baseUrl = getBaseUrl()
       
@@ -255,21 +267,26 @@ export const useProfileStore = defineStore('profile', () => {
         throw new Error(data.message || 'Error al actualizar la contraseña')
       }
 
-      // Limpiar formulario
       passwordData.value = {
         contrasenaActual: '',
         nuevaContrasena: '',
         confirmarContrasena: ''
       }
 
+      uiStore.showSuccess(
+        data.message || 'Contraseña actualizada exitosamente',
+        'Contraseña Actualizada'
+      )
+
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar contraseña:', err)
+      uiStore.showError(err.message, 'Error al Actualizar Contraseña')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -277,7 +294,7 @@ export const useProfileStore = defineStore('profile', () => {
    * Actualizar dirección
    */
   const updateAddress = async () => {
-    loading.value = true
+    uiStore.showLoading('Actualizando dirección...')
     error.value = null
 
     try {
@@ -303,17 +320,22 @@ export const useProfileStore = defineStore('profile', () => {
         throw new Error(data.message || 'Error al actualizar la dirección')
       }
 
-      // Recargar perfil
       await fetchProfile()
+
+      uiStore.showSuccess(
+        data.message || 'Dirección actualizada exitosamente',
+        'Dirección Actualizada'
+      )
 
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error al actualizar dirección:', err)
+      uiStore.showError(err.message, 'Error al Actualizar Dirección')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -322,7 +344,6 @@ export const useProfileStore = defineStore('profile', () => {
    */
   const reset = () => {
     profileData.value = null
-    loading.value = false
     error.value = null
     personalData.value = {
       nombres: '',
@@ -356,7 +377,6 @@ export const useProfileStore = defineStore('profile', () => {
   return {
     // State
     profileData,
-    loading,
     error,
     personalData,
     emailData,

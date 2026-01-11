@@ -288,6 +288,17 @@
   .checkbox-custom:checked {
     @apply bg-primary border-primary;
   }
+
+  .btn-secondary {
+    @apply px-4 py-2.5 rounded-lg font-medium text-neutral bg-hover border border-border;
+    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply transition-all duration-200;
+    font-size: 0.9375rem;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply bg-border;
+  }
 }
 
 @layer utilities {
@@ -313,9 +324,7 @@
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   }
-}
 
-@layer utilities {
   /* Scrollbar personalizado */
   .scrollbar-custom::-webkit-scrollbar {
     width: 6px;
@@ -339,22 +348,8 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
   }
-}
-@layer components {
-  .btn-secondary {
-    @apply px-4 py-2.5 rounded-lg font-medium text-neutral bg-hover border border-border;
-    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply transition-all duration-200;
-    font-size: 0.9375rem;
-  }
 
-  .btn-secondary:hover:not(:disabled) {
-    @apply bg-border;
-  }
-}
-
-@layer utilities {
-  /* Z-index para modales */
+  /* Z-index para modales y overlays */
   .z-9999 {
     z-index: 9999;
   }
@@ -362,4 +357,21 @@
   .z-10000 {
     z-index: 10000;
   }
+
+  .z-10001 {
+    z-index: 10001;
+  }
+
+  .z-10002 {
+    z-index: 10002;
+  }
+}
+
+/* SweetAlert2 z-index override - Fuera de @layer para mayor especificidad */
+.swal2-container {
+  z-index: 10001 !important;
+}
+
+.swal2-container.swal-z-index-10001 {
+  z-index: 10001 !important;
 }

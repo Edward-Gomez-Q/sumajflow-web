@@ -1,12 +1,15 @@
 // src/stores/socio/minasStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useMinasStore = defineStore('minas', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
+  // State
   const minas = ref([])
   const estadisticas = ref({
     totalMinasActivas: 0,
@@ -14,9 +17,9 @@ export const useMinasStore = defineStore('minas', () => {
     minasPorSector: {},
     estadisticasGeograficas: null
   })
-  const loading = ref(false)
   const error = ref(null)
 
+  // Computed
   const minasActivas = computed(() => 
     minas.value.filter(m => m.estado === 'activo')
   )
@@ -25,8 +28,9 @@ export const useMinasStore = defineStore('minas', () => {
     minas.value.filter(m => m.estado === 'inactivo')
   )
 
+  // GET - Fetch minas
   const fetchMinas = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando minas...')
     error.value = null
 
     try {
@@ -48,12 +52,15 @@ export const useMinasStore = defineStore('minas', () => {
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
+  // GET - Fetch estadísticas
   const fetchEstadisticas = async () => {
     try {
       const response = await fetch(`${rutaApi}/socio/minas/estadisticas`, {
@@ -78,7 +85,11 @@ export const useMinasStore = defineStore('minas', () => {
     }
   }
 
+  // GET - Get mina por ID
   const getMinaById = async (id) => {
+    uiStore.showLoading('Cargando mina...')
+    error.value = null
+
     try {
       const response = await fetch(`${rutaApi}/socio/minas/${id}`, {
         headers: {
@@ -96,12 +107,18 @@ export const useMinasStore = defineStore('minas', () => {
       return { success: true, data: data.data }
 
     } catch (err) {
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
+
+    } finally {
+      uiStore.hideLoading()
     }
   }
 
+  // POST - Crear mina
   const createMina = async (minaData) => {
-    loading.value = true
+    uiStore.showLoading('Creando mina...')
     error.value = null
 
     try {
@@ -123,18 +140,26 @@ export const useMinasStore = defineStore('minas', () => {
       minas.value.push(data.data)
       await fetchEstadisticas()
 
+      uiStore.showSuccess(
+        data.message || 'Mina creada exitosamente',
+        'Creada Exitosamente'
+      )
+
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Crear')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
+  // PUT - Actualizar mina
   const updateMina = async (id, minaData) => {
-    loading.value = true
+    uiStore.showLoading('Actualizando mina...')
     error.value = null
 
     try {
@@ -160,18 +185,32 @@ export const useMinasStore = defineStore('minas', () => {
 
       await fetchEstadisticas()
 
+      uiStore.showSuccess(
+        data.message || 'Mina actualizada exitosamente',
+        'Actualizada Exitosamente'
+      )
+
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Actualizar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
-  const deleteMina = async (id) => {
-    loading.value = true
+  // DELETE - Eliminar mina
+  const deleteMina = async (id, minaNombre = 'esta mina') => {
+    const confirmed = await uiStore.showDeleteConfirm(minaNombre)
+    
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Eliminando mina...')
     error.value = null
 
     try {
@@ -196,13 +235,20 @@ export const useMinasStore = defineStore('minas', () => {
       
       await fetchEstadisticas()
 
+      uiStore.showSuccess(
+        data.message || 'Mina eliminada exitosamente',
+        'Eliminada Exitosamente'
+      )
+
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Eliminar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -214,17 +260,20 @@ export const useMinasStore = defineStore('minas', () => {
       minasPorSector: {},
       estadisticasGeograficas: null
     }
-    loading.value = false
     error.value = null
   }
 
   return {
+    // State
     minas,
     estadisticas,
-    loading,
     error,
+
+    // Computed
     minasActivas,
     minasInactivas,
+
+    // Actions
     fetchMinas,
     fetchEstadisticas,
     getMinaById,

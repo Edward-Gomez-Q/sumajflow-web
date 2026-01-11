@@ -1,10 +1,12 @@
 // src/stores/comercializadora/lotesComercializadoraStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useLotesComercializadoraStore = defineStore('lotesComercializadora', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
@@ -29,8 +31,6 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
-  const loading = ref(false)
-  const loadingDetalle = ref(false)
   const error = ref(null)
 
   // Computed
@@ -54,7 +54,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
    * Fetch lotes con paginación y filtros
    */
   const fetchLotes = async (nuevosFiltros = {}) => {
-    loading.value = true
+    uiStore.showLoading('Cargando lotes...')
     error.value = null
 
     if (Object.keys(nuevosFiltros).length > 0) {
@@ -97,10 +97,11 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lotes comercializadora:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -151,7 +152,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
    * Obtener detalle completo del lote
    */
   const fetchLoteDetalle = async (id) => {
-    loadingDetalle.value = true
+    uiStore.showLoading('Cargando detalle del lote...')
     error.value = null
 
     try {
@@ -173,10 +174,11 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lote detalle:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
+
     } finally {
-      loadingDetalle.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -184,7 +186,16 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
    * Aprobar lote
    */
   const aprobarLote = async (loteId, aprobacionData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      'Esta seguro que desea aprobar este lote?',
+      'Confirmar Aprobacion'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Aprobando lote...')
     error.value = null
 
     try {
@@ -205,14 +216,20 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
 
       await fetchLotes()
 
+      uiStore.showSuccess(
+        data.message || 'Lote aprobado exitosamente',
+        'Aprobado Exitosamente'
+      )
+
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error aprobando lote:', err)
+      uiStore.showError(err.message, 'Error al Aprobar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -220,7 +237,16 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
    * Rechazar lote
    */
   const rechazarLote = async (loteId, rechazoData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      'Esta seguro que desea rechazar este lote?',
+      'Confirmar Rechazo'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Rechazando lote...')
     error.value = null
 
     try {
@@ -241,14 +267,20 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
 
       await fetchLotes()
 
+      uiStore.showSuccess(
+        data.message || 'Lote rechazado exitosamente',
+        'Rechazado Exitosamente'
+      )
+
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error rechazando lote:', err)
+      uiStore.showError(err.message, 'Error al Rechazar')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -284,8 +316,6 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
-    loading.value = false
-    loadingDetalle.value = false
     error.value = null
   }
 
@@ -295,8 +325,6 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     loteDetalle,
     paginacion,
     filtros,
-    loading,
-    loadingDetalle,
     error,
     
     // Computed

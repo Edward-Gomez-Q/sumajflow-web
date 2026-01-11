@@ -1,10 +1,12 @@
 // src/stores/cooperativa/lotesCooperativaGeneralStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGeneral', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
@@ -32,8 +34,6 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
-  const loading = ref(false)
-  const loadingDetalle = ref(false)
   const error = ref(null)
 
   // Computed
@@ -61,7 +61,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
    * Fetch lotes con paginación y filtros
    */
   const fetchLotes = async (nuevosFiltros = {}) => {
-    loading.value = true
+    uiStore.showLoading('Cargando lotes...')
     error.value = null
 
     // Actualizar filtros si se pasaron nuevos
@@ -106,10 +106,11 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lotes cooperativa:', err)
+      uiStore.showError(err.message, 'Error al Cargar Lotes')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -159,11 +160,11 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     await fetchLotes()
   }
 
-    /**
+  /**
    * Obtener detalle completo del lote
    */
   const fetchLoteDetalle = async (id) => {
-    loadingDetalle.value = true
+    uiStore.showLoading('Cargando detalle del lote...')
     error.value = null
 
     try {
@@ -185,10 +186,11 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lote detalle:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
+
     } finally {
-      loadingDetalle.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -227,8 +229,6 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
-    loading.value = false
-    loadingDetalle.value = false
     error.value = null
   }
 
@@ -238,8 +238,6 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     loteDetalle,
     paginacion,
     filtros,
-    loading,
-    loadingDetalle,
     error,
     
     // Computed

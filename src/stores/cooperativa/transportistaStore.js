@@ -1,10 +1,14 @@
 // src/stores/cooperativa/transportistaStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
-import { useSessionStore } from '../sessionStore.js'
 
 export const useTransportistaStore = defineStore('transportista', () => {
+  const uiStore = useUIStore()
+  const sessionStore = useSessionStore()
+
   // State
   const invitaciones = ref([])
   const transportistas = ref([])
@@ -25,12 +29,11 @@ export const useTransportistaStore = defineStore('transportista', () => {
     busqueda: ''
   })
   const filtros = ref({
-    estado: '', // Simplificado: solo un filtro de estado
+    estado: '',
     busqueda: '',
     ordenarPor: 'createdAt',
     direccion: 'desc'
   })
-  const isLoading = ref(false)
   const error = ref(null)
   const lastFetch = ref(null)
 
@@ -57,12 +60,10 @@ export const useTransportistaStore = defineStore('transportista', () => {
    * Crear invitación con QR
    */
   const crearInvitacion = async (datosInvitacion) => {
-    isLoading.value = true
+    uiStore.showLoading('Creando invitación...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const response = await fetch(`${API_URL}/cooperativa/transportistas/invitar`, {
         method: 'POST',
         headers: {
@@ -79,16 +80,22 @@ export const useTransportistaStore = defineStore('transportista', () => {
       }
 
       if (data.success) {
+        uiStore.showSuccess(
+          'La invitación ha sido creada exitosamente. El transportista podrá escanear el código QR para registrarse.',
+          'Invitación Creada'
+        )
         return { success: true, data: data.data }
       } else {
         throw new Error(data.message || 'Respuesta no exitosa del servidor')
       }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al crear invitación:', err)
+      uiStore.showError(err.message, 'Error al Crear Invitación')
       return { success: false, error: err.message }
+
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -96,12 +103,10 @@ export const useTransportistaStore = defineStore('transportista', () => {
    * Listar invitaciones
    */
   const fetchInvitaciones = async (params = {}) => {
-    isLoading.value = true
+    uiStore.showLoading('Cargando invitaciones...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const queryParams = new URLSearchParams({
         pagina: params.pagina ?? paginacionInvitaciones.value.paginaActual,
         tamanoPagina: params.tamanoPagina ?? paginacionInvitaciones.value.elementosPorPagina
@@ -148,12 +153,14 @@ export const useTransportistaStore = defineStore('transportista', () => {
       } else {
         throw new Error(data.message || 'Respuesta no exitosa del servidor')
       }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener invitaciones:', err)
+      uiStore.showError(err.message, 'Error al Cargar Invitaciones')
       return { success: false, error: err.message }
+
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -180,12 +187,10 @@ export const useTransportistaStore = defineStore('transportista', () => {
    * Fetch transportistas con paginación y filtros
    */
   const fetchTransportistas = async (params = {}) => {
-    isLoading.value = true
+    uiStore.showLoading('Cargando transportistas...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const queryParams = new URLSearchParams({
         pagina: params.pagina ?? paginacion.value.paginaActual,
         tamanoPagina: params.tamanoPagina ?? paginacion.value.elementosPorPagina,
@@ -193,11 +198,9 @@ export const useTransportistaStore = defineStore('transportista', () => {
         direccion: params.direccion ?? filtros.value.direccion
       })
 
-      // Estado (puede ser vacío)
       const estado = params.estado ?? filtros.value.estado ?? ''
       queryParams.append('estado', estado)
 
-      // Búsqueda (puede ser vacío)
       const busqueda = params.busqueda ?? filtros.value.busqueda ?? ''
       queryParams.append('busqueda', busqueda)
 
@@ -234,12 +237,14 @@ export const useTransportistaStore = defineStore('transportista', () => {
       } else {
         throw new Error(data.message || 'Respuesta no exitosa del servidor')
       }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener transportistas:', err)
+      uiStore.showError(err.message, 'Error al Cargar Transportistas')
       return { success: false, error: err.message }
+
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -247,12 +252,10 @@ export const useTransportistaStore = defineStore('transportista', () => {
    * Obtener detalle de un transportista
    */
   const fetchTransportistaDetalle = async (transportistaId) => {
-    isLoading.value = true
+    uiStore.showLoading('Cargando detalle del transportista...')
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const response = await fetch(
         `${API_URL}/cooperativa/transportistas/${transportistaId}`,
         {
@@ -271,12 +274,14 @@ export const useTransportistaStore = defineStore('transportista', () => {
       }
 
       return { success: true, data: data.data }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al obtener detalle:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
+
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -284,12 +289,22 @@ export const useTransportistaStore = defineStore('transportista', () => {
    * Cambiar estado de transportista
    */
   const cambiarEstado = async (transportistaId, nuevoEstado, motivo = '') => {
-    isLoading.value = true
+    const accion = nuevoEstado === 'activo' ? 'activar' : 'desactivar'
+    const nombreAccion = nuevoEstado === 'activo' ? 'activación' : 'desactivación'
+    
+    const confirmed = await uiStore.showConfirm(
+      `¿Estás seguro de ${accion} este transportista?${motivo ? ` Motivo: ${motivo}` : ''}`,
+      `Confirmar ${nombreAccion}`
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading(`${accion === 'activar' ? 'Activando' : 'Desactivando'} transportista...`)
     error.value = null
 
     try {
-      const sessionStore = useSessionStore()
-
       const response = await fetch(
         `${API_URL}/cooperativa/transportistas/${transportistaId}/estado`,
         {
@@ -311,7 +326,6 @@ export const useTransportistaStore = defineStore('transportista', () => {
         throw new Error(data.message || 'Error al cambiar estado')
       }
 
-      // Actualizar localmente
       const transportistaIndex = transportistas.value.findIndex(
         t => t.id === transportistaId
       )
@@ -320,16 +334,22 @@ export const useTransportistaStore = defineStore('transportista', () => {
         transportistas.value[transportistaIndex].estadoCuenta = nuevoEstado
       }
 
-      // Recargar lista
       await fetchTransportistas({ pagina: paginacion.value.paginaActual })
 
+      uiStore.showSuccess(
+        data.message || `El estado del transportista ha sido actualizado a ${nuevoEstado}.`,
+        'Estado Actualizado'
+      )
+
       return { success: true, message: data.message }
+
     } catch (err) {
       error.value = err.message
-      console.error('Error al cambiar estado:', err)
+      uiStore.showError(err.message, 'Error al Cambiar Estado')
       return { success: false, error: err.message }
+
     } finally {
-      isLoading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -420,7 +440,6 @@ export const useTransportistaStore = defineStore('transportista', () => {
     paginacion,
     filtrosInvitaciones,
     filtros,
-    isLoading,
     error,
     lastFetch,
 

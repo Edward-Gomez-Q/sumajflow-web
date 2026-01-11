@@ -1,11 +1,15 @@
+// src/stores/onboardingStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import rutaApi  from '../assets/rutaApi.js'
+import { useUIStore } from './uiStore'
+import rutaApi from '../assets/rutaApi.js'
 
 export const useOnboardingStore = defineStore('onboarding', () => {
+  const uiStore = useUIStore()
+
   const currentStep = ref(1)
-  const selectedRole = ref(null) // 'cooperativa' | 'socio' | 'ingenio' | 'comercializadora'
-  const totalSteps = ref(3) // Se ajusta según el rol seleccionado
+  const selectedRole = ref(null)
+  const totalSteps = ref(3)
 
   const personalData = ref({
     nombres: '',
@@ -155,13 +159,12 @@ export const useOnboardingStore = defineStore('onboarding', () => {
 
   // Computed
   const canGoNext = computed(() => {
-    // Validar según el paso actual
     switch (currentStep.value) {
-      case 1: // Datos personales
+      case 1:
         return validatePersonalData()
-      case 2: // Credenciales
+      case 2:
         return validateUserData()
-      case 3: // Selección de rol
+      case 3:
         return selectedRole.value !== null
       case 4:
         if (selectedRole.value === 'cooperativa') {
@@ -235,19 +238,18 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const setRole = (role) => {
     selectedRole.value = role
     
-    // Ajustar total de pasos según el rol
     switch (role) {
       case 'cooperativa':
-        totalSteps.value = 6 // Personal, User, Role, BasicInfo, Sectors, Balance
+        totalSteps.value = 6
         break
       case 'socio':
-        totalSteps.value = 4 // Personal, User, Role, Association
+        totalSteps.value = 4
         break
       case 'ingenio':
-        totalSteps.value = 7 // Personal, User, Role, BasicInfo, Plant, Balance, Warehouses
+        totalSteps.value = 7
         break
       case 'comercializadora':
-        totalSteps.value = 6 // Personal, User, Role, BasicInfo, Warehouses, Balance
+        totalSteps.value = 6
         break
       default:
         totalSteps.value = 3
@@ -416,6 +418,8 @@ export const useOnboardingStore = defineStore('onboarding', () => {
 
   // Método principal para enviar al backend
   const submitOnboarding = async () => {
+    uiStore.showLoading('Procesando registro...')
+
     try {
       const API_URL = rutaApi
 
@@ -459,9 +463,22 @@ export const useOnboardingStore = defineStore('onboarding', () => {
         throw new Error(data.message || 'Error al registrar usuario')
       }
 
+      uiStore.showSuccess(
+        'Registro completado exitosamente. Por favor, inicia sesión.',
+        'Registro Exitoso'
+      )
+
       return { success: true, data }
+
     } catch (error) {
+      uiStore.showError(
+        error.message || 'Ocurrió un error al procesar el registro. Por favor, intenta nuevamente.',
+        'Error en el Registro'
+      )
       return { success: false, error: error.message }
+
+    } finally {
+      uiStore.hideLoading()
     }
   }
 
@@ -471,7 +488,6 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     selectedRole.value = null
     totalSteps.value = 3
     
-    // Reset completo a valores vacíos
     personalData.value = {
       nombres: '',
       primer_apellido: '',

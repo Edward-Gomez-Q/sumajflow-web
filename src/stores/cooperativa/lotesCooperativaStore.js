@@ -1,19 +1,18 @@
 // src/stores/cooperativa/lotesCooperativaStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   // State
   const lotesPendientes = ref([])
   const loteDetalle = ref(null)
   const transportistasDisponibles = ref([])
-  const loading = ref(false)
-  const loadingDetalle = ref(false)
-  const loadingTransportistas = ref(false)
   const error = ref(null)
 
   // Computed
@@ -37,7 +36,7 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
    * Obtener lotes pendientes de aprobación
    */
   const fetchLotesPendientes = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando lotes pendientes...')
     error.value = null
 
     try {
@@ -59,10 +58,10 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lotes pendientes:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -70,7 +69,7 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
    * Obtener detalle completo de un lote
    */
   const fetchLoteDetalle = async (loteId) => {
-    loadingDetalle.value = true
+    uiStore.showLoading('Cargando detalle del lote...')
     error.value = null
 
     try {
@@ -92,10 +91,10 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching lote detalle:', err)
+      uiStore.showError(err.message, 'Error al Cargar Detalle')
       return { success: false, error: err.message }
     } finally {
-      loadingDetalle.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -103,7 +102,7 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
    * Obtener transportistas disponibles
    */
   const fetchTransportistasDisponibles = async () => {
-    loadingTransportistas.value = true
+    uiStore.showLoading('Cargando transportistas disponibles...')
     error.value = null
 
     try {
@@ -125,10 +124,10 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
 
     } catch (err) {
       error.value = err.message
-      console.error('Error fetching transportistas:', err)
+      uiStore.showError(err.message, 'Error al Cargar')
       return { success: false, error: err.message }
     } finally {
-      loadingTransportistas.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -136,7 +135,16 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
    * Aprobar lote y asignar transportistas
    */
   const aprobarLote = async (loteId, aprobacionData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      'Esta seguro que desea aprobar este lote?',
+      'Confirmar Aprobacion'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Aprobando lote...')
     error.value = null
 
     try {
@@ -158,14 +166,19 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
       // Actualizar lista de pendientes
       await fetchLotesPendientes()
 
+      uiStore.showSuccess(
+        data.message || 'Lote aprobado exitosamente',
+        'Aprobado Exitosamente'
+      )
+
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error aprobando lote:', err)
+      uiStore.showError(err.message, 'Error al Aprobar')
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -173,7 +186,16 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
    * Rechazar lote
    */
   const rechazarLote = async (loteId, rechazoData) => {
-    loading.value = true
+    const confirmed = await uiStore.showConfirm(
+      'Esta seguro que desea rechazar este lote?',
+      'Confirmar Rechazo'
+    )
+
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Rechazando lote...')
     error.value = null
 
     try {
@@ -195,14 +217,19 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
       // Actualizar lista de pendientes
       await fetchLotesPendientes()
 
+      uiStore.showSuccess(
+        data.message || 'Lote rechazado exitosamente',
+        'Rechazado Exitosamente'
+      )
+
       return { success: true, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      console.error('Error rechazando lote:', err)
+      uiStore.showError(err.message, 'Error al Rechazar')
       return { success: false, error: err.message }
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -220,9 +247,6 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
     lotesPendientes.value = []
     loteDetalle.value = null
     transportistasDisponibles.value = []
-    loading.value = false
-    loadingDetalle.value = false
-    loadingTransportistas.value = false
     error.value = null
   }
 
@@ -231,9 +255,6 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
     lotesPendientes,
     loteDetalle,
     transportistasDisponibles,
-    loading,
-    loadingDetalle,
-    loadingTransportistas,
     error,
     
     // Computed

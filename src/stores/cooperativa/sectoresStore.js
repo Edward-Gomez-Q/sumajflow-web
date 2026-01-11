@@ -1,10 +1,12 @@
-// src/stores/sectoresStore.js
+// src/stores/cooperativa/sectoresStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../sessionStore.js'
+import { useUIStore } from '../uiStore'
+import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
 export const useSectoresStore = defineStore('sectores', () => {
+  const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
   const sectores = ref([])
@@ -14,10 +16,9 @@ export const useSectoresStore = defineStore('sectores', () => {
     sectoresInactivos: 0,
     areaTotalHectareas: 0
   })
-  const loading = ref(false)
   const error = ref(null)
 
-  // Colores disponibles (mismos que en el componente)
+  // Colores disponibles
   const availableColors = [
     { name: 'Azul Oscuro', value: '#1E3A8A' },
     { name: 'Verde', value: '#059669' },
@@ -42,12 +43,10 @@ export const useSectoresStore = defineStore('sectores', () => {
     sectores.value.filter(s => s.estado === 'inactivo')
   )
 
-  // Colores ya usados por otros sectores
   const coloresUsados = computed(() => 
     sectores.value.map(s => s.color)
   )
 
-  // Colores disponibles (no usados)
   const coloresDisponibles = computed(() => 
     availableColors.filter(color => !coloresUsados.value.includes(color.value))
   )
@@ -74,7 +73,7 @@ export const useSectoresStore = defineStore('sectores', () => {
 
   // Actions
   const fetchSectores = async () => {
-    loading.value = true
+    uiStore.showLoading('Cargando sectores...')
     error.value = null
 
     try {
@@ -96,9 +95,11 @@ export const useSectoresStore = defineStore('sectores', () => {
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar Sectores')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -127,6 +128,8 @@ export const useSectoresStore = defineStore('sectores', () => {
   }
 
   const getSectorById = async (id) => {
+    uiStore.showLoading('Cargando sector...')
+
     try {
       const response = await fetch(`${rutaApi}/cooperativa/sectores/${id}`, {
         headers: {
@@ -144,12 +147,16 @@ export const useSectoresStore = defineStore('sectores', () => {
       return { success: true, data: data.data }
 
     } catch (err) {
+      uiStore.showError(err.message, 'Error al Cargar Sector')
       return { success: false, error: err.message }
+
+    } finally {
+      uiStore.hideLoading()
     }
   }
 
   const createSector = async (sectorData) => {
-    loading.value = true
+    uiStore.showLoading('Creando sector...')
     error.value = null
 
     try {
@@ -173,24 +180,29 @@ export const useSectoresStore = defineStore('sectores', () => {
         throw new Error(data.message || 'Error al crear sector')
       }
 
-      // Actualizar lista local
       sectores.value.push(data.data)
       
-      // Actualizar estadísticas
       await fetchEstadisticas()
+
+      uiStore.showSuccess(
+        data.message || 'Sector creado exitosamente',
+        'Sector Creado'
+      )
 
       return { success: true, data: data.data }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Crear Sector')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
   const updateSector = async (id, sectorData) => {
-    loading.value = true
+    uiStore.showLoading('Actualizando sector...')
     error.value = null
 
     try {
@@ -214,27 +226,38 @@ export const useSectoresStore = defineStore('sectores', () => {
         throw new Error(data.message || 'Error al actualizar sector')
       }
 
-      // Actualizar lista local
       const index = sectores.value.findIndex(s => s.id === id)
       if (index !== -1) {
         sectores.value[index] = data.data
       }
 
-      // Actualizar estadísticas
       await fetchEstadisticas()
+
+      uiStore.showSuccess(
+        data.message || 'Sector actualizado exitosamente',
+        'Sector Actualizado'
+      )
 
       return { success: true, data: data.data }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Actualizar Sector')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
-  const deleteSector = async (id) => {
-    loading.value = true
+  const deleteSector = async (id, sectorNombre = 'este sector') => {
+    const confirmed = await uiStore.showDeleteConfirm(sectorNombre)
+    
+    if (!confirmed) {
+      return { success: false, cancelled: true }
+    }
+
+    uiStore.showLoading('Eliminando sector...')
     error.value = null
 
     try {
@@ -252,19 +275,24 @@ export const useSectoresStore = defineStore('sectores', () => {
         throw new Error(data.message || 'Error al eliminar sector')
       }
 
-      // Actualizar lista local
       sectores.value = sectores.value.filter(s => s.id !== id)
       
-      // Actualizar estadísticas
       await fetchEstadisticas()
+
+      uiStore.showSuccess(
+        data.message || 'Sector eliminado exitosamente',
+        'Sector Eliminado'
+      )
 
       return { success: true }
 
     } catch (err) {
       error.value = err.message
+      uiStore.showError(err.message, 'Error al Eliminar Sector')
       return { success: false, error: err.message }
+
     } finally {
-      loading.value = false
+      uiStore.hideLoading()
     }
   }
 
@@ -276,7 +304,6 @@ export const useSectoresStore = defineStore('sectores', () => {
       sectoresInactivos: 0,
       areaTotalHectareas: 0
     }
-    loading.value = false
     error.value = null
   }
 
@@ -284,7 +311,6 @@ export const useSectoresStore = defineStore('sectores', () => {
     // State
     sectores,
     estadisticas,
-    loading,
     error,
     availableColors,
 

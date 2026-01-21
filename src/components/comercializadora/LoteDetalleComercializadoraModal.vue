@@ -174,25 +174,6 @@ const formatDateShort = (dateString) => {
                 >
                   {{ lote.estado }}
                 </span>
-                <div class="flex-1 h-px bg-border min-w-[100px]"></div>
-                
-                <!-- Acciones de Aprobación/Rechazo -->
-                <div v-if="esPendienteAprobacion" class="flex gap-2">
-                  <button
-                    @click="() => { emit('aprobar'); emit('close'); }"
-                    class="btn bg-green-600 hover:bg-green-700 flex items-center gap-2 text-sm px-4 py-2"
-                  >
-                    <CheckCircle2 class="w-4 h-4" />
-                    Aprobar
-                  </button>
-                  <button
-                    @click="() => { emit('rechazar'); emit('close'); }"
-                    class="btn-secondary bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 text-sm px-4 py-2"
-                  >
-                    <X class="w-4 h-4" />
-                    Rechazar
-                  </button>
-                </div>
               </div>
             </div>
 

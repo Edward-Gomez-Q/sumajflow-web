@@ -14,6 +14,12 @@ export function useTrackingWebSocket() {
   // Almacenar datos de tracking por asignacionCamionId
   const trackingData = reactive({})
   
+  // 🆕 Timestamp de última recepción de mensaje por camión
+  const ultimosTimestamps = reactive({})
+  
+  // 🆕 Timeouts de offline por camión
+  const timeoutsOffline = reactive({})
+  
   // Suscripciones activas
   const suscripcionesActivas = reactive({
     lotes: new Set(),
@@ -21,8 +27,58 @@ export function useTrackingWebSocket() {
   })
 
   /**
-   * Conectar al WebSocket
+   * 🆕 Iniciar monitoreo de offline para un camión
    */
+  const iniciarMonitoreoOffline = (asignacionCamionId) => {
+    // Limpiar timeout anterior si existe
+    if (timeoutsOffline[asignacionCamionId]) {
+      clearTimeout(timeoutsOffline[asignacionCamionId])
+    }
+
+    // Marcar timestamp actual
+    ultimosTimestamps[asignacionCamionId] = Date.now()
+
+    // Configurar timeout de 40 segundos
+    timeoutsOffline[asignacionCamionId] = setTimeout(() => {
+      console.log(`⚠️ Camión ${asignacionCamionId} sin mensajes WebSocket por 40 segundos, marcando offline`)
+      
+      // Actualizar estado de conexión a offline
+      if (trackingData[asignacionCamionId]) {
+        trackingData[asignacionCamionId] = {
+          ...trackingData[asignacionCamionId],
+          estadoConexion: 'offline'
+        }
+      }
+    }, 40000) // 40 segundos
+  }
+
+  /**
+   * 🆕 Reiniciar monitoreo de offline (llamar cada vez que llega un mensaje)
+   */
+  const reiniciarMonitoreoOffline = (asignacionCamionId) => {
+    // Marcar como online
+    if (trackingData[asignacionCamionId]) {
+      trackingData[asignacionCamionId] = {
+        ...trackingData[asignacionCamionId],
+        estadoConexion: 'online'
+      }
+    }
+
+    // Reiniciar el timeout
+    iniciarMonitoreoOffline(asignacionCamionId)
+  }
+
+  /**
+   * 🆕 Limpiar monitoreo de offline para un camión
+   */
+  const limpiarMonitoreoOffline = (asignacionCamionId) => {
+    if (timeoutsOffline[asignacionCamionId]) {
+      clearTimeout(timeoutsOffline[asignacionCamionId])
+      delete timeoutsOffline[asignacionCamionId]
+    }
+    delete ultimosTimestamps[asignacionCamionId]
+  }
+
   const conectar = () => {
     return new Promise((resolve, reject) => {
       if (!sessionStore.isAuthenticated || !sessionStore.user?.id) {
@@ -79,14 +135,15 @@ export function useTrackingWebSocket() {
     })
   }
 
-  /**
-   * Desconectar del WebSocket
-   */
   const desconectar = () => {
     if (stompClient.value) {
       console.log('🔌 Desconectando Tracking WebSocket...')
       
-      // Cancelar todas las suscripciones
+      // 🆕 Limpiar todos los monitoreos de offline
+      Object.keys(timeoutsOffline).forEach(id => {
+        limpiarMonitoreoOffline(parseInt(id))
+      })
+      
       suscripcionesActivas.lotes.clear()
       suscripcionesActivas.camiones.clear()
       
@@ -96,9 +153,6 @@ export function useTrackingWebSocket() {
     }
   }
 
-  /**
-   * Suscribirse a actualizaciones de un lote completo
-   */
   const suscribirLote = (loteId) => {
     if (!stompClient.value || !isConectado.value) {
       console.warn('⚠️ No se puede suscribir: WebSocket no conectado')
@@ -116,14 +170,18 @@ export function useTrackingWebSocket() {
       const subscription = stompClient.value.subscribe(
         `/topic/tracking/lote/${loteId}`,
         (message) => {
-          console.log(`📥 Actualización recibida para lote ${loteId}:`, message.body)
+          console.log(`📥 Mensaje WebSocket recibido para lote ${loteId}`)
           
           try {
             const data = JSON.parse(message.body)
             
-            // Actualizar datos de tracking
             if (data.asignacionCamionId) {
+              // Actualizar datos de tracking
               trackingData[data.asignacionCamionId] = data
+              
+              // 🆕 Reiniciar monitoreo de offline
+              reiniciarMonitoreoOffline(data.asignacionCamionId)
+              
               console.log(`✅ Tracking actualizado para camión ${data.asignacionCamionId}`)
             }
           } catch (e) {
@@ -140,22 +198,13 @@ export function useTrackingWebSocket() {
     }
   }
 
-  /**
-   * Desuscribirse de un lote
-   */
   const desuscribirLote = (loteId) => {
     if (suscripcionesActivas.lotes.has(loteId)) {
       console.log(`🔕 Desuscribiendo de lote ${loteId}`)
       suscripcionesActivas.lotes.delete(loteId)
-      
-      // TODO: Implementar desuscripción real si STOMP lo soporta
-      // Por ahora solo removemos del Set
     }
   }
 
-  /**
-   * Suscribirse a un camión específico (asignacionCamionId)
-   */
   const suscribirCamion = (asignacionCamionId) => {
     if (!stompClient.value || !isConectado.value) {
       console.warn('⚠️ No se puede suscribir: WebSocket no conectado')
@@ -173,17 +222,26 @@ export function useTrackingWebSocket() {
       const subscription = stompClient.value.subscribe(
         `/topic/tracking/camion/${asignacionCamionId}`,
         (message) => {
-          console.log(`📥 Actualización recibida para camión ${asignacionCamionId}:`, message.body)
+          console.log(`📥 Mensaje WebSocket recibido para camión ${asignacionCamionId}`)
           
           try {
             const data = JSON.parse(message.body)
+            
+            // Actualizar datos de tracking
             trackingData[asignacionCamionId] = data
+            
+            // 🆕 Reiniciar monitoreo de offline
+            reiniciarMonitoreoOffline(asignacionCamionId)
+            
             console.log(`✅ Tracking actualizado para camión ${asignacionCamionId}`)
           } catch (e) {
             console.error('❌ Error al parsear mensaje de tracking del camión:', e)
           }
         }
       )
+
+      // 🆕 Iniciar monitoreo de offline
+      iniciarMonitoreoOffline(asignacionCamionId)
 
       suscripcionesActivas.camiones.add(asignacionCamionId)
       console.log(`✅ Suscrito exitosamente a camión ${asignacionCamionId}`)
@@ -193,19 +251,17 @@ export function useTrackingWebSocket() {
     }
   }
 
-  /**
-   * Desuscribirse de un camión específico
-   */
   const desuscribirCamion = (asignacionCamionId) => {
     if (suscripcionesActivas.camiones.has(asignacionCamionId)) {
       console.log(`🔕 Desuscribiendo de camión ${asignacionCamionId}`)
+      
+      // 🆕 Limpiar monitoreo de offline
+      limpiarMonitoreoOffline(asignacionCamionId)
+      
       suscripcionesActivas.camiones.delete(asignacionCamionId)
     }
   }
 
-  /**
-   * Limpiar todos los datos de tracking
-   */
   const limpiarTracking = () => {
     Object.keys(trackingData).forEach(key => delete trackingData[key])
     console.log('🧹 Datos de tracking limpiados')

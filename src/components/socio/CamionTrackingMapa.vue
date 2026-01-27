@@ -18,29 +18,31 @@ const mapContainer = ref(null)
 let map = null
 let marcadorCamion = null
 let routeLine = null
-const markers = []
+let markers = []
 
-// Estado de conexión
-const ultimaActualizacion = ref(null)
-const timeoutOffline = ref(null)
-const estadoConexionLocal = ref('online')
-
-// Computed para estado de conexión
+// 🆕 Estado de conexión viene del trackingData (manejado por el composable)
 const estaOnline = computed(() => {
-  return estadoConexionLocal.value === 'online'
+  return props.trackingData?.estadoConexion === 'online'
 })
+
+// 🆕 Emitir cambios cuando cambia el estado en trackingData
+watch(() => props.trackingData?.estadoConexion, (nuevoEstado) => {
+  if (nuevoEstado) {
+    emit('conexion-change', nuevoEstado)
+    console.log(`📡 Estado de conexión actualizado desde WebSocket: ${nuevoEstado}`)
+  }
+}, { immediate: true })
 
 onMounted(async () => {
   await nextTick()
   setTimeout(() => {
     inicializarMapa()
-    iniciarMonitoreoConexion()
   }, 500)
 })
 
 onUnmounted(() => {
-  limpiarTimeoutOffline()
   limpiarRuta()
+  limpiarMarcadores()
   if (map) {
     map.remove()
     map = null
@@ -49,7 +51,6 @@ onUnmounted(() => {
 
 watch(() => props.trackingData?.ubicacionActual, (newUbicacion, oldUbicacion) => {
   if (newUbicacion && map) {
-    // Solo actualizar si realmente cambió la ubicación
     const cambioUbicacion = !oldUbicacion || 
       oldUbicacion.lat !== newUbicacion.lat || 
       oldUbicacion.lng !== newUbicacion.lng
@@ -58,34 +59,31 @@ watch(() => props.trackingData?.ubicacionActual, (newUbicacion, oldUbicacion) =>
       console.log('🔄 Nueva ubicación detectada, actualizando mapa')
       actualizarMarcadorCamion(newUbicacion)
       actualizarRutaProximoPunto()
-      reiniciarMonitoreoConexion()
+    } else {
+      // Aunque no cambió la ubicación, actualizar marcador por velocidad/rumbo
+      actualizarMarcadorCamion(newUbicacion)
     }
   }
 }, { deep: true })
 
 watch(() => props.trackingData?.puntosControl, (newPuntos, oldPuntos) => {
   if (map && newPuntos) {
-    // Solo actualizar ruta si cambió el estado de los puntos
     const cambioEstado = JSON.stringify(newPuntos) !== JSON.stringify(oldPuntos)
     
     if (cambioEstado) {
-      console.log('🔄 Estado de puntos cambió, actualizando ruta')
+      console.log('🔄 Estado de puntos cambió, reconstruyendo marcadores y ruta')
+      console.log('📍 Estados actuales:', newPuntos.map(p => `${p.nombre}: ${p.estado}`).join(', '))
+      
+      limpiarRuta()
+      limpiarMarcadores()
+      agregarPuntosControl()
       actualizarRutaProximoPunto()
     }
   }
 }, { deep: true })
 
-// Watch para emitir cambios de estado
-watch(() => estadoConexionLocal.value, (nuevoEstado) => {
-  emit('conexion-change', nuevoEstado)
-  console.log(`📡 Estado de conexión cambió a: ${nuevoEstado}`)
-})
-
 const inicializarMapa = () => {
   console.log('🗺️ Inicializando mapa...')
-  console.log('Leaflet disponible:', !!L) 
-  console.log('Contenedor:', mapContainer.value)
-  console.log('Datos:', props.trackingData)
   
   if (!L) { 
     console.error('❌ Leaflet no está disponible')
@@ -98,12 +96,10 @@ const inicializarMapa = () => {
   }
 
   try {
-    // Obtener ubicación actual
     const ubicacion = props.trackingData?.ubicacionActual
     const lat = ubicacion?.lat || -19.5
     const lng = ubicacion?.lng || -65.8
 
-    // Crear mapa
     map = L.map(mapContainer.value, { 
       center: [lat, lng],
       zoom: 13,
@@ -112,7 +108,6 @@ const inicializarMapa = () => {
 
     console.log('✅ Mapa creado')
 
-    // Agregar tiles de OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
       maxZoom: 19
@@ -120,20 +115,16 @@ const inicializarMapa = () => {
 
     console.log('✅ Tiles agregados')
 
-    // Agregar puntos de control
     if (props.trackingData?.puntosControl) {
       agregarPuntosControl()
     }
 
-    // Agregar marcador del camión
     if (ubicacion) {
       actualizarMarcadorCamion(ubicacion)
     }
 
-    // Dibujar ruta inicial
     actualizarRutaProximoPunto()
 
-    // Ajustar vista
     setTimeout(() => {
       if (map) {
         map.invalidateSize()
@@ -147,38 +138,90 @@ const inicializarMapa = () => {
   }
 }
 
+const limpiarMarcadores = () => {
+  if (markers.length > 0) {
+    markers.forEach(markerGroup => {
+      if (markerGroup.marker && map.hasLayer(markerGroup.marker)) {
+        map.removeLayer(markerGroup.marker)
+      }
+      if (markerGroup.circle && map.hasLayer(markerGroup.circle)) {
+        map.removeLayer(markerGroup.circle)
+      }
+    })
+    markers = []
+    console.log('🗑️ Marcadores de puntos de control eliminados')
+  }
+}
+
 const agregarPuntosControl = () => {
   const puntosControl = props.trackingData.puntosControl || []
   
+  console.log(`📍 Agregando ${puntosControl.length} puntos de control`)
+  
   puntosControl.forEach(punto => {
-    // Determinar color según tipo
     let color = '#6B7280'
-    if (punto.tipo === 'mina') color = '#10B981'
-    else if (punto.tipo.includes('balanza')) color = '#F59E0B'
-    else if (punto.tipo.includes('almacen')) color = '#6366F1'
+    
+    if (punto.tipo === 'mina') {
+      color = '#10B981'
+    } else if (punto.tipo.includes('balanza')) {
+      color = '#F59E0B'
+    } else if (punto.tipo.includes('almacen')) {
+      color = '#6366F1'
+    }
 
-    // Crear marcador
+    let fillOpacity = 0.8
+    let weight = 2
+    
+    if (punto.estado === 'completado') {
+      fillOpacity = 0.4
+      weight = 1
+    } else if (punto.estado === 'en_punto') {
+      fillOpacity = 1.0
+      weight = 3
+    }
+
     const marker = L.circleMarker([punto.lat, punto.lng], {
-      radius: 8,
+      radius: punto.estado === 'en_punto' ? 10 : 8,
       fillColor: color,
       color: '#fff',
-      weight: 2,
-      fillOpacity: 0.8
+      weight: weight,
+      fillOpacity: fillOpacity
     }).addTo(map)
 
-    // Popup
+    const estadoEmoji = {
+      'completado': '✓',
+      'en_punto': '◉',
+      'pendiente': '○'
+    }
+
+    const estadoTexto = {
+      'completado': 'Completado',
+      'en_punto': 'En punto',
+      'pendiente': 'Pendiente'
+    }
+
+    let tiemposHtml = ''
+    if (punto.llegada) {
+      const llegadaDate = new Date(punto.llegada)
+      tiemposHtml += `<p style="margin: 4px 0; font-size: 11px;">🕐 Llegada: ${llegadaDate.toLocaleTimeString('es-BO')}</p>`
+    }
+    if (punto.salida) {
+      const salidaDate = new Date(punto.salida)
+      tiemposHtml += `<p style="margin: 4px 0; font-size: 11px;">🕑 Salida: ${salidaDate.toLocaleTimeString('es-BO')}</p>`
+    }
+
     marker.bindPopup(`
       <div style="min-width: 150px;">
         <h3 style="margin: 0 0 8px 0; font-weight: 600; color: ${color};">${punto.nombre}</h3>
-        <p style="margin: 0; font-size: 12px; color: #6B7280;">${punto.tipo.replace(/_/g, ' ')}</p>
+        <p style="margin: 0; font-size: 12px; color: #6B7280; text-transform: capitalize;">${punto.tipo.replace(/_/g, ' ')}</p>
         <div style="margin-top: 8px; padding: 4px 8px; background: ${color}20; color: ${color}; border-radius: 4px; font-size: 11px; font-weight: 500; display: inline-block;">
-          ${punto.estado === 'completado' ? '✓ Completado' : punto.estado === 'en_punto' ? '◉ En punto' : '○ Pendiente'}
+          ${estadoEmoji[punto.estado] || '○'} ${estadoTexto[punto.estado] || 'Pendiente'}
         </div>
+        ${tiemposHtml}
       </div>
     `)
 
-    // Agregar círculo de geofencing
-    L.circle([punto.lat, punto.lng], {
+    const circle = L.circle([punto.lat, punto.lng], {
       radius: punto.radio || 1000,
       color: color,
       fillColor: color,
@@ -187,7 +230,8 @@ const agregarPuntosControl = () => {
       dashArray: '5, 5'
     }).addTo(map)
 
-    markers.push(marker)
+    markers.push({ marker, circle, punto })
+    console.log(`  ✅ ${punto.nombre} - Estado: ${punto.estado}`)
   })
 
   console.log(`✅ ${puntosControl.length} puntos de control agregados`)
@@ -196,16 +240,13 @@ const agregarPuntosControl = () => {
 const actualizarMarcadorCamion = (ubicacion) => {
   if (!map) return
 
-  // Remover marcador anterior
   if (marcadorCamion) {
     map.removeLayer(marcadorCamion)
   }
 
-  // Color según estado de conexión
   const colorCamion = estaOnline.value ? '#3B82F6' : '#9CA3AF'
   const colorPulso = estaOnline.value ? '#3B82F6' : '#6B7280'
 
-  // Crear icono personalizado del camión
   const iconoHTML = `
     <div style="position: relative; width: 32px; height: 32px;">
       ${estaOnline.value ? `<div style="position: absolute; top: 50%; left: 50%; width: 48px; height: 48px; background: ${colorPulso}; border-radius: 50%; opacity: 0.3; animation: pulse 2s infinite; transform: translate(-50%, -50%);"></div>` : ''}
@@ -224,13 +265,11 @@ const actualizarMarcadorCamion = (ubicacion) => {
     iconAnchor: [16, 16]
   })
 
-  // Crear marcador
   marcadorCamion = L.marker([ubicacion.lat, ubicacion.lng], {
     icon: icono,
     zIndexOffset: 1000
   }).addTo(map)
 
-  // Popup
   const velocidad = ubicacion.velocidad ? Math.round(ubicacion.velocidad) : 0
   const timestamp = new Date(ubicacion.timestamp).toLocaleTimeString('es-BO')
   const estadoTexto = estaOnline.value ? 'En Línea' : 'Sin Conexión'
@@ -254,11 +293,9 @@ const actualizarMarcadorCamion = (ubicacion) => {
   console.log('✅ Marcador del camión actualizado')
 }
 
-// Función auxiliar para limpiar la ruta de manera segura
 const limpiarRuta = () => {
   if (routeLine && map) {
     try {
-      // Verificar si la capa está en el mapa antes de eliminar
       if (map.hasLayer(routeLine)) {
         map.removeLayer(routeLine)
         console.log('🗑️ Ruta anterior eliminada correctamente')
@@ -276,36 +313,37 @@ const actualizarRutaProximoPunto = async () => {
     return
   }
 
-  // 🔴 CRÍTICO: Limpiar ruta anterior ANTES de cualquier otra operación
   limpiarRuta()
 
-  // Obtener próximo punto de control pendiente
   const proximoPunto = obtenerProximoPuntoControl()
+  
   if (!proximoPunto) {
-    console.log('ℹ️ No hay próximo punto de control, no se dibuja ruta')
+    console.log('ℹ️ No hay próximo punto de control pendiente, no se dibuja ruta')
     return
   }
 
   const { lat: origenLat, lng: origenLng } = props.trackingData.ubicacionActual
   const { lat: destinoLat, lng: destinoLng } = proximoPunto
 
-  console.log('🗺️ Calculando nueva ruta hacia:', proximoPunto.nombre)
-  console.log('📍 Desde:', origenLat, origenLng)
-  console.log('📍 Hasta:', destinoLat, destinoLng)
+  console.log(`🗺️ Dibujando ruta hacia próximo punto: ${proximoPunto.nombre} (${proximoPunto.estado})`)
+  console.log('📍 Desde:', origenLat.toFixed(4), origenLng.toFixed(4))
+  console.log('📍 Hasta:', destinoLat.toFixed(4), destinoLng.toFixed(4))
 
   try {
-    // Intentar obtener ruta de OSRM
     const route = await fetchRoute(origenLat, origenLng, destinoLat, destinoLng)
     
     if (route && route.geometry) {
       const coordinates = decodePolyline(route.geometry)
       
-      // Verificar que tenemos coordenadas válidas
       if (coordinates.length < 2) {
         throw new Error('Coordenadas insuficientes para dibujar ruta')
       }
 
-      // Dibujar nueva ruta
+      if (routeLine) {
+        console.warn('⚠️ Se intentó dibujar una ruta cuando ya existe una, limpiando primero')
+        limpiarRuta()
+      }
+
       routeLine = L.polyline(coordinates, {
         color: estaOnline.value ? '#3B82F6' : '#9CA3AF',
         weight: 4,
@@ -314,14 +352,18 @@ const actualizarRutaProximoPunto = async () => {
         dashArray: estaOnline.value ? null : '10, 10'
       }).addTo(map)
 
-      console.log('✅ Nueva ruta dibujada exitosamente con', coordinates.length, 'puntos')
+      console.log(`✅ Ruta dibujada exitosamente con ${coordinates.length} puntos hacia ${proximoPunto.nombre}`)
     } else {
       throw new Error('No se pudo obtener geometría de ruta')
     }
   } catch (error) {
     console.warn('⚠️ No se pudo obtener ruta de OSRM, usando línea directa:', error.message)
     
-    // Dibujar línea directa como fallback
+    if (routeLine) {
+      console.warn('⚠️ Se intentó dibujar una línea cuando ya existe una ruta, limpiando primero')
+      limpiarRuta()
+    }
+
     routeLine = L.polyline([
       [origenLat, origenLng],
       [destinoLat, destinoLng]
@@ -332,18 +374,22 @@ const actualizarRutaProximoPunto = async () => {
       dashArray: '10, 10'
     }).addTo(map)
 
-    console.log('✅ Línea directa dibujada como fallback')
+    console.log(`✅ Línea directa dibujada como fallback hacia ${proximoPunto.nombre}`)
   }
 }
 
 const obtenerProximoPuntoControl = () => {
   const puntosControl = props.trackingData?.puntosControl || []
   
-  // Buscar el primer punto que no esté completado
+  console.log('🔍 Buscando próximo punto de control...')
+  console.log('  Puntos disponibles:', puntosControl.map(p => `${p.nombre} (${p.estado})`).join(', '))
+  
   const proximoPunto = puntosControl.find(punto => punto.estado !== 'completado')
   
   if (proximoPunto) {
-    console.log('🎯 Próximo punto de control:', proximoPunto.nombre, '(', proximoPunto.tipo, ')')
+    console.log(`🎯 Próximo punto encontrado: ${proximoPunto.nombre} - Estado: ${proximoPunto.estado}`)
+  } else {
+    console.log('ℹ️ No hay puntos pendientes (todos completados)')
   }
   
   return proximoPunto || null
@@ -354,7 +400,7 @@ const fetchRoute = async (lat1, lng1, lat2, lng2) => {
     const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=polyline`
     
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(5000) // 5 segundos timeout
+      signal: AbortSignal.timeout(5000)
     })
     
     const data = await response.json()
@@ -414,50 +460,16 @@ const decodePolyline = (encoded) => {
   return coordinates
 }
 
-const iniciarMonitoreoConexion = () => {
-  ultimaActualizacion.value = Date.now()
-  reiniciarMonitoreoConexion()
-}
-
-const reiniciarMonitoreoConexion = () => {
-  limpiarTimeoutOffline()
-  
-  // Marcar como online inmediatamente
-  estadoConexionLocal.value = 'online'
-  ultimaActualizacion.value = Date.now()
-
-  // Configurar timeout de 40 segundos para marcar offline
-  timeoutOffline.value = setTimeout(() => {
-    console.log('⚠️ No se recibieron actualizaciones en 40 segundos, marcando como offline')
-    estadoConexionLocal.value = 'offline'
-    
-    // Actualizar marcador y ruta para reflejar estado offline
-    if (props.trackingData?.ubicacionActual) {
-      actualizarMarcadorCamion(props.trackingData.ubicacionActual)
-      actualizarRutaProximoPunto()
-    }
-  }, 40000) // 40 segundos
-}
-
-const limpiarTimeoutOffline = () => {
-  if (timeoutOffline.value) {
-    clearTimeout(timeoutOffline.value)
-    timeoutOffline.value = null
-  }
-}
-
 const ajustarVista = () => {
   if (!map) return
 
   const bounds = []
 
-  // Agregar ubicación del camión
   if (props.trackingData?.ubicacionActual) {
     const { lat, lng } = props.trackingData.ubicacionActual
     bounds.push([lat, lng])
   }
 
-  // Agregar puntos de control
   if (props.trackingData?.puntosControl) {
     props.trackingData.puntosControl.forEach(punto => {
       bounds.push([punto.lat, punto.lng])
@@ -482,20 +494,18 @@ const centrarEnCamion = () => {
 defineExpose({
   centrarEnCamion,
   ajustarVista,
-  estadoConexion: computed(() => estadoConexionLocal.value)
+  estadoConexion: estaOnline
 })
 </script>
 
 <template>
   <div class="relative w-full h-full">
-    <!-- Contenedor del mapa -->
     <div 
       ref="mapContainer" 
       class="absolute inset-0 w-full h-full bg-gray-200 rounded-lg"
       style="min-height: 400px;"
     ></div>
 
-    <!-- Controles -->
     <div class="absolute top-4 right-4 z-1000 flex flex-col gap-2">
       <button
         v-if="trackingData?.ubicacionActual"
@@ -515,7 +525,6 @@ defineExpose({
       </button>
     </div>
 
-    <!-- Indicador de conexión mejorado -->
     <div class="absolute bottom-4 left-4 z-1000">
       <div 
         class="bg-white rounded-lg shadow-lg px-3 py-2 flex items-center gap-2 transition-all"
@@ -541,7 +550,6 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Leyenda -->
     <div class="absolute bottom-4 right-4 z-1000 bg-white rounded-lg shadow-lg p-3" style="max-width: 200px;">
       <h4 class="text-xs font-semibold text-gray-700 mb-2">Leyenda</h4>
       <div class="space-y-1 text-xs">

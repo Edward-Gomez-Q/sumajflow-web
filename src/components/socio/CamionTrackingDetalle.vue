@@ -1,6 +1,6 @@
 <!-- src/components/socio/CamionTrackingDetalle.vue -->
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   X,
   Truck,
@@ -14,10 +14,17 @@ import {
   CheckCircle2,
   Circle,
   Map as MapIcon,
-  History
+  History,
+  Camera,
+  FileText,
+  Image as ImageIcon,
+  MapPinned,
+  Package
 } from 'lucide-vue-next'
 import CamionTrackingMapa from './CamionTrackingMapa.vue'
 import CamionTrackingHistorial from './CamionTrackingHistorial.vue'
+import { useSessionStore } from '@/stores/sessionStore'
+import rutaApi from '@/assets/rutaApi.js'
 
 const props = defineProps({
   camion: {
@@ -36,24 +43,114 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
+const sessionStore = useSessionStore()
 const tabActual = ref('tiempo-real')
 
-// Estado de conexión local para sincronizar con el mapa
-const estadoConexionMapa = ref('online')
+// Estado para tracking completado
+const trackingCompletado = ref(null)
+const loadingResumen = ref(false)
 
-const ubicacionActual = computed(() => props.tracking?.ubicacionActual || null)
-const metricas = computed(() => props.tracking?.metricas || null)
-const puntosControl = computed(() => props.tracking?.puntosControl || [])
-const eventosEstado = computed(() => props.tracking?.eventosEstado || [])
+// 🆕 Estado para evidencias
+const evidencias = ref(null)
+const loadingEvidencias = ref(false)
 
-// Usar el estado del mapa en lugar del tracking directamente
-const estadoConexion = computed(() => estadoConexionMapa.value)
+const viajeCompletado = computed(() => {
+  return props.tracking?.estadoViaje === 'Completado' || 
+         props.camion?.estado === 'Completado'
+})
+
+// Usar tracking completado si está disponible, sino usar el tracking en vivo
+const trackingActual = computed(() => {
+  return trackingCompletado.value || props.tracking
+})
+
+const ubicacionActual = computed(() => trackingActual.value?.ubicacionActual || null)
+const metricas = computed(() => trackingActual.value?.metricas || null)
+const puntosControl = computed(() => trackingActual.value?.puntosControl || [])
+const eventosEstado = computed(() => trackingActual.value?.eventosEstado || [])
+
+const estadoConexion = computed(() => {
+  if (viajeCompletado.value) return 'completado'
+  return trackingActual.value?.estadoConexion || 'offline'
+})
+
 const enLinea = computed(() => estadoConexion.value === 'online')
 
-// Manejar evento de cambio de conexión desde el mapa
-const handleConexionChange = (nuevoEstado) => {
-  estadoConexionMapa.value = nuevoEstado
-  console.log('📡 Estado de conexión en detalle actualizado:', nuevoEstado)
+// Cargar resumen final si está completado
+onMounted(async () => {
+  if (viajeCompletado.value && props.camion?.id) {
+    await cargarResumenFinal(props.camion.id)
+  }
+  // Cargar evidencias al montar
+  await cargarEvidencias()
+})
+
+// 🆕 Watch para recargar evidencias cuando cambian los eventos de estado
+watch(() => trackingActual.value?.eventosEstado?.length, (newLength, oldLength) => {
+  if (newLength > oldLength && tabActual.value === 'evidencias') {
+    cargarEvidencias()
+  }
+})
+
+const cargarResumenFinal = async (asignacionId) => {
+  loadingResumen.value = true
+  
+  try {
+    const response = await fetch(
+      `${rutaApi}/tracking/asignacion/${asignacionId}/resumen-final`,
+      {
+        headers: {
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    const data = await response.json()
+
+    if (data.success) {
+      trackingCompletado.value = data.data
+      console.log('✅ Resumen final cargado:', trackingCompletado.value)
+    } else {
+      console.error('❌ Error al cargar resumen:', data.message)
+    }
+  } catch (error) {
+    console.error('❌ Error cargando resumen final:', error)
+  } finally {
+    loadingResumen.value = false
+  }
+}
+
+// 🆕 Cargar evidencias del viaje
+const cargarEvidencias = async () => {
+  if (!props.camion?.id) return
+  
+  loadingEvidencias.value = true
+  
+  try {
+    const response = await fetch(
+      `${rutaApi}/tracking/asignacion/${props.camion.id}/evidencias`,
+      {
+        headers: {
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    const data = await response.json()
+
+    if (data.success) {
+      evidencias.value = data.data
+      console.log('✅ Evidencias cargadas:', evidencias.value)
+    } else {
+      console.error('❌ Error al cargar evidencias:', data.message)
+    }
+  } catch (error) {
+    console.error('❌ Error cargando evidencias:', error)
+  } finally {
+    loadingEvidencias.value = false
+  }
 }
 
 const formatDistancia = (distanciaKm) => {
@@ -79,18 +176,6 @@ const formatDuracion = (segundos) => {
     return `${horas}h ${minutos}min`
   }
   return `${minutos}min`
-}
-
-const formatTiempoRelativo = (timestamp) => {
-  if (!timestamp) return '-'
-  const ahora = new Date()
-  const fecha = new Date(timestamp)
-  const diff = Math.floor((ahora - fecha) / 1000)
-  
-  if (diff < 60) return 'Justo ahora'
-  if (diff < 3600) return `Hace ${Math.floor(diff / 60)}min`
-  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)}h`
-  return `Hace ${Math.floor(diff / 86400)}d`
 }
 
 const formatDateTime = (timestamp) => {
@@ -120,6 +205,13 @@ const getEstadoPuntoColor = (estado) => {
 const getEstadoPuntoIcon = (estado) => {
   return estado === 'completado' ? CheckCircle2 : Circle
 }
+
+// 🆕 Obtener URL completa de imagen
+const getImageUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  return `${rutaApi}/files/${path}`
+}
 </script>
 
 <template>
@@ -140,7 +232,16 @@ const getEstadoPuntoIcon = (estado) => {
                 <h2 class="text-xl font-semibold text-neutral">
                   Camión #{{ camion.numeroCamion }}
                 </h2>
+                <!-- Indicador de estado -->
                 <div
+                  v-if="viajeCompletado"
+                  class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-500/10 text-green-700"
+                >
+                  <CheckCircle2 class="w-3 h-3" />
+                  Completado
+                </div>
+                <div
+                  v-else
                   class="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
                   :class="enLinea 
                     ? 'bg-green-500/10 text-green-700' 
@@ -167,17 +268,17 @@ const getEstadoPuntoIcon = (estado) => {
         </div>
 
         <!-- Tabs -->
-        <div class="flex border-b border-border px-4 sm:px-6 shrink-0">
+        <div class="flex border-b border-border px-4 sm:px-6 shrink-0 overflow-x-auto">
           <button
             @click="tabActual = 'tiempo-real'"
-            class="px-4 py-3 text-sm font-medium transition-colors relative"
+            class="px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap"
             :class="tabActual === 'tiempo-real' 
               ? 'text-primary' 
               : 'text-secondary hover:text-neutral'"
           >
             <div class="flex items-center gap-2">
               <MapIcon class="w-4 h-4" />
-              <span>Tiempo Real</span>
+              <span>{{ viajeCompletado ? 'Resumen Final' : 'Tiempo Real' }}</span>
             </div>
             <div
               v-if="tabActual === 'tiempo-real'"
@@ -187,7 +288,7 @@ const getEstadoPuntoIcon = (estado) => {
           
           <button
             @click="tabActual = 'historial'"
-            class="px-4 py-3 text-sm font-medium transition-colors relative"
+            class="px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap"
             :class="tabActual === 'historial' 
               ? 'text-primary' 
               : 'text-secondary hover:text-neutral'"
@@ -201,14 +302,40 @@ const getEstadoPuntoIcon = (estado) => {
               class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
             ></div>
           </button>
+
+          <!-- 🆕 Tab de Evidencias -->
+          <button
+            @click="tabActual = 'evidencias'; cargarEvidencias()"
+            class="px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap"
+            :class="tabActual === 'evidencias' 
+              ? 'text-primary' 
+              : 'text-secondary hover:text-neutral'"
+          >
+            <div class="flex items-center gap-2">
+              <Camera class="w-4 h-4" />
+              <span>Evidencias</span>
+            </div>
+            <div
+              v-if="tabActual === 'evidencias'"
+              class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+            ></div>
+          </button>
         </div>
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto scrollbar-custom">
-          <!-- Tab Tiempo Real -->
+          <!-- Tab Resumen Final / Tiempo Real -->
           <div v-if="tabActual === 'tiempo-real'" class="p-4 sm:p-6">
+            <!-- Loading resumen -->
+            <div v-if="loadingResumen" class="text-center py-12">
+              <div class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Truck class="w-8 h-8 text-white" />
+              </div>
+              <p class="text-sm text-secondary">Cargando resumen final...</p>
+            </div>
+
             <!-- Sin tracking -->
-            <div v-if="!tracking" class="text-center py-12">
+            <div v-else-if="!trackingActual" class="text-center py-12">
               <div class="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center mx-auto mb-4">
                 <WifiOff class="w-8 h-8 text-white" />
               </div>
@@ -220,79 +347,6 @@ const getEstadoPuntoIcon = (estado) => {
 
             <!-- Con tracking -->
             <div v-else class="space-y-6">
-              <!-- Mapa en tiempo real -->
-              <div class="bg-base rounded-xl border border-border overflow-hidden">
-                <div class="p-4 border-b border-border bg-hover">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <MapPin class="w-4 h-4 text-primary" />
-                      <h3 class="text-sm font-semibold text-neutral">Mapa en Tiempo Real</h3>
-                    </div>
-                    <div 
-                      class="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                      :class="enLinea ? 'bg-green-500/10' : 'bg-red-500/10'"
-                    >
-                      <div 
-                        class="w-2 h-2 rounded-full"
-                        :class="enLinea ? 'bg-green-500 animate-pulse' : 'bg-red-500'"
-                      ></div>
-                      <span 
-                        class="text-xs font-medium"
-                        :class="enLinea ? 'text-green-700' : 'text-red-700'"
-                      >
-                        {{ enLinea ? 'En vivo' : 'Offline' }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div style="height: 400px;">
-                  <CamionTrackingMapa
-                    :tracking-data="tracking"
-                    @conexion-change="handleConexionChange"
-                  />
-                </div>
-              </div>
-
-              <!-- Ubicación actual -->
-              <div 
-                v-if="ubicacionActual"
-                class="bg-base rounded-xl p-4 border border-border"
-              >
-                <h3 class="text-sm font-medium text-secondary mb-3 flex items-center gap-2">
-                  <MapPin class="w-4 h-4" />
-                  Ubicación Actual
-                </h3>
-                <div class="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <p class="text-xs text-tertiary">Coordenadas</p>
-                    <p class="font-mono text-sm text-neutral mt-1">
-                      {{ ubicacionActual.lat.toFixed(6) }}, {{ ubicacionActual.lng.toFixed(6) }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-tertiary">Última actualización</p>
-                    <p class="text-sm text-neutral mt-1">
-                      {{ formatTiempoRelativo(ubicacionActual.timestamp) }}
-                    </p>
-                  </div>
-                  <div v-if="ubicacionActual.velocidad !== undefined">
-                    <p class="text-xs text-tertiary">Velocidad</p>
-                    <p class="text-lg font-semibold text-neutral mt-1">
-                      {{ formatVelocidad(ubicacionActual.velocidad) }}
-                    </p>
-                  </div>
-                  <div v-if="ubicacionActual.rumbo !== undefined">
-                    <p class="text-xs text-tertiary">Rumbo</p>
-                    <div class="flex items-center gap-2 mt-1">
-                      <Navigation 
-                        class="w-4 h-4 text-primary"
-                        :style="{ transform: `rotate(${ubicacionActual.rumbo}deg)` }"
-                      />
-                      <span class="text-sm text-neutral">{{ Math.round(ubicacionActual.rumbo) }}°</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <!-- Métricas del viaje -->
               <div 
@@ -423,8 +477,258 @@ const getEstadoPuntoIcon = (estado) => {
           <div v-if="tabActual === 'historial'">
             <CamionTrackingHistorial
               :asignacion-id="camion.id"
-              :tracking="tracking"
+              :tracking="trackingActual"
             />
+          </div>
+
+          <!-- 🆕 Tab Evidencias -->
+          <div v-if="tabActual === 'evidencias'" class="p-4 sm:p-6">
+            <!-- Loading evidencias -->
+            <div v-if="loadingEvidencias" class="text-center py-12">
+              <div class="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <Camera class="w-8 h-8 text-white" />
+              </div>
+              <p class="text-sm text-secondary">Cargando evidencias...</p>
+            </div>
+
+            <!-- Sin evidencias -->
+            <div v-else-if="!evidencias" class="text-center py-12">
+              <div class="w-16 h-16 rounded-full bg-gray-500 flex items-center justify-center mx-auto mb-4">
+                <FileText class="w-8 h-8 text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-neutral mb-2">Sin evidencias</h3>
+              <p class="text-sm text-secondary">
+                Aún no hay evidencias registradas para este viaje
+              </p>
+            </div>
+
+            <!-- Con evidencias -->
+            <div v-else class="space-y-4">
+              <!-- Inicio de viaje -->
+              <div v-if="evidencias.inicioViaje" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <MapPinned class="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Inicio de Viaje</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.inicioViaje.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p class="text-xs text-tertiary">Ubicación</p>
+                    <p class="text-neutral font-medium">{{ evidencias.inicioViaje.lat?.toFixed(6) }}, {{ evidencias.inicioViaje.lng?.toFixed(6) }}</p>
+                  </div>
+                  <div v-if="evidencias.inicioViaje.dispositivo">
+                    <p class="text-xs text-tertiary">Dispositivo</p>
+                    <p class="text-neutral font-medium capitalize">{{ evidencias.inicioViaje.dispositivo.replace('_', ' ') }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Llegada a mina -->
+              <div v-if="evidencias.llegadaMina" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <MapPin class="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Llegada a Mina</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.llegadaMina.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div v-if="evidencias.llegadaMina.observaciones" class="text-sm">
+                    <p class="text-xs text-tertiary">Observaciones</p>
+                    <p class="text-neutral">{{ evidencias.llegadaMina.observaciones }}</p>
+                  </div>
+                  <div class="flex gap-3">
+                    <div v-if="evidencias.llegadaMina.palaOperativa !== null" class="flex items-center gap-1.5">
+                      <CheckCircle2 v-if="evidencias.llegadaMina.palaOperativa" class="w-4 h-4 text-green-500" />
+                      <X v-else class="w-4 h-4 text-red-500" />
+                      <span class="text-xs text-secondary">Pala operativa</span>
+                    </div>
+                    <div v-if="evidencias.llegadaMina.mineralVisible !== null" class="flex items-center gap-1.5">
+                      <CheckCircle2 v-if="evidencias.llegadaMina.mineralVisible" class="w-4 h-4 text-green-500" />
+                      <X v-else class="w-4 h-4 text-red-500" />
+                      <span class="text-xs text-secondary">Mineral visible</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Carguío completo -->
+              <div v-if="evidencias.carguioCompleto" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Package class="w-4 h-4 text-green-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Carguío Completo</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.carguioCompleto.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <div v-if="evidencias.carguioCompleto.mineralCargadoCompletamente !== null" class="flex items-center gap-1.5">
+                    <CheckCircle2 v-if="evidencias.carguioCompleto.mineralCargadoCompletamente" class="w-4 h-4 text-green-500" />
+                    <X v-else class="w-4 h-4 text-red-500" />
+                    <span class="text-xs text-secondary">Mineral cargado completamente</span>
+                  </div>
+                  <div v-if="evidencias.carguioCompleto.fotoCamionCargadoUrl" class="space-y-2">
+                    <p class="text-xs text-tertiary">Foto del camión cargado</p>
+                    <img 
+                      :src="getImageUrl(evidencias.carguioCompleto.fotoCamionCargadoUrl)" 
+                      alt="Camión cargado"
+                      class="w-full max-w-md rounded-lg border border-border cursor-pointer hover:opacity-90 transition"
+                      @click="window.open(getImageUrl(evidencias.carguioCompleto.fotoCamionCargadoUrl), '_blank')"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pesaje origen -->
+              <div v-if="evidencias.pesajeOrigen" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Gauge class="w-4 h-4 text-purple-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Pesaje Origen</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.pesajeOrigen.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center p-2 bg-hover rounded-lg">
+                      <p class="text-xs text-tertiary">Peso Bruto</p>
+                      <p class="text-lg font-bold text-neutral">{{ evidencias.pesajeOrigen.pesoBrutoKg }} kg</p>
+                    </div>
+                    <div class="text-center p-2 bg-hover rounded-lg">
+                      <p class="text-xs text-tertiary">Peso Tara</p>
+                      <p class="text-lg font-bold text-neutral">{{ evidencias.pesajeOrigen.pesoTaraKg }} kg</p>
+                    </div>
+                    <div class="text-center p-2 bg-green-500/10 rounded-lg">
+                      <p class="text-xs text-green-700">Peso Neto</p>
+                      <p class="text-lg font-bold text-green-700">{{ evidencias.pesajeOrigen.pesoNetoKg }} kg</p>
+                    </div>
+                  </div>
+                  <div v-if="evidencias.pesajeOrigen.observaciones" class="text-sm">
+                    <p class="text-xs text-tertiary">Observaciones</p>
+                    <p class="text-neutral">{{ evidencias.pesajeOrigen.observaciones }}</p>
+                  </div>
+                  <div v-if="evidencias.pesajeOrigen.ticketPesajeUrl" class="space-y-2">
+                    <p class="text-xs text-tertiary">Ticket de pesaje</p>
+                    <img 
+                      :src="getImageUrl(evidencias.pesajeOrigen.ticketPesajeUrl)" 
+                      alt="Ticket de pesaje origen"
+                      class="w-full max-w-md rounded-lg border border-border cursor-pointer hover:opacity-90 transition"
+                      @click="window.open(getImageUrl(evidencias.pesajeOrigen.ticketPesajeUrl), '_blank')"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pesaje destino -->
+              <div v-if="evidencias.pesajeDestino" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Gauge class="w-4 h-4 text-purple-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Pesaje Destino</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.pesajeDestino.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div class="text-center p-2 bg-hover rounded-lg">
+                      <p class="text-xs text-tertiary">Peso Bruto</p>
+                      <p class="text-lg font-bold text-neutral">{{ evidencias.pesajeDestino.pesoBrutoKg }} kg</p>
+                    </div>
+                    <div class="text-center p-2 bg-hover rounded-lg">
+                      <p class="text-xs text-tertiary">Peso Tara</p>
+                      <p class="text-lg font-bold text-neutral">{{ evidencias.pesajeDestino.pesoTaraKg }} kg</p>
+                    </div>
+                    <div class="text-center p-2 bg-green-500/10 rounded-lg">
+                      <p class="text-xs text-green-700">Peso Neto</p>
+                      <p class="text-lg font-bold text-green-700">{{ evidencias.pesajeDestino.pesoNetoKg }} kg</p>
+                    </div>
+                  </div>
+                  <div v-if="evidencias.pesajeDestino.observaciones" class="text-sm">
+                    <p class="text-xs text-tertiary">Observaciones</p>
+                    <p class="text-neutral">{{ evidencias.pesajeDestino.observaciones }}</p>
+                  </div>
+                  <div v-if="evidencias.pesajeDestino.ticketPesajeUrl" class="space-y-2">
+                    <p class="text-xs text-tertiary">Ticket de pesaje</p>
+                    <img 
+                      :src="getImageUrl(evidencias.pesajeDestino.ticketPesajeUrl)" 
+                      alt="Ticket de pesaje destino"
+                      class="w-full max-w-md rounded-lg border border-border cursor-pointer hover:opacity-90 transition"
+                      @click="window.open(getImageUrl(evidencias.pesajeDestino.ticketPesajeUrl), '_blank')"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Llegada almacén -->
+              <div v-if="evidencias.llegadaAlmacen" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                    <MapPin class="w-4 h-4 text-indigo-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Llegada a Almacén</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.llegadaAlmacen.timestamp) }}</p>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div v-if="evidencias.llegadaAlmacen.observaciones" class="text-sm">
+                    <p class="text-xs text-tertiary">Observaciones</p>
+                    <p class="text-neutral">{{ evidencias.llegadaAlmacen.observaciones }}</p>
+                  </div>
+                  <div v-if="evidencias.llegadaAlmacen.confirmacionLlegada !== null" class="flex items-center gap-1.5">
+                    <CheckCircle2 v-if="evidencias.llegadaAlmacen.confirmacionLlegada" class="w-4 h-4 text-green-500" />
+                    <X v-else class="w-4 h-4 text-red-500" />
+                    <span class="text-xs text-secondary">Confirmación de llegada</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Descarga iniciada -->
+              <div v-if="evidencias.descargaIniciada" class="bg-base rounded-xl p-4 border border-border">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Package class="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Descarga Iniciada</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.descargaIniciada.timestamp) }}</p>
+                  </div>
+                </div>
+                <div v-if="evidencias.descargaIniciada.observaciones" class="text-sm">
+                  <p class="text-xs text-tertiary">Observaciones</p>
+                  <p class="text-neutral">{{ evidencias.descargaIniciada.observaciones }}</p>
+                </div>
+              </div>
+
+              <!-- Ruta finalizada -->
+              <div v-if="evidencias.rutaFinalizada" class="bg-base rounded-xl p-4 border border-green-500/20">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <CheckCircle2 class="w-4 h-4 text-green-500" />
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-semibold text-neutral">Ruta Finalizada</h4>
+                    <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.rutaFinalizada.timestamp) }}</p>
+                  </div>
+                </div>
+                <div v-if="evidencias.rutaFinalizada.observacionesFinales" class="text-sm">
+                  <p class="text-xs text-tertiary">Observaciones finales</p>
+                  <p class="text-neutral">{{ evidencias.rutaFinalizada.observacionesFinales }}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

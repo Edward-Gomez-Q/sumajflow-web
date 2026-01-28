@@ -7,14 +7,59 @@ import {
   Weight,
   Calendar,
   FileText,
-  User
+  User,
+  Map as MapIcon
 } from 'lucide-vue-next'
+import RouteMapViewer from './RouteMapViewer.vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   lote: {
     type: Object,
     required: true
   }
+})
+
+// Computed properties para el mapa
+const origenMapa = computed(() => {
+  if (!props.lote || !props.lote.minaLatitud || !props.lote.minaLongitud) return null
+  return {
+    id: props.lote.minaId,
+    nombre: props.lote.minaNombre,
+    latitud: props.lote.minaLatitud,
+    longitud: props.lote.minaLongitud,
+    sectorColor: props.lote.sectorColor || '#1E3A8A'
+  }
+})
+
+const destinoMapa = computed(() => {
+  if (!props.lote || !props.lote.destinoBalanzaLatitud || !props.lote.destinoBalanzaLongitud) return null
+  
+  return {
+    id: props.lote.destinoId,
+    razonSocial: props.lote.destinoNombre,
+    latitudAlmacen: props.lote.destinoAlmacenLatitud,
+    longitudAlmacen: props.lote.destinoAlmacenLongitud,
+    latitudBalanza: props.lote.destinoBalanzaLatitud,
+    longitudBalanza: props.lote.destinoBalanzaLongitud,
+    municipio: props.lote.destinoMunicipio
+  }
+})
+
+const balanzaCoopMapa = computed(() => {
+  if (!props.lote || 
+      !props.lote.cooperativaBalanzaLatitud || 
+      !props.lote.cooperativaBalanzaLongitud) return null
+  
+  return {
+    razonSocial: props.lote.cooperativaNombre || 'Cooperativa',
+    latitudBalanza: props.lote.cooperativaBalanzaLatitud,
+    longitudBalanza: props.lote.cooperativaBalanzaLongitud
+  }
+})
+
+const tipoDestino = computed(() => {
+  return props.lote?.destinoTipo || 'ingenio'
 })
 
 const formatDate = (dateString) => {
@@ -32,6 +77,33 @@ const formatDate = (dateString) => {
 
 <template>
   <div class="space-y-6">
+    <!-- Mapa de Ruta -->
+    <div 
+      v-if="origenMapa && destinoMapa"
+      class="bg-base rounded-xl border border-border shadow-sm overflow-hidden"
+    >
+      <div class="p-4 border-b border-border bg-hover">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <MapIcon class="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-neutral">Mapa de Ruta</h3>
+            <p class="text-xs text-tertiary">Visualiza el recorrido completo del lote</p>
+          </div>
+        </div>
+      </div>
+      <div class="h-[400px]">
+        <RouteMapViewer
+          :origen="origenMapa"
+          :destino="destinoMapa"
+          :balanza-coop="balanzaCoopMapa"
+          :tipo-destino="tipoDestino"
+          class="h-full"
+        />
+      </div>
+    </div>
+
     <!-- Grid de información -->
     <div class="grid md:grid-cols-2 gap-4">
       <!-- Mina de Origen -->

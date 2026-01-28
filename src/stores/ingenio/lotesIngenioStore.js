@@ -12,6 +12,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
   // State
   const lotes = ref([])
   const loteDetalle = ref(null)
+  const loadingDetalle = ref(false)
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -152,7 +153,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
    * Obtener detalle completo del lote
    */
   const fetchLoteDetalle = async (id) => {
-    uiStore.showLoading('Cargando detalle del lote...')
+    loadingDetalle.value = true
     error.value = null
 
     try {
@@ -178,7 +179,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
       return { success: false, error: err.message }
 
     } finally {
-      uiStore.hideLoading()
+      loadingDetalle.value = false
     }
   }
 
@@ -187,8 +188,8 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
    */
   const aprobarLote = async (loteId, aprobacionData) => {
     const confirmed = await uiStore.showConfirm(
-      'Esta seguro que desea aprobar este lote?',
-      'Confirmar Aprobacion'
+      '¿Está seguro que desea aprobar este lote?',
+      'Confirmar Aprobación'
     )
 
     if (!confirmed) {
@@ -238,7 +239,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
    */
   const rechazarLote = async (loteId, rechazoData) => {
     const confirmed = await uiStore.showConfirm(
-      'Esta seguro que desea rechazar este lote?',
+      '¿Está seguro que desea rechazar este lote?',
       'Confirmar Rechazo'
     )
 
@@ -297,6 +298,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
   const reset = () => {
     lotes.value = []
     loteDetalle.value = null
+    loadingDetalle.value = false
     paginacion.value = {
       totalElementos: 0,
       totalPaginas: 0,
@@ -323,6 +325,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
     // State
     lotes,
     loteDetalle,
+    loadingDetalle, // 🆕
     paginacion,
     filtros,
     error,

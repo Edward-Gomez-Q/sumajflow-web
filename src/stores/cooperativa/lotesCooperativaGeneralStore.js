@@ -12,6 +12,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
   // State
   const lotes = ref([])
   const loteDetalle = ref(null)
+  const loadingDetalle = ref(false) // 🆕 Agregado
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -57,20 +58,15 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     lotes.value.filter(l => l.estado === 'Rechazado')
   )
 
-  /**
-   * Fetch lotes con paginación y filtros
-   */
   const fetchLotes = async (nuevosFiltros = {}) => {
     uiStore.showLoading('Cargando lotes...')
     error.value = null
 
-    // Actualizar filtros si se pasaron nuevos
     if (Object.keys(nuevosFiltros).length > 0) {
       filtros.value = { ...filtros.value, ...nuevosFiltros }
     }
 
     try {
-      // Construir query params
       const params = new URLSearchParams()
       
       Object.keys(filtros.value).forEach(key => {
@@ -114,34 +110,22 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     }
   }
 
-  /**
-   * Cambiar página
-   */
   const cambiarPagina = async (nuevaPagina) => {
     filtros.value.page = nuevaPagina
     await fetchLotes()
   }
 
-  /**
-   * Cambiar tamaño de página
-   */
   const cambiarTamanoPagina = async (nuevoTamano) => {
     filtros.value.size = nuevoTamano
     filtros.value.page = 0
     await fetchLotes()
   }
 
-  /**
-   * Aplicar filtros
-   */
   const aplicarFiltros = async (nuevosFiltros) => {
     filtros.value = { ...filtros.value, ...nuevosFiltros, page: 0 }
     await fetchLotes()
   }
 
-  /**
-   * Limpiar filtros
-   */
   const limpiarFiltros = async () => {
     filtros.value = {
       estado: null,
@@ -161,10 +145,10 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
   }
 
   /**
-   * Obtener detalle completo del lote
+   * 🆕 Modificado para usar loadingDetalle
    */
   const fetchLoteDetalle = async (id) => {
-    uiStore.showLoading('Cargando detalle del lote...')
+    loadingDetalle.value = true
     error.value = null
 
     try {
@@ -190,23 +174,18 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
       return { success: false, error: err.message }
 
     } finally {
-      uiStore.hideLoading()
+      loadingDetalle.value = false
     }
   }
 
-  /**
-   * Limpiar detalle
-   */
   const limpiarDetalle = () => {
     loteDetalle.value = null
   }
 
-  /**
-   * Reset completo
-   */
   const reset = () => {
     lotes.value = []
     loteDetalle.value = null
+    loadingDetalle.value = false // 🆕
     paginacion.value = {
       totalElementos: 0,
       totalPaginas: 0,
@@ -236,6 +215,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     // State
     lotes,
     loteDetalle,
+    loadingDetalle, // 🆕
     paginacion,
     filtros,
     error,

@@ -12,6 +12,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
   // State
   const lotes = ref([])
   const loteDetalle = ref(null)
+  const loadingDetalle = ref(false)
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -50,9 +51,6 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     lotes.value.filter(l => l.estado === 'Completado')
   )
 
-  /**
-   * Fetch lotes con paginación y filtros
-   */
   const fetchLotes = async (nuevosFiltros = {}) => {
     uiStore.showLoading('Cargando lotes...')
     error.value = null
@@ -105,34 +103,22 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     }
   }
 
-  /**
-   * Cambiar página
-   */
   const cambiarPagina = async (nuevaPagina) => {
     filtros.value.page = nuevaPagina
     await fetchLotes()
   }
 
-  /**
-   * Cambiar tamaño de página
-   */
   const cambiarTamanoPagina = async (nuevoTamano) => {
     filtros.value.size = nuevoTamano
     filtros.value.page = 0
     await fetchLotes()
   }
 
-  /**
-   * Aplicar filtros
-   */
   const aplicarFiltros = async (nuevosFiltros) => {
     filtros.value = { ...filtros.value, ...nuevosFiltros, page: 0 }
     await fetchLotes()
   }
 
-  /**
-   * Limpiar filtros
-   */
   const limpiarFiltros = async () => {
     filtros.value = {
       estado: null,
@@ -147,12 +133,8 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     }
     await fetchLotes()
   }
-
-  /**
-   * Obtener detalle completo del lote
-   */
   const fetchLoteDetalle = async (id) => {
-    uiStore.showLoading('Cargando detalle del lote...')
+    loadingDetalle.value = true
     error.value = null
 
     try {
@@ -178,17 +160,14 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       return { success: false, error: err.message }
 
     } finally {
-      uiStore.hideLoading()
+      loadingDetalle.value = false
     }
   }
 
-  /**
-   * Aprobar lote
-   */
   const aprobarLote = async (loteId, aprobacionData) => {
     const confirmed = await uiStore.showConfirm(
-      'Esta seguro que desea aprobar este lote?',
-      'Confirmar Aprobacion'
+      '¿Está seguro que desea aprobar este lote?',
+      'Confirmar Aprobación'
     )
 
     if (!confirmed) {
@@ -233,12 +212,9 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     }
   }
 
-  /**
-   * Rechazar lote
-   */
   const rechazarLote = async (loteId, rechazoData) => {
     const confirmed = await uiStore.showConfirm(
-      'Esta seguro que desea rechazar este lote?',
+      '¿Está seguro que desea rechazar este lote?',
       'Confirmar Rechazo'
     )
 
@@ -284,19 +260,14 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     }
   }
 
-  /**
-   * Limpiar detalle
-   */
   const limpiarDetalle = () => {
     loteDetalle.value = null
   }
 
-  /**
-   * Reset completo
-   */
   const reset = () => {
     lotes.value = []
     loteDetalle.value = null
+    loadingDetalle.value = false
     paginacion.value = {
       totalElementos: 0,
       totalPaginas: 0,
@@ -323,6 +294,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     // State
     lotes,
     loteDetalle,
+    loadingDetalle,
     paginacion,
     filtros,
     error,

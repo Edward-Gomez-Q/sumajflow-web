@@ -26,6 +26,7 @@ const lotesStore = useLotesIngenioStore()
 const showDetalleModal = ref(false)
 const showAprobacionModal = ref(false)
 const showRechazoModal = ref(false)
+const loteIdSeleccionado = ref(null)
 const loteSeleccionado = ref(null)
 
 onMounted(async () => {
@@ -33,12 +34,14 @@ onMounted(async () => {
 })
 
 const openDetalleModal = (lote) => {
+  loteIdSeleccionado.value = lote.id
   loteSeleccionado.value = lote
   showDetalleModal.value = true
 }
 
 const closeDetalleModal = () => {
   showDetalleModal.value = false
+  loteIdSeleccionado.value = null
   loteSeleccionado.value = null
   lotesStore.limpiarDetalle()
 }
@@ -65,20 +68,23 @@ const closeRechazoModal = () => {
 
 const handleAprobacionExitosa = () => {
   closeAprobacionModal()
+  closeDetalleModal()
 }
 
 const handleRechazoExitoso = () => {
   closeRechazoModal()
+  closeDetalleModal()
 }
 
-const handleDetalleAprobar = (lote) => {
+// 🆕 Handlers desde el modal de detalle
+const handleDetalleAprobar = () => {
   closeDetalleModal()
-  openAprobacionModal(lote)
+  openAprobacionModal(loteSeleccionado.value)
 }
 
-const handleDetalleRechazar = (lote) => {
+const handleDetalleRechazar = () => {
   closeDetalleModal()
-  openRechazoModal(lote)
+  openRechazoModal(loteSeleccionado.value)
 }
 
 const aplicarFiltros = async (filtros) => {
@@ -378,12 +384,13 @@ const esPendienteAprobacion = (lote) => {
     </div>
 
     <!-- Modales -->
+    <!-- 🆕 Modal de detalle actualizado con tracking -->
     <LoteDetalleIngenioModal
-      v-if="showDetalleModal && loteSeleccionado"
-      :lote-id="loteSeleccionado.id"
+      v-if="showDetalleModal && loteIdSeleccionado"
+      :lote-id="loteIdSeleccionado"
       @close="closeDetalleModal"
-      @aprobar="handleDetalleAprobar(loteSeleccionado)"
-      @rechazar="handleDetalleRechazar(loteSeleccionado)"
+      @aprobar="handleDetalleAprobar"
+      @rechazar="handleDetalleRechazar"
     />
 
     <LoteAprobacionIngenioModal

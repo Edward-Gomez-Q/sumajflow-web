@@ -626,13 +626,6 @@ defineExpose({
             </div>
           </div>
         </div>
-
-        <div class="mt-3 pt-3 border-t border-border">
-          <p class="text-xs text-tertiary text-center">
-            <span v-if="routeData.error">* Distancia calculada en línea recta</span>
-            <span v-else>Ruta completa pasando por todos los puntos</span>
-          </p>
-        </div>
       </div>
     </Transition>
   </div>

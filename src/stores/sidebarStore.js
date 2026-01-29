@@ -186,10 +186,10 @@ export const useSidebarStore = defineStore('sidebar', () => {
         badge: null
       },
       {
-        id: 'recepciones',
-        label: 'Recepciones',
-        icon: ClipboardList,
-        route: '/ingenio/recepciones',
+        id: 'concentrados',
+        label: 'Concentrados',
+        icon: Factory,
+        route: '/ingenio/concentrados',
         badge: null
       },
       {

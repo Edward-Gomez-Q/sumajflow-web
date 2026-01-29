@@ -286,16 +286,16 @@ const routes = [
         meta : {
           title : 'Lotes - Ingenio'
         }
-      }
-      /*{
-        path: 'recepciones',
-        name: 'IngenioRecepciones',
-        component: () => import('./views/ingenio/Recepciones.vue'),
-        meta: { 
-          title: 'Recepciones - Ingenio'
-        }
       },
       {
+        path: 'concentrados',
+        name: 'IngenioConcentrados',
+        component: () => import('./views/ingenio/Concentrados.vue'),
+        meta: { 
+          title: 'Concentrados - Ingenio'
+        }
+      },
+      /*{
         path: 'procesamiento',
         name: 'IngenioProcesamiento',
         component: () => import('./views/ingenio/Procesamiento.vue'),

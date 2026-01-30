@@ -29,8 +29,11 @@ const props = defineProps({
 const concentradosStore = useConcentradosIngenioStore()
 const observacionesModal = ref(false)
 const procesoDestino = ref(null)
-const observacionesTexto = ref('')
 const columnaHover = ref(null)
+
+const observacionesFinProceso = ref('')
+const observacionesInicioProceso = ref('')
+const observacionesGenerales = ref('')
 
 onMounted(async () => {
   await concentradosStore.fetchProcesos(props.concentradoId)
@@ -44,31 +47,79 @@ watch(() => props.concentradoId, async (newId) => {
 
 const kanban = computed(() => concentradosStore.kanban)
 
-// Determinar si todos los procesos están pendientes (no se ha iniciado nada)
 const todosProcesosPendientes = computed(() => {
   if (!kanban.value || !kanban.value.todosProcesos) return false
   return kanban.value.todosProcesos.every(p => p.estado === 'pendiente')
 })
 
-// Crear columnas: columna "Pendiente" + columnas de procesos + columna "Finalizado"
+const todosCompletados = computed(() => {
+  if (!kanban.value || !kanban.value.todosProcesos) return false
+  return kanban.value.todosProcesos.every(p => p.estado === 'completado')
+})
+
+const tipoMovimiento = computed(() => {
+  if (!procesoDestino.value || !columnaActual.value) return null
+  
+  const columnaActualObj = columnas.value.find(c => c.id === columnaActual.value)
+  
+  if (columnaActualObj?.tipo === 'inicio') {
+    return 'iniciar'
+  }
+  
+  if (procesoDestino.value.tipo === 'fin') {
+    return 'finalizar'
+  }
+  
+  return 'intermedio'
+})
+
+const tituloModal = computed(() => {
+  switch (tipoMovimiento.value) {
+    case 'iniciar': return 'Iniciar Procesamiento'
+    case 'finalizar': return 'Finalizar Procesamiento'
+    default: return 'Avanzar Proceso'
+  }
+})
+
+const subtituloModal = computed(() => {
+  switch (tipoMovimiento.value) {
+    case 'iniciar': return 'Primer proceso del concentrado'
+    case 'finalizar': return 'Completar procesamiento completo'
+    default: return 'Movimiento entre procesos'
+  }
+})
+
+const textoBotonConfirmar = computed(() => {
+  switch (tipoMovimiento.value) {
+    case 'iniciar': return 'Iniciar Proceso'
+    case 'finalizar': return 'Finalizar Procesamiento'
+    default: return 'Confirmar Movimiento'
+  }
+})
+
+const nombreProcesoActual = computed(() => {
+  const columnaActualObj = columnas.value.find(c => c.id === columnaActual.value)
+  return columnaActualObj?.nombre || ''
+})
+
+const nombreProcesoDestino = computed(() => {
+  return procesoDestino.value?.nombre || ''
+})
+
 const columnas = computed(() => {
   if (!kanban.value || !kanban.value.todosProcesos) return []
   
   const cols = []
   const procesosOrdenados = [...kanban.value.todosProcesos].sort((a, b) => a.orden - b.orden)
   
-  // Columna inicial "Pendiente" (solo si todos los procesos están pendientes)
-  if (todosProcesosPendientes.value) {
-    cols.push({
-      id: 'pendiente',
-      tipo: 'inicio',
-      nombre: 'Por Iniciar',
-      descripcion: 'Arrastra al primer proceso para comenzar',
-      orden: 0
-    })
-  }
+  cols.push({
+    id: 'pendiente',
+    tipo: 'inicio',
+    nombre: 'Iniciar',
+    descripcion: 'Zona de inicio',
+    orden: 0
+  })
   
-  // Columnas de procesos
   procesosOrdenados.forEach(proceso => {
     cols.push({
       id: proceso.id,
@@ -79,18 +130,17 @@ const columnas = computed(() => {
     })
   })
   
-  // Columna final "Finalizado" (solo si hay al menos un proceso iniciado o completado)
   const hayProcesoIniciado = kanban.value.todosProcesos.some(p => 
     p.estado === 'en_proceso' || p.estado === 'completado'
   )
   
-  if (hayProcesoIniciado) {
+  if (hayProcesoIniciado || todosCompletados.value) {
     const ultimoOrden = procesosOrdenados[procesosOrdenados.length - 1]?.orden || 0
     cols.push({
       id: 'finalizado',
       tipo: 'fin',
       nombre: 'Finalizado',
-      descripcion: 'Arrastra aquí para completar',
+      descripcion: 'Completado',
       orden: ultimoOrden + 1
     })
   }
@@ -98,31 +148,48 @@ const columnas = computed(() => {
   return cols
 })
 
-// Determinar en qué columna está el concentrado
 const columnaActual = computed(() => {
   if (!kanban.value || !kanban.value.todosProcesos) return null
   
-  // Si todos están pendientes, está en la columna "Pendiente"
   if (todosProcesosPendientes.value) {
     return 'pendiente'
   }
   
-  // Si todos están completados, está en columna "Finalizado"
-  const todosCompletados = kanban.value.todosProcesos.every(p => p.estado === 'completado')
-  if (todosCompletados) {
+  if (todosCompletados.value) {
     return 'finalizado'
   }
   
-  // Buscar primer proceso en_proceso
   const procesoActivo = kanban.value.todosProcesos.find(p => p.estado === 'en_proceso')
-  if (procesoActivo) return procesoActivo.id
+  if (procesoActivo) {
+    return procesoActivo.id
+  }
   
-  // Si no, buscar primer pendiente (ya se inició alguno antes)
   const primerPendiente = kanban.value.todosProcesos.find(p => p.estado === 'pendiente')
   return primerPendiente ? primerPendiente.id : null
 })
 
-// Drag & Drop handlers
+const procesosQueSeCompletaran = computed(() => {
+  if (!procesoDestino.value || !kanban.value) return []
+  
+  if (procesoDestino.value.tipo === 'fin') return []
+  if (tipoMovimiento.value === 'iniciar') return []
+  
+  const columnaActualObj = columnas.value.find(c => c.id === columnaActual.value)
+  if (!columnaActualObj || columnaActualObj.tipo === 'inicio') return []
+  
+  const intermedios = kanban.value.todosProcesos.filter(p => {
+    if (p.id === columnaActual.value && p.estado === 'en_proceso') {
+      return true
+    }
+    
+    return p.orden > columnaActualObj.orden && 
+           p.orden < procesoDestino.value.orden &&
+           p.estado !== 'completado'
+  })
+  
+  return intermedios
+})
+
 const onDragStart = (evento) => {
   evento.dataTransfer.effectAllowed = 'move'
   evento.dataTransfer.setData('text/plain', 'concentrado')
@@ -135,13 +202,11 @@ const onDragEnd = () => {
 const onDragOver = (evento, columna) => {
   evento.preventDefault()
   
-  // No puedes soltar en la columna donde ya estás
   if (columna.id === columnaActual.value) {
     evento.dataTransfer.dropEffect = 'none'
     return
   }
   
-  // Validar si es un movimiento válido
   const valido = validarMovimiento(columna)
   
   if (valido) {
@@ -161,98 +226,95 @@ const onDrop = async (evento, columna) => {
   evento.preventDefault()
   columnaHover.value = null
   
-  // Validar movimiento
   if (!validarMovimiento(columna)) {
     mostrarError('No puedes mover el concentrado a esta columna')
     return
   }
   
-  // Abrir modal para observaciones
   procesoDestino.value = columna
-  observacionesTexto.value = ''
   observacionesModal.value = true
 }
 
-// Validar si se puede mover a una columna
 const validarMovimiento = (columna) => {
-  // Si está en "Pendiente", solo puede ir al primer proceso
   if (columnaActual.value === 'pendiente') {
     return columna.tipo === 'proceso' && columna.orden === 1
   }
   
-  // No puede ir a columna "Pendiente" una vez salió de ella
   if (columna.tipo === 'inicio') {
     return false
   }
   
-  // No puede ir a "Finalizado" si ya está ahí
-  if (columna.tipo === 'fin' && columnaActual.value === 'finalizado') {
+  if (columnaActual.value === 'finalizado') {
     return false
   }
   
-  // Permitir mover a columna "Finalizado" solo si está en el último proceso
   if (columna.tipo === 'fin') {
-    const ultimoProceso = kanban.value.todosProcesos
-      .sort((a, b) => a.orden - b.orden)[kanban.value.todosProcesos.length - 1]
-    return columnaActual.value === ultimoProceso.id
+    const procesosOrdenados = [...kanban.value.todosProcesos].sort((a, b) => a.orden - b.orden)
+    const ultimoProceso = procesosOrdenados[procesosOrdenados.length - 1]
+    
+    return columnaActual.value === ultimoProceso.id && ultimoProceso.estado === 'en_proceso'
   }
   
-  // No puede mover a procesos completados
   if (columna.proceso && columna.proceso.estado === 'completado') {
     return false
   }
   
-  // Solo puede mover hacia adelante (no retroceder)
   const columnaActualObj = columnas.value.find(c => c.id === columnaActual.value)
-  if (columnaActualObj && columna.orden < columnaActualObj.orden) {
-    return false
+  
+  if (columnaActualObj && columna.tipo === 'proceso') {
+    return columna.orden === columnaActualObj.orden + 1
   }
   
-  return true
+  return false
 }
 
-// Ejecutar movimiento
 const ejecutarMovimiento = async () => {
   if (!procesoDestino.value) return
   
-  // Si la columna destino es "Finalizado", completar el último proceso
-  if (procesoDestino.value.tipo === 'fin') {
-    const ultimoProceso = kanban.value.todosProcesos
-      .sort((a, b) => a.orden - b.orden)[kanban.value.todosProcesos.length - 1]
-    
-    // Usar el endpoint tradicional para completar el último proceso
-    const result = await concentradosStore.avanzarProceso(
+  let result
+  
+  if (tipoMovimiento.value === 'iniciar') {
+    result = await concentradosStore.iniciarProcesamiento(
       props.concentradoId,
-      ultimoProceso.id,
-      observacionesTexto.value || null
+      observacionesInicioProceso.value || null
     )
-    
-    if (result.success) {
-      cerrarModal()
-    }
-  } else {
-    // Usar el nuevo endpoint para mover a procesos intermedios
-    const result = await concentradosStore.moverAProceso(
+  } 
+  else if (tipoMovimiento.value === 'finalizar') {
+    result = await concentradosStore.finalizarProcesamiento(
+      props.concentradoId,
+      {
+        observacionesFinProceso: observacionesFinProceso.value || null,
+        observacionesGenerales: observacionesGenerales.value || null
+      }
+    )
+  } 
+  else {
+    result = await concentradosStore.moverAProceso(
       props.concentradoId,
       procesoDestino.value.id,
-      observacionesTexto.value || null
+      {
+        observacionesFinProceso: observacionesFinProceso.value || null,
+        observacionesInicioProceso: observacionesInicioProceso.value || null
+      }
     )
-    
-    if (result.success) {
-      cerrarModal()
-    }
+  }
+  
+  if (result.success) {
+    cerrarModal()
   }
 }
 
 const cerrarModal = () => {
   observacionesModal.value = false
   procesoDestino.value = null
-  observacionesTexto.value = ''
+  observacionesFinProceso.value = ''
+  observacionesInicioProceso.value = ''
+  observacionesGenerales.value = ''
 }
 
 const mostrarError = (mensaje) => {
   const errorDiv = document.createElement('div')
-  errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-[10002] animate-slide-in-right'
+  errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-10002 animate-slide-in-right'
   errorDiv.textContent = mensaje
   document.body.appendChild(errorDiv)
   
@@ -289,96 +351,53 @@ const formatDate = (dateString) => {
     minute: '2-digit'
   })
 }
-
-// Calcular cuántos procesos se completarán automáticamente
-const procesosQueSeCompletaran = computed(() => {
-  if (!procesoDestino.value || !kanban.value) return []
-  
-  // Si va a "Finalizado", no mostrar lista (solo se completa el último)
-  if (procesoDestino.value.tipo === 'fin') return []
-  
-  const columnaActualObj = columnas.value.find(c => c.id === columnaActual.value)
-  if (!columnaActualObj || columnaActualObj.tipo === 'inicio') return []
-  
-  // Calcular procesos entre actual y destino
-  const intermedios = kanban.value.todosProcesos.filter(p => 
-    p.orden >= columnaActualObj.orden && 
-    p.orden < procesoDestino.value.orden &&
-    p.estado !== 'completado'
-  )
-  
-  return intermedios
-})
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Loading -->
+  <div class="h-[calc(100vh-280px)] flex flex-col">
     <div v-if="concentradosStore.loadingKanban" class="text-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
       <p class="text-secondary">Cargando procesos...</p>
     </div>
 
-    <!-- Kanban Content -->
-    <div v-else-if="kanban && columnas.length > 0" class="space-y-6">
-      <!-- Resumen Superior -->
-      <div class="bg-primary rounded-xl p-6 shadow-sm">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div>
-            <p class="text-sm text-white/70 mb-1">Total Procesos</p>
-            <p class="text-3xl font-bold text-white">{{ kanban.totalProcesos }}</p>
+    <div v-else-if="kanban && columnas.length > 0" class="h-full flex flex-col gap-4">
+      <div class="bg-primary rounded-xl p-4 shadow-sm shrink-0">
+        <div class="grid grid-cols-4 gap-4 items-center">
+          <div class="text-center">
+            <p class="text-xs text-white/70 mb-0.5">Total</p>
+            <p class="text-2xl font-bold text-white">{{ kanban.totalProcesos }}</p>
           </div>
-          <div>
-            <p class="text-sm text-white/70 mb-1">Completados</p>
-            <p class="text-3xl font-bold text-white">{{ kanban.procesosCompletados }}</p>
+          <div class="text-center">
+            <p class="text-xs text-white/70 mb-0.5">Completados</p>
+            <p class="text-2xl font-bold text-white">{{ kanban.procesosCompletados }}</p>
           </div>
-          <div>
-            <p class="text-sm text-white/70 mb-1">Pendientes</p>
-            <p class="text-3xl font-bold text-white">{{ kanban.procesosPendientes }}</p>
+          <div class="text-center">
+            <p class="text-xs text-white/70 mb-0.5">Pendientes</p>
+            <p class="text-2xl font-bold text-white">{{ kanban.procesosPendientes }}</p>
           </div>
-        </div>
-
-        <!-- Progreso visual -->
-        <div class="mt-4 pt-4 border-t border-white/20">
-          <div class="flex items-center justify-between text-sm text-white/70 mb-2">
-            <span>Progreso del procesamiento</span>
-            <span class="font-semibold">{{ Math.round((kanban.procesosCompletados / kanban.totalProcesos) * 100) }}%</span>
-          </div>
-          <div class="w-full bg-white/20 rounded-full h-3">
-            <div 
-              class="bg-white rounded-full h-3 transition-all duration-500"
-              :style="{ width: `${(kanban.procesosCompletados / kanban.totalProcesos) * 100}%` }"
-            ></div>
+          
+          <div class="flex items-center gap-3">
+            <div class="flex-1">
+              <div class="w-full bg-white/20 rounded-full h-2">
+                <div 
+                  class="bg-white rounded-full h-2 transition-all duration-500"
+                  :style="{ width: `${(kanban.procesosCompletados / kanban.totalProcesos) * 100}%` }"
+                ></div>
+              </div>
+            </div>
+            <span class="text-sm font-semibold text-white whitespace-nowrap">
+              {{ Math.round((kanban.procesosCompletados / kanban.totalProcesos) * 100) }}%
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- Instrucciones -->
-      <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div class="flex items-start gap-3">
-          <Zap class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-          <div class="text-sm text-blue-800 dark:text-blue-200">
-            <p class="font-medium mb-1">¿Cómo usar el tablero Kanban?</p>
-            <p>
-              <strong>Arrastra</strong> el concentrado (tarjeta azul) entre las columnas para avanzar. 
-              <span class="inline-flex items-center gap-1">
-                <Sparkles class="w-3 h-3 inline" />
-                <strong>Puedes saltar procesos</strong>
-              </span> 
-              y se completarán automáticamente.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tablero Kanban -->
-      <div class="overflow-x-auto pb-4 scrollbar-custom">
-        <div class="inline-flex gap-4 min-w-full">
-          <!-- Iterar sobre todas las columnas -->
+      <div class="flex-1 overflow-x-auto overflow-y-hidden scrollbar-custom">
+        <div class="h-full grid gap-3 px-1" :style="{ gridTemplateColumns: `repeat(${columnas.length}, 1fr)` }">
           <div
             v-for="columna in columnas"
             :key="columna.id"
-            class="shrink-0 w-80 bg-base rounded-xl border-2 transition-all duration-200"
+            class="bg-surface rounded-xl border-2 transition-all duration-200 flex flex-col h-full min-w-0"
             :class="[
               columnaHover === columna.id ? 'border-primary shadow-xl ring-4 ring-primary/20 scale-[1.02]' : 'border-border',
               columna.proceso?.estado === 'completado' ? 'opacity-75' : ''
@@ -387,92 +406,66 @@ const procesosQueSeCompletaran = computed(() => {
             @dragleave="onDragLeave"
             @drop="onDrop($event, columna)"
           >
-            <!-- Header de columna -->
-            <div 
-              class="p-4 border-b border-border"
-              :class="[
-                columna.tipo === 'inicio' ? 'bg-linear-to-br from-indigo-500/10 to-purple-500/10' : '',
-                columna.tipo === 'fin' ? 'bg-linear-to-br from-green-500/10 to-emerald-500/10' : '',
-                columna.proceso?.estado === 'en_proceso' ? 'bg-yellow-500/10' : '',
-                columna.proceso?.estado === 'completado' ? 'bg-green-500/10' : ''
-              ]"
-            >
-              <!-- Columna "Pendiente" (inicio) -->
+            <div class="p-3 border-b border-border shrink-0">
               <template v-if="columna.tipo === 'inicio'">
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-500 center shrink-0 shadow-lg">
+                <div class="flex items-center gap-2 mb-2"> 
+                  <div class="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-500 center shrink-0">
                     <Package class="w-4 h-4 text-white" />
                   </div>
-                  <span class="text-xs px-2 py-1 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium">
-                    Inicio
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-neutral text-sm truncate">{{ columna.nombre }}</h3>
+                    <p class="text-xs text-secondary truncate">{{ columna.descripcion }}</p>
+                  </div>
                 </div>
-                <h3 class="font-semibold text-neutral text-lg mb-1">{{ columna.nombre }}</h3>
-                <p class="text-xs text-secondary">{{ columna.descripcion }}</p>
+                <div class="h-11"></div>
               </template>
 
-              <!-- Columna "Finalizado" (fin) -->
               <template v-else-if="columna.tipo === 'fin'">
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="w-8 h-8 rounded-lg bg-linear-to-br from-green-500 to-emerald-500 center shrink-0 shadow-lg">
+                <div class="flex items-center gap-2 mb-2">  <!-- ⬅️ AGREGA mb-2 AQUÍ -->
+                  <div 
+                    class="w-8 h-8 rounded-lg center shrink-0"
+                    :class="todosCompletados ? 'bg-linear-to-br from-green-500 to-emerald-500' : 'bg-gray-500'"
+                  >
                     <CheckCircle2 class="w-4 h-4 text-white" />
                   </div>
-                  <span class="text-xs px-2 py-1 rounded bg-green-500/10 text-green-600 dark:text-green-400 font-medium">
-                    Fin
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-neutral text-sm truncate">{{ columna.nombre }}</h3>
+                    <p class="text-xs text-secondary truncate">{{ columna.descripcion }}</p>
+                  </div>
                 </div>
-                <h3 class="font-semibold text-neutral text-lg mb-1">{{ columna.nombre }}</h3>
-                <p class="text-xs text-secondary">{{ columna.descripcion }}</p>
+                <!-- AGREGA ESTO PARA IGUALAR ALTURA ⬇️ -->
+                <div class="h-11"></div>
               </template>
 
-              <!-- Columnas de Procesos -->
               <template v-else>
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-2">
-                    <div 
-                      class="w-8 h-8 rounded-lg center shrink-0 shadow-sm"
-                      :class="getEstadoColor(columna.proceso.estado)"
-                    >
-                      <component :is="getEstadoIcon(columna.proceso.estado)" class="w-4 h-4 text-white" />
-                    </div>
-                    <span class="text-xs px-2 py-1 rounded bg-primary/10 text-primary font-medium">
-                      Paso {{ columna.orden }}
-                    </span>
-                  </div>
-                </div>
-                
-                <h3 class="font-semibold text-neutral text-lg">{{ columna.nombre }}</h3>
-                
-                <div class="mt-2 flex items-center gap-2">
-                  <span 
-                    class="text-xs px-2 py-1 rounded-full font-medium text-white shadow-sm"
+                <div class="flex items-center gap-2 mb-2">
+                  <div 
+                    class="w-8 h-8 rounded-lg center shrink-0"
                     :class="getEstadoColor(columna.proceso.estado)"
                   >
-                    {{ 
-                      columna.proceso.estado === 'pendiente' ? 'Pendiente' : 
-                      columna.proceso.estado === 'en_proceso' ? 'En Proceso' : 
-                      'Completado' 
-                    }}
+                    <component :is="getEstadoIcon(columna.proceso.estado)" class="w-4 h-4 text-white" />
+                  </div>
+                  <span class="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                    Paso {{ columna.orden }}
                   </span>
                 </div>
-
-                <!-- Fechas -->
-                <div v-if="columna.proceso.fechaInicio || columna.proceso.fechaFin" class="mt-3 space-y-1 text-xs text-secondary">
-                  <div v-if="columna.proceso.fechaInicio" class="flex items-center gap-1">
-                    <PlayCircle class="w-3 h-3" />
-                    <span>Iniciado: {{ formatDate(columna.proceso.fechaInicio) }}</span>
-                  </div>
-                  <div v-if="columna.proceso.fechaFin" class="flex items-center gap-1">
-                    <CheckCircle2 class="w-3 h-3" />
-                    <span>Finalizado: {{ formatDate(columna.proceso.fechaFin) }}</span>
-                  </div>
-                </div>
+                
+                <h3 class="font-semibold text-neutral text-sm mb-1 truncate">{{ columna.nombre }}</h3>
+                
+                <span 
+                  class="inline-block text-xs px-2 py-0.5 rounded-full font-medium text-white"
+                  :class="getEstadoColor(columna.proceso.estado)"
+                >
+                  {{ 
+                    columna.proceso.estado === 'pendiente' ? 'Pendiente' : 
+                    columna.proceso.estado === 'en_proceso' ? 'En Proceso' : 
+                    'Completado' 
+                  }}
+                </span>
               </template>
             </div>
 
-            <!-- Drop zone / Contenido -->
-            <div class="p-4 min-h-[200px] flex items-center justify-center">
-              <!-- Concentrado está en esta columna -->
+            <div class="flex-1 p-3 flex items-center justify-center overflow-y-auto scrollbar-custom min-h-0">
               <div
                 v-if="columna.id === columnaActual"
                 class="bg-linear-to-br from-primary via-primary to-primary/90 rounded-xl p-4 shadow-xl border-2 border-primary/50 w-full cursor-move hover:shadow-2xl hover:scale-[1.02] transition-all group"
@@ -481,55 +474,53 @@ const procesosQueSeCompletaran = computed(() => {
                 @dragend="onDragEnd"
               >
                 <div class="flex items-center gap-3 mb-3">
-                  <div class="w-10 h-10 rounded-lg bg-white/20 center shrink-0 shadow-inner">
+                  <div class="w-10 h-10 rounded-lg bg-white/20 center shrink-0">
                     <Package class="w-5 h-5 text-white" />
                   </div>
-                  <div class="flex-1">
-                    <p class="text-white font-semibold text-sm">{{ concentrado.codigoConcentrado }}</p>
-                    <p class="text-white/70 text-xs mt-0.5">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-white font-semibold text-sm truncate">00{{ concentrado.id }}</p>
+                    <p class="text-white/70 text-xs mt-0.5 truncate">
                       {{ concentrado.mineralPrincipal }} - {{ concentrado.pesoInicial }} kg
                     </p>
                   </div>
                 </div>
 
-                <div class="bg-white/15 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
-                  <p class="text-white/90 text-xs font-medium mb-1 flex items-center gap-1">
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
+                  <p v-if="columna.tipo !== 'fin'" class="text-white/90 text-xs font-medium mb-1 flex items-center gap-1">
                     <ArrowRight class="w-3 h-3" />
                     Arrastra para avanzar
                   </p>
                   <p class="text-white text-sm font-medium">
                     {{ 
-                      columna.tipo === 'inicio' ? 'Por iniciar procesamiento' :
                       columna.tipo === 'fin' ? 'Procesamiento completado ✓' :
-                      columna.proceso.estado === 'pendiente' ? 'Por iniciar' : 
-                      'En proceso' 
+                      columna.tipo === 'proceso' && columna.proceso.estado === 'en_proceso' ? 'En proceso' : 
+                      'Por iniciar'
                     }}
                   </p>
                 </div>
 
-                <!-- Observaciones del proceso actual -->
-                <div v-if="columna.proceso && columna.proceso.observaciones" class="mt-3 bg-white/10 rounded-lg p-2 backdrop-blur-sm border border-white/10">
+                <div v-if="columna.proceso && columna.proceso.observaciones" class="mt-3 bg-white/10 rounded-lg p-2 backdrop-blur-sm border border-white/20">
                   <p class="text-white/90 text-xs font-medium mb-1 flex items-center gap-1">
                     <FileText class="w-3 h-3" />
                     Observaciones:
                   </p>
-                  <p class="text-white/80 text-xs leading-relaxed">{{ columna.proceso.observaciones }}</p>
+                  <p class="text-white/80 text-xs leading-relaxed line-clamp-3">{{ columna.proceso.observaciones }}</p>
                 </div>
 
-                <!-- Indicador de arrastre -->
                 <div v-if="columna.tipo !== 'fin'" class="mt-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <p class="text-white/60 text-xs font-medium">↔ Arrastra aquí ↔</p>
                 </div>
               </div>
 
-              <!-- Columna vacía -->
               <div v-else class="text-center">
                 <div 
                   class="w-16 h-16 rounded-full mx-auto center mb-3 transition-all"
                   :class="[
                     columna.tipo === 'inicio' ? 'bg-linear-to-br from-indigo-500/20 to-purple-500/20' : '',
-                    columna.tipo === 'fin' ? 'bg-linear-to-br from-green-500/20 to-emerald-500/20' : '',
-                    columna.proceso?.estado === 'completado' ? 'bg-green-500/20' : 'bg-gray-500/10'
+                    columna.tipo === 'fin' && todosCompletados ? 'bg-linear-to-br from-green-500/20 to-emerald-500/20' : '',
+                    columna.tipo === 'fin' && !todosCompletados ? 'bg-gray-500/10' : '',
+                    columna.proceso?.estado === 'completado' ? 'bg-green-500/20' : '',
+                    columna.proceso?.estado !== 'completado' && columna.tipo === 'proceso' ? 'bg-gray-500/10' : ''
                   ]"
                 >
                   <component 
@@ -537,15 +528,18 @@ const procesosQueSeCompletaran = computed(() => {
                     class="w-8 h-8"
                     :class="[
                       columna.tipo === 'inicio' ? 'text-indigo-500' : '',
-                      columna.tipo === 'fin' ? 'text-green-500' : '',
-                      columna.proceso?.estado === 'completado' ? 'text-green-500' : 'text-gray-400'
+                      columna.tipo === 'fin' && todosCompletados ? 'text-green-500' : '',
+                      columna.tipo === 'fin' && !todosCompletados ? 'text-gray-400' : '',
+                      columna.proceso?.estado === 'completado' ? 'text-green-500' : '',
+                      columna.proceso?.estado !== 'completado' && columna.tipo === 'proceso' ? 'text-gray-400' : ''
                     ]"
                   />
                 </div>
                 <p class="text-sm text-secondary font-medium">
                   {{ 
                     columna.tipo === 'inicio' ? 'Zona de inicio' :
-                    columna.tipo === 'fin' ? 'Completa aquí ✓' :
+                    columna.tipo === 'fin' && todosCompletados ? 'Completado ✓' :
+                    columna.tipo === 'fin' && !todosCompletados ? 'Arrastra para finalizar' :
                     columna.proceso?.estado === 'completado' ? 'Completado ✓' : 
                     'Esperando...' 
                   }}
@@ -555,26 +549,13 @@ const procesosQueSeCompletaran = computed(() => {
           </div>
         </div>
       </div>
-
-      <!-- Observaciones globales -->
-      <div v-if="kanban.procesoActual && kanban.procesoActual.observaciones" class="bg-hover rounded-xl p-4 border border-border">
-        <div class="flex items-start gap-3">
-          <FileText class="w-5 h-5 text-secondary shrink-0 mt-0.5" />
-          <div class="flex-1">
-            <p class="text-sm font-medium text-neutral mb-1">Observaciones del proceso actual:</p>
-            <p class="text-sm text-secondary">{{ kanban.procesoActual.observaciones }}</p>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Estado vacío -->
     <div v-else class="text-center py-12">
       <AlertCircle class="w-16 h-16 text-secondary mx-auto mb-4" />
       <p class="text-secondary">No hay procesos configurados para este concentrado</p>
     </div>
 
-    <!-- Modal de Confirmación -->
     <Teleport to="body">
       <div
         v-if="observacionesModal && procesoDestino"
@@ -582,122 +563,133 @@ const procesosQueSeCompletaran = computed(() => {
         @click.self="cerrarModal"
       >
         <div class="bg-surface rounded-xl shadow-2xl w-full max-w-lg border border-border animate-scale-in">
-          <!-- Header -->
-          <div class="p-6 border-b border-border bg-linear-to-br from-primary/5 to-transparent">
+          <div class="p-6 border-b border-border">
             <div class="flex items-center gap-3">
               <div 
                 class="w-12 h-12 rounded-lg center shrink-0 shadow-lg"
-                :class="procesoDestino.tipo === 'fin' ? 'bg-linear-to-br from-green-500 to-green-600' : 'bg-linear-to-br from-primary to-primary/80'"
+                :class="tipoMovimiento === 'finalizar' ? 'bg-linear-to-br from-green-500 to-green-600' : 'bg-linear-to-br from-primary to-primary/80'"
               >
-                <component :is="procesoDestino.tipo === 'fin' ? CheckCircle2 : Zap" class="w-6 h-6 text-white" />
+                <component :is="tipoMovimiento === 'finalizar' ? CheckCircle2 : Zap" class="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-neutral">
-                  {{ procesoDestino.tipo === 'fin' ? 'Finalizar Procesamiento' : 'Mover Concentrado' }}
-                </h3>
-                <p class="text-sm text-secondary mt-0.5">
-                  {{ 
-                    procesoDestino.tipo === 'inicio' ? 'Iniciar procesamiento' : 
-                    procesoDestino.tipo === 'fin' ? 'Completar último proceso' :
-                    procesoDestino.nombre 
-                  }}
-                </p>
+                <h3 class="text-lg font-semibold text-neutral">{{ tituloModal }}</h3>
+                <p class="text-sm text-secondary mt-0.5">{{ subtituloModal }}</p>
               </div>
             </div>
           </div>
 
-          <!-- Content -->
           <div class="p-6 space-y-4">
-            <!-- Información del movimiento -->
             <div 
-              class="border-2 rounded-lg p-4"
-              :class="[
-                procesoDestino.tipo === 'fin' 
-                  ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                  : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800'
-              ]"
+              class="rounded-xl p-4 shadow-sm"
+              :class="tipoMovimiento === 'finalizar' ? 'bg-green-600 dark:bg-green-700' : 'bg-primary'"
             >
-              <div class="flex items-start gap-2">
+              <div class="flex items-start gap-3">
                 <component 
-                  :is="procesoDestino.tipo === 'fin' ? CheckCircle2 : ArrowRight" 
-                  class="w-5 h-5 shrink-0 mt-0.5"
-                  :class="procesoDestino.tipo === 'fin' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'"
+                  :is="tipoMovimiento === 'finalizar' ? CheckCircle2 : ArrowRight" 
+                  class="w-5 h-5 text-white shrink-0 mt-0.5"
                 />
-                <div 
-                  class="text-sm"
-                  :class="procesoDestino.tipo === 'fin' 
-                    ? 'text-green-800 dark:text-green-200' 
-                    : 'text-blue-800 dark:text-blue-200'"
-                >
-                  <template v-if="procesoDestino.tipo === 'fin'">
-                    <p class="font-medium mb-1">Se completará el procesamiento:</p>
-                    <p class="text-base font-semibold">
-                      {{ kanban.todosProcesos.sort((a, b) => a.orden - b.orden)[kanban.todosProcesos.length - 1]?.nombreProceso }}
-                    </p>
-                    <p class="mt-2 text-xs opacity-80">
-                      El concentrado pasará a estado: <strong>"Esperando Reporte Químico"</strong>
-                    </p>
+                <div class="flex-1">
+                  <template v-if="tipoMovimiento === 'finalizar'">
+                    <p class="text-xs text-white/70 mb-1">Se completará el procesamiento:</p>
+                    <p class="font-semibold text-white">{{ nombreProcesoDestino }}</p>
+                  </template>
+                  <template v-else-if="tipoMovimiento === 'iniciar'">
+                    <p class="text-xs text-white/70 mb-1">Se iniciará el procesamiento:</p>
+                    <p class="font-semibold text-white">{{ nombreProcesoDestino }}</p>
                   </template>
                   <template v-else>
-                    <p class="font-medium mb-1">Se moverá el concentrado a:</p>
-                    <p class="text-base font-semibold">{{ procesoDestino.nombre }}</p>
-                    
-                    <!-- Mostrar procesos que se completarán automáticamente -->
-                    <div v-if="procesosQueSeCompletaran.length > 0" class="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                      <p class="font-medium mb-2 flex items-center gap-1.5">
-                        <Sparkles class="w-4 h-4" />
-                        Se completarán automáticamente:
-                      </p>
-                      <ul class="mt-2 space-y-1.5">
-                        <li 
-                          v-for="proceso in procesosQueSeCompletaran" 
-                          :key="proceso.id" 
-                          class="text-xs flex items-center gap-1.5 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded"
-                        >
-                          <CheckCircle2 class="w-3 h-3 shrink-0" />
-                          <span class="font-medium">{{ proceso.nombreProceso }}</span>
-                        </li>
-                      </ul>
-                    </div>
+                    <p class="text-xs text-white/70 mb-1">Movimiento:</p>
+                    <p class="font-semibold text-white">{{ nombreProcesoActual }} → {{ nombreProcesoDestino }}</p>
                   </template>
+                  
                 </div>
               </div>
             </div>
 
-            <!-- Observaciones -->
-            <div class="input-group">
+            <div v-if="tipoMovimiento === 'iniciar'" class="input-group">
               <label class="input-label flex items-center gap-1.5">
                 <FileText class="w-4 h-4" />
-                Observaciones (opcional)
+                Observaciones iniciales del proceso
               </label>
               <textarea
-                v-model="observacionesTexto"
-                rows="4"
-                placeholder="Añade notas sobre este movimiento..."
+                v-model="observacionesInicioProceso"
+                rows="3"
+                placeholder="Describe el estado inicial del proceso..."
                 class="w-full"
                 autofocus
               ></textarea>
-              <p class="input-helper">Documenta cualquier detalle relevante del proceso</p>
             </div>
+
+            <template v-else-if="tipoMovimiento === 'finalizar'">
+              <div class="input-group">
+                <label class="input-label flex items-center gap-1.5">
+                  <FileText class="w-4 h-4" />
+                  Observaciones finales del último proceso
+                </label>
+                <textarea
+                  v-model="observacionesFinProceso"
+                  rows="3"
+                  placeholder="¿Cómo finalizó este proceso?..."
+                  class="w-full"
+                  autofocus
+                ></textarea>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label flex items-center gap-1.5">
+                  <Sparkles class="w-4 h-4" />
+                  Observaciones generales del procesamiento completo
+                </label>
+                <textarea
+                  v-model="observacionesGenerales"
+                  rows="3"
+                  placeholder="Comentarios generales sobre todo el procesamiento..."
+                  class="w-full"
+                ></textarea>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="input-group">
+                <label class="input-label flex items-center gap-1.5">
+                  <CheckCircle2 class="w-4 h-4" />
+                  Observaciones finales: "{{ nombreProcesoActual }}"
+                </label>
+                <textarea
+                  v-model="observacionesFinProceso"
+                  rows="3"
+                  placeholder="¿Cómo finalizó este proceso?..."
+                  class="w-full"
+                  autofocus
+                ></textarea>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label flex items-center gap-1.5">
+                  <PlayCircle class="w-4 h-4" />
+                  Observaciones iniciales: "{{ nombreProcesoDestino }}"
+                </label>
+                <textarea
+                  v-model="observacionesInicioProceso"
+                  rows="3"
+                  placeholder="Estado inicial del siguiente proceso..."
+                  class="w-full"
+                ></textarea>
+              </div>
+            </template>
           </div>
 
-          <!-- Acciones -->
           <div class="flex gap-3 p-6 border-t border-border bg-hover/30">
-            <button
-              @click="cerrarModal"
-              class="btn-secondary flex-1"
-            >
+            <button @click="cerrarModal" class="btn-secondary flex-1">
               Cancelar
             </button>
             <button
               @click="ejecutarMovimiento"
               class="btn flex-1 flex items-center justify-center gap-2 shadow-lg"
-              :class="procesoDestino.tipo === 'fin' 
-                ? 'bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
-                : 'bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'"
+              :class="tipoMovimiento === 'finalizar' ? 'bg-linear-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : ''"
             >
-              <component :is="procesoDestino.tipo === 'fin' ? CheckCircle2 : Zap" class="w-4 h-4" />
-              {{ procesoDestino.tipo === 'fin' ? 'Finalizar Procesamiento' : 'Confirmar Movimiento' }}
+              <component :is="tipoMovimiento === 'finalizar' ? CheckCircle2 : Zap" class="w-4 h-4" />
+              {{ textoBotonConfirmar }}
             </button>
           </div>
         </div>
@@ -737,9 +729,9 @@ const procesosQueSeCompletaran = computed(() => {
   animation: slide-in-right 0.3s ease-out;
 }
 
-/* Scrollbar personalizada */
 .scrollbar-custom::-webkit-scrollbar {
   height: 8px;
+  width: 6px;
 }
 
 .scrollbar-custom::-webkit-scrollbar-track {
@@ -753,5 +745,13 @@ const procesosQueSeCompletaran = computed(() => {
 
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

@@ -834,8 +834,4 @@ const getMineralesNombres = (lote) => {
   transform: scale(0);
 }
 
-/* Center helper */
-.center {
-  @apply flex items-center justify-center;
-}
 </style>

@@ -9,13 +9,21 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
   const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
-  // State
+  // Concentrados
   const concentrados = ref([])
   const concentradoDetalle = ref(null)
-  const kanban = ref(null)
   const estadisticas = ref(null)
   const loadingDetalle = ref(false)
+  
+  // Kanban
+  const kanban = ref(null)
   const loadingKanban = ref(false)
+  
+  // Planta
+  const infoPlanta = ref(null)
+  const loadingInfoPlanta = ref(false)
+  
+  // Paginación y filtros
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -32,11 +40,11 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
     page: 0,
     size: 10
   })
+  
   const error = ref(null)
-  const infoPlanta = ref(null)
-  const loadingInfoPlanta = ref(false)
 
-  // Computed
+  // ==================== COMPUTED ====================
+  
   const concentradosEnProceso = computed(() => 
     concentrados.value.filter(c => c.estado === 'en_proceso')
   )
@@ -49,8 +57,11 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
     concentrados.value.filter(c => c.estado === 'listo_para_liquidacion')
   )
 
+  // ==================== ACTIONS - CONCENTRADOS ====================
+
   /**
    * Fetch concentrados con paginación y filtros
+   * GET /ingenio/concentrados
    */
   const fetchConcentrados = async (nuevosFiltros = {}) => {
     uiStore.showLoading('Cargando concentrados...')
@@ -106,6 +117,7 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
 
   /**
    * Obtener detalle completo del concentrado
+   * GET /ingenio/concentrados/{id}
    */
   const fetchConcentradoDetalle = async (id) => {
     loadingDetalle.value = true
@@ -140,6 +152,7 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
 
   /**
    * Obtener dashboard de estadísticas
+   * GET /ingenio/concentrados/dashboard
    */
   const fetchDashboard = async () => {
     try {
@@ -166,7 +179,8 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
   }
 
   /**
-   * Crear concentrado(s) - ACTUALIZADO para soportar múltiples concentrados
+   * Crear concentrado(s) - Soporta creación múltiple (Zn+Pb)
+   * POST /ingenio/concentrados
    */
   const crearConcentrado = async (datosConcentrado) => {
     const confirmed = await uiStore.showConfirm(
@@ -199,7 +213,6 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
 
       await fetchConcentrados()
 
-      // data.data ahora es un array de concentrados
       const cantidad = data.cantidad || (Array.isArray(data.data) ? data.data.length : 1)
       
       uiStore.showSuccess(
@@ -209,7 +222,7 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
 
       return { 
         success: true, 
-        data: data.data, // Array de concentrados creados
+        data: data.data,
         cantidad: cantidad,
         message: data.message 
       }
@@ -223,54 +236,62 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
       uiStore.hideLoading()
     }
   }
+
   /**
- * Obtener información de la planta del ingenio
- */
-const fetchInfoPlanta = async () => {
-  loadingInfoPlanta.value = true
-  error.value = null
+   * Obtener información de la planta del ingenio
+   * GET /ingenio/concentrados/info-planta
+   */
+  const fetchInfoPlanta = async () => {
+    loadingInfoPlanta.value = true
+    error.value = null
 
-  try {
-    const response = await fetch(`${rutaApi}/ingenio/concentrados/info-planta`, {
-      headers: {
-        'Authorization': `Bearer ${sessionStore.token}`,
-        'Content-Type': 'application/json'
+    try {
+      const response = await fetch(`${rutaApi}/ingenio/concentrados/info-planta`, {
+        headers: {
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al cargar información de la planta')
       }
-    })
 
-    const data = await response.json()
+      infoPlanta.value = data.data
+      return { success: true, data: data.data }
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Error al cargar información de la planta')
+    } catch (err) {
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Cargar Info de Planta')
+      return { success: false, error: err.message }
+
+    } finally {
+      loadingInfoPlanta.value = false
     }
-
-    infoPlanta.value = data.data
-    return { success: true, data: data.data }
-
-  } catch (err) {
-    error.value = err.message
-    uiStore.showError(err.message, 'Error al Cargar Info de Planta')
-    return { success: false, error: err.message }
-
-  } finally {
-    loadingInfoPlanta.value = false
   }
-}
+
+  // ==================== ACTIONS - KANBAN ====================
 
   /**
    * Obtener procesos del Kanban
+   * GET /ingenio/kanban/concentrados/{concentradoId}/procesos
    */
   const fetchProcesos = async (concentradoId) => {
     loadingKanban.value = true
     error.value = null
 
     try {
-      const response = await fetch(`${rutaApi}/ingenio/concentrados/${concentradoId}/procesos`, {
-        headers: {
-          'Authorization': `Bearer ${sessionStore.token}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/procesos`,
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionStore.token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      })
+      )
 
       const data = await response.json()
 
@@ -292,52 +313,45 @@ const fetchInfoPlanta = async () => {
   }
 
   /**
-   * Avanzar proceso del Kanban
+   * Iniciar procesamiento (primer proceso)
+   * POST /ingenio/kanban/concentrados/{concentradoId}/iniciar
    */
-  const avanzarProceso = async (concentradoId, procesoId, observaciones) => {
-    const confirmed = await uiStore.showConfirm(
-      '¿Está seguro que desea avanzar este proceso?',
-      'Confirmar Avance de Proceso'
-    )
-
-    if (!confirmed) {
-      return { success: false, cancelled: true }
-    }
-
-    uiStore.showLoading('Avanzando proceso...')
+  const iniciarProcesamiento = async (concentradoId, observacionesInicioProceso) => {
+    uiStore.showLoading('Iniciando procesamiento...')
     error.value = null
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/procesos/${procesoId}/avanzar`,
+        `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/iniciar`,
         {
-          method: 'PATCH',
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${sessionStore.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ observaciones })
+          body: JSON.stringify({ observacionesInicioProceso })
         }
       )
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al avanzar proceso')
+        throw new Error(data.message || 'Error al iniciar procesamiento')
       }
-
+      
+      await fetchProcesos(concentradoId)
       kanban.value = data.data
 
       uiStore.showSuccess(
-        data.message || 'Proceso avanzado exitosamente',
-        'Proceso Avanzado'
+        data.message || 'Procesamiento iniciado exitosamente',
+        'Procesamiento Iniciado'
       )
 
       return { success: true, data: data.data, message: data.message }
 
     } catch (err) {
       error.value = err.message
-      uiStore.showError(err.message, 'Error al Avanzar Proceso')
+      uiStore.showError(err.message, 'Error al Iniciar')
       return { success: false, error: err.message }
 
     } finally {
@@ -345,13 +359,17 @@ const fetchInfoPlanta = async () => {
     }
   }
 
+  /**
+   * Mover concentrado entre procesos intermedios
+   * POST /ingenio/kanban/concentrados/{concentradoId}/mover-a-proceso
+   */
   const moverAProceso = async (concentradoId, procesoDestinoId, observaciones) => {
     uiStore.showLoading('Moviendo concentrado...')
     error.value = null
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/mover-a-proceso`,
+        `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/mover-a-proceso`,
         {
           method: 'POST',
           headers: {
@@ -360,8 +378,8 @@ const fetchInfoPlanta = async () => {
           },
           body: JSON.stringify({
             procesoDestinoId: procesoDestinoId,
-            observaciones: observaciones,
-            completarIntermedios: true
+            observacionesFinProceso: observaciones.observacionesFinProceso,
+            observacionesInicioProceso: observaciones.observacionesInicioProceso
           })
         }
       )
@@ -371,7 +389,8 @@ const fetchInfoPlanta = async () => {
       if (!response.ok) {
         throw new Error(data.message || 'Error al mover concentrado')
       }
-
+      
+      await fetchProcesos(concentradoId)
       kanban.value = data.data
 
       uiStore.showSuccess(
@@ -392,7 +411,62 @@ const fetchInfoPlanta = async () => {
   }
 
   /**
+   * Finalizar procesamiento completo
+   * POST /ingenio/kanban/concentrados/{concentradoId}/finalizar
+   */
+  const finalizarProcesamiento = async (concentradoId, observaciones) => {
+    uiStore.showLoading('Finalizando procesamiento...')
+    error.value = null
+
+    try {
+      const response = await fetch(
+        `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/finalizar`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionStore.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            observacionesFinProceso: observaciones.observacionesFinProceso,
+            observacionesGenerales: observaciones.observacionesGenerales
+          })
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al finalizar procesamiento')
+      }
+      
+      await fetchProcesos(concentradoId)
+      await fetchConcentrados()
+      await fetchConcentradoDetalle(concentradoId)
+      kanban.value = data.data
+
+      uiStore.showSuccess(
+        data.message || 'Procesamiento finalizado exitosamente',
+        'Procesamiento Finalizado'
+      )
+
+      return { success: true, data: data.data, message: data.message }
+
+    } catch (err) {
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Finalizar')
+      return { success: false, error: err.message }
+
+    } finally {
+      uiStore.hideLoading()
+    }
+  }
+
+  // ==================== ACTIONS - REPORTES QUÍMICOS ====================
+
+  /**
    * Registrar reporte químico
+   * POST /ingenio/reportes-quimicos/concentrados/{concentradoId}
    */
   const registrarReporteQuimico = async (concentradoId, datosReporte) => {
     const confirmed = await uiStore.showConfirm(
@@ -409,7 +483,7 @@ const fetchInfoPlanta = async () => {
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/reporte-quimico`,
+        `${rutaApi}/ingenio/reportes-quimicos/concentrados/${concentradoId}`,
         {
           method: 'POST',
           headers: {
@@ -447,6 +521,7 @@ const fetchInfoPlanta = async () => {
 
   /**
    * Validar reporte químico
+   * PATCH /ingenio/reportes-quimicos/concentrados/{concentradoId}/validar
    */
   const validarReporteQuimico = async (concentradoId) => {
     const confirmed = await uiStore.showConfirm(
@@ -463,7 +538,7 @@ const fetchInfoPlanta = async () => {
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/validar-reporte`,
+        `${rutaApi}/ingenio/reportes-quimicos/concentrados/${concentradoId}/validar`,
         {
           method: 'PATCH',
           headers: {
@@ -498,8 +573,11 @@ const fetchInfoPlanta = async () => {
     }
   }
 
+  // ==================== ACTIONS - LIQUIDACIONES DE SERVICIO ====================
+
   /**
    * Revisar solicitud de liquidación
+   * PATCH /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/revisar
    */
   const revisarLiquidacionServicio = async (concentradoId) => {
     const confirmed = await uiStore.showConfirm(
@@ -516,7 +594,7 @@ const fetchInfoPlanta = async () => {
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/revisar-liquidacion-servicio`,
+        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/revisar`,
         {
           method: 'PATCH',
           headers: {
@@ -553,6 +631,7 @@ const fetchInfoPlanta = async () => {
 
   /**
    * Aprobar liquidación de servicio
+   * POST /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/aprobar
    */
   const aprobarLiquidacionServicio = async (concentradoId, datosLiquidacion) => {
     const confirmed = await uiStore.showConfirm(
@@ -569,7 +648,7 @@ const fetchInfoPlanta = async () => {
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/aprobar-liquidacion-servicio`,
+        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/aprobar`,
         {
           method: 'POST',
           headers: {
@@ -607,6 +686,7 @@ const fetchInfoPlanta = async () => {
 
   /**
    * Registrar pago de servicio
+   * POST /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/registrar-pago
    */
   const registrarPagoServicio = async (concentradoId, datosPago) => {
     const confirmed = await uiStore.showConfirm(
@@ -623,7 +703,7 @@ const fetchInfoPlanta = async () => {
 
     try {
       const response = await fetch(
-        `${rutaApi}/ingenio/concentrados/${concentradoId}/registrar-pago-servicio`,
+        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/registrar-pago`,
         {
           method: 'POST',
           headers: {
@@ -659,34 +739,24 @@ const fetchInfoPlanta = async () => {
     }
   }
 
-  /**
-   * Cambiar página
-   */
+  // ==================== UTILITIES ====================
+
   const cambiarPagina = async (nuevaPagina) => {
     filtros.value.page = nuevaPagina
     await fetchConcentrados()
   }
 
-  /**
-   * Cambiar tamaño de página
-   */
   const cambiarTamanoPagina = async (nuevoTamano) => {
     filtros.value.size = nuevoTamano
     filtros.value.page = 0
     await fetchConcentrados()
   }
 
-  /**
-   * Aplicar filtros
-   */
   const aplicarFiltros = async (nuevosFiltros) => {
     filtros.value = { ...filtros.value, ...nuevosFiltros, page: 0 }
     await fetchConcentrados()
   }
 
-  /**
-   * Limpiar filtros
-   */
   const limpiarFiltros = async () => {
     filtros.value = {
       estado: null,
@@ -699,23 +769,14 @@ const fetchInfoPlanta = async () => {
     await fetchConcentrados()
   }
 
-  /**
-   * Limpiar detalle
-   */
   const limpiarDetalle = () => {
     concentradoDetalle.value = null
   }
 
-  /**
-   * Limpiar kanban
-   */
   const limpiarKanban = () => {
     kanban.value = null
   }
 
-  /**
-   * Reset completo
-   */
   const reset = () => {
     concentrados.value = []
     concentradoDetalle.value = null
@@ -723,6 +784,8 @@ const fetchInfoPlanta = async () => {
     estadisticas.value = null
     loadingDetalle.value = false
     loadingKanban.value = false
+    infoPlanta.value = null
+    loadingInfoPlanta.value = false
     paginacion.value = {
       totalElementos: 0,
       totalPaginas: 0,
@@ -741,6 +804,8 @@ const fetchInfoPlanta = async () => {
     }
     error.value = null
   }
+
+  // ==================== RETURN ====================
 
   return {
     // State
@@ -761,20 +826,29 @@ const fetchInfoPlanta = async () => {
     concentradosEsperandoReporte,
     concentradosListoLiquidacion,
     
-    // Actions
+    // Actions - Concentrados
     fetchConcentrados,
     fetchConcentradoDetalle,
     fetchDashboard,
-    moverAProceso,
     crearConcentrado,
-    fetchProcesos,
-    avanzarProceso,
     fetchInfoPlanta,
+    
+    // Actions - Kanban
+    fetchProcesos,
+    iniciarProcesamiento,
+    moverAProceso,
+    finalizarProcesamiento,
+    
+    // Actions - Reportes Químicos
     registrarReporteQuimico,
     validarReporteQuimico,
+    
+    // Actions - Liquidaciones de Servicio
     revisarLiquidacionServicio,
     aprobarLiquidacionServicio,
     registrarPagoServicio,
+    
+    // Utilities
     cambiarPagina,
     cambiarTamanoPagina,
     aplicarFiltros,

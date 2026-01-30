@@ -85,27 +85,36 @@ const handleRechazar = () => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-              <PackageCheck class="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 class="text-xl font-semibold text-neutral">
-                Detalle del Lote #{{ loteId }}
-              </h2>
-              <p v-if="lote" class="text-sm text-secondary mt-0.5">
-                Creado el {{ formatDateShort(lote.fechaCreacion) }}
-              </p>
-            </div>
-          </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+<div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+      <PackageCheck class="w-6 h-6 text-white" />
+    </div>
+    <div>
+      <div class="flex items-center gap-2">
+        <h2 class="text-xl font-semibold text-neutral">
+          Detalle del Lote #{{ loteId }}
+        </h2>
+        <span
+          v-if="lote"
+          class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+          :class="getEstadoColorSolido(lote.estado)"
+        >
+          {{ lote.estado }}
+        </span>
+      </div>
+      <p v-if="lote" class="text-sm text-secondary mt-0.5">
+        Creado el {{ formatDateShort(lote.fechaCreacion) }}
+      </p>
+    </div>
+  </div>
+  <button
+    @click="emit('close')"
+    class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+  >
+    <X class="w-5 h-5" />
+  </button>
+</div>
 
         <!-- Loading -->
         <div v-if="lotesStore.loadingDetalle" class="p-12 text-center flex-1">
@@ -116,37 +125,6 @@ const handleRechazar = () => {
         <!-- Content -->
         <div v-else-if="lote" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6">
-            <!-- Estado Principal + Acciones de Aprobación -->
-            <div class="mb-6">
-              <div class="flex items-center gap-3 flex-wrap">
-                <span
-                  class="px-4 py-2 rounded-lg text-sm font-medium text-white"
-                  :class="getEstadoColorSolido(lote.estado)"
-                >
-                  {{ lote.estado }}
-                </span>
-                
-                <!-- Botones de Aprobar/Rechazar si está pendiente -->
-                <template v-if="esPendienteAprobacion">
-                  <div class="flex-1 h-px bg-border"></div>
-                  <button
-                    @click="handleAprobar"
-                    class="btn flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle2 class="w-4 h-4" />
-                    Aprobar Lote
-                  </button>
-                  <button
-                    @click="handleRechazar"
-                    class="btn-secondary flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <XCircle class="w-4 h-4" />
-                    Rechazar Lote
-                  </button>
-                </template>
-              </div>
-            </div>
-
             <!-- Tabs -->
             <div class="border-b border-border mb-6">
               <div class="flex gap-4 overflow-x-auto scrollbar-custom">

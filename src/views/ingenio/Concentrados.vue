@@ -45,11 +45,6 @@ const crearNuevoConcentrado = () => {
 const handleConcentradoCreado = async (concentrado) => {
   await concentradosStore.fetchConcentrados()
   await concentradosStore.fetchDashboard()
-  // Opcionalmente abrir el detalle del primer concentrado creado
-  if (concentrado && concentrado.id) {
-    concentradoSeleccionadoId.value = concentrado.id
-    mostrarModalDetalle.value = true
-  }
 }
 
 const aplicarFiltros = async (filtros) => {
@@ -209,7 +204,7 @@ const formatPeso = (peso) => {
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                     <h3 class="font-semibold text-neutral text-base sm:text-lg truncate">
-                      {{ concentrado.codigoConcentrado }}
+                      00{{ concentrado.id }}
                     </h3>
                     <span 
                       v-if="concentrado.mineralPrincipal"
@@ -217,24 +212,14 @@ const formatPeso = (peso) => {
                     >
                       {{ concentrado.mineralPrincipal }}
                     </span>
-                    <!-- NUEVO: Badge si proviene de separación múltiple -->
-                    <span 
-                      v-if="concentrado.loteOrigenMultiple"
-                      class="text-xs px-2 py-1 rounded-lg font-medium bg-purple-500 text-white flex items-center gap-1"
-                      title="Proviene de separación de minerales"
-                    >
-                      <Layers class="w-3 h-3" />
-                      Multi
-                    </span>
                   </div>
                   <div class="flex items-center gap-2 mt-1 text-xs sm:text-sm text-secondary">
                     <User class="w-3 h-3 sm:w-4 sm:h-4" />
                     <span class="truncate">{{ concentrado.socioNombres }} {{ concentrado.socioApellidos }}</span>
                   </div>
-                  <!-- NUEVO: Mostrar minerales secundarios si existen -->
                   <div v-if="concentrado.mineralesSecundarios" class="mt-1">
                     <span class="text-xs text-secondary">
-                      Sec: {{ concentrado.mineralesSecundarios }}
+                      Minerales Secundarios: {{ concentrado.mineralesSecundarios }}
                     </span>
                   </div>
                 </div>
@@ -284,20 +269,6 @@ const formatPeso = (peso) => {
                 <p class="text-sm font-medium text-neutral mt-0.5">
                   {{ formatDate(concentrado.fechaInicio) }}
                 </p>
-              </div>
-            </div>
-
-            <!-- Minerales -->
-            <div v-if="concentrado.minerales && concentrado.minerales.length > 0" class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs text-secondary">Minerales:</span>
-              <div class="flex gap-1 flex-wrap">
-                <span
-                  v-for="mineral in concentrado.minerales"
-                  :key="mineral.id"
-                  class="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary font-medium"
-                >
-                  {{ mineral.nomenclatura }}
-                </span>
               </div>
             </div>
 

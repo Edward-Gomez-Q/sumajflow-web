@@ -9,13 +9,15 @@ import {
   Kanban,
   FlaskConical,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  History
 } from 'lucide-vue-next'
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from './ConcentradoDetalleTabGeneral.vue'
 import ConcentradoDetalleTabKanban from './ConcentradoDetalleTabKanban.vue'
 import ConcentradoDetalleTabReporte from './ConcentradoDetalleTabReporte.vue'
 import ConcentradoDetalleTabLiquidacion from './ConcentradoDetalleTabLiquidacion.vue'
+import ConcentradoDetalleTabHistorial from './ConcentradoDetalleTabHistorial.vue'
 
 const props = defineProps({
   concentradoId: {
@@ -64,6 +66,7 @@ const tabsDisponibles = computed(() => {
   ].includes(concentrado.value.estado)) {
     tabs.push({ id: 'liquidacion', label: 'Liquidación', icon: DollarSign, disponible: true })
   }
+  tabs.push({ id: 'historial', label: 'Historial', icon: History, disponible: true })
 
   return tabs
 })
@@ -75,7 +78,7 @@ const tabsDisponibles = computed(() => {
       class="fixed inset-0 z-9999 flex items-center justify-center bg-neutral-900/20 backdrop-blur-sm p-4"
       @click.self="emit('close')"
     >
-      <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
+      <div class="bg-surface rounded-xl shadow-2xl w-full max-w-[1500px] max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
           <div class="flex items-center gap-3">
@@ -90,9 +93,18 @@ const tabsDisponibles = computed(() => {
               <PackageCheck class="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 class="text-xl font-semibold text-neutral">
-                {{ concentrado?.codigoConcentrado || 'Cargando...' }}
-              </h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-semibold text-neutral">
+                  {{ concentrado?.id ? '00' + concentrado.id : 'Cargando...' }}
+                </h2>
+                <span
+                  v-if="concentrado"
+                  class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+                  :class="getEstadoConfig(concentrado.estado).color"
+                >
+                  {{ getEstadoConfig(concentrado.estado).label }}
+                </span>
+              </div>
               <p v-if="concentrado" class="text-sm text-secondary mt-0.5">
                 {{ concentrado.socioNombres }} {{ concentrado.socioApellidos }}
               </p>
@@ -124,108 +136,55 @@ const tabsDisponibles = computed(() => {
         <!-- Content -->
         <div v-else-if="concentrado" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6">
-            <!-- Card de Estado Principal -->
-            <div class="bg-base rounded-xl border border-border p-6 mb-6">
-              <div class="flex items-center justify-between flex-wrap gap-4">
-                <div class="flex items-center gap-4">
-                  <div 
-                    class="w-14 h-14 rounded-xl center shrink-0"
-                    :class="getEstadoConfig(concentrado.estado).color"
-                  >
-                    <PackageCheck class="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h2 class="text-xl font-bold text-neutral">{{ concentrado.codigoConcentrado }}</h2>
-                    <p class="text-sm text-secondary mt-1">
-                      {{ concentrado.socioNombres }} {{ concentrado.socioApellidos }}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span 
-                    class="px-4 py-2 rounded-lg text-sm font-medium"
-                    :class="[getEstadoConfig(concentrado.estado).color, getEstadoConfig(concentrado.estado).textColor]"
-                  >
-                    {{ getEstadoConfig(concentrado.estado).label }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Info rápida -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-                <div>
-                  <p class="text-xs text-secondary mb-1">Peso Inicial</p>
-                  <p class="text-lg font-semibold text-neutral">
-                    {{ concentrado.pesoInicial }} kg
-                  </p>
-                </div>
-                <div>
-                  <p class="text-xs text-secondary mb-1">Mineral Principal</p>
-                  <p class="text-lg font-semibold text-neutral">
-                    {{ concentrado.mineralPrincipal || '-' }}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-xs text-secondary mb-1">Número de Sacos</p>
-                  <p class="text-lg font-semibold text-neutral">
-                    {{ concentrado.numeroSacos || 0 }}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-xs text-secondary mb-1">Lotes Procesados</p>
-                  <p class="text-lg font-semibold text-neutral">
-                    {{ concentrado.lotes?.length || 0 }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <!-- Tabs -->
-            <div class="bg-base rounded-xl border border-border">
-              <!-- Tab Headers -->
-              <div class="border-b border-border px-4 overflow-x-auto scrollbar-custom">
-                <div class="flex gap-2 min-w-max">
-                  <button
-                    v-for="tab in tabsDisponibles"
-                    :key="tab.id"
-                    @click="tabActual = tab.id"
-                    class="px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2"
-                    :class="tabActual === tab.id
-                      ? 'text-primary border-b-2 border-primary'
-                      : 'text-secondary hover:text-neutral'"
-                  >
-                    <component :is="tab.icon" class="w-4 h-4" />
-                    {{ tab.label }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Tab Content -->
-              <div class="p-6">
-                <ConcentradoDetalleTabGeneral 
-                  v-show="tabActual === 'general'" 
-                  :concentrado="concentrado"
-                />
-                
-                <ConcentradoDetalleTabKanban 
-                  v-show="tabActual === 'kanban'" 
-                  :concentrado="concentrado"
-                  :concentrado-id="concentradoId"
-                />
-                
-                <ConcentradoDetalleTabReporte 
-                  v-show="tabActual === 'reporte'" 
-                  :concentrado="concentrado"
-                  :concentrado-id="concentradoId"
-                />
-                
-                <ConcentradoDetalleTabLiquidacion 
-                  v-show="tabActual === 'liquidacion'" 
-                  :concentrado="concentrado"
-                  :concentrado-id="concentradoId"
-                />
+            <div class="border-b border-border mb-6">
+              <div class="flex gap-4 overflow-x-auto scrollbar-custom">
+                <button
+                  v-for="tab in tabsDisponibles"
+                  :key="tab.id"
+                  @click="tabActual = tab.id"
+                  class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
+                  :class="tabActual === tab.id
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-secondary hover:text-neutral'"
+                >
+                  <component :is="tab.icon" class="w-4 h-4" />
+                  {{ tab.label }}
+                </button>
               </div>
             </div>
+
+            <!-- Tab Content -->
+            <ConcentradoDetalleTabGeneral 
+              v-show="tabActual === 'general'" 
+              :concentrado="concentrado"
+            />
+            
+            <ConcentradoDetalleTabKanban 
+              v-show="tabActual === 'kanban'" 
+              :concentrado="concentrado"
+              :concentrado-id="concentradoId"
+            />
+            
+            <ConcentradoDetalleTabReporte 
+              v-show="tabActual === 'reporte'" 
+              :concentrado="concentrado"
+              :concentrado-id="concentradoId"
+            />
+            
+            <ConcentradoDetalleTabLiquidacion 
+              v-show="tabActual === 'liquidacion'" 
+              :concentrado="concentrado"
+              :concentrado-id="concentradoId"
+            />
+
+            <!-- ✅ Pasar tabActual y concentradoId -->
+            <ConcentradoDetalleTabHistorial 
+              v-show="tabActual === 'historial'" 
+              :concentrado="concentrado"
+              :concentrado-id="concentradoId"
+              :tab-actual="tabActual"
+            />
           </div>
         </div>
       </div>

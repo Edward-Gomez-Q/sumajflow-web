@@ -2,7 +2,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Truck, MapPin, Radio, WifiOff, Eye, CheckCircle2 } from 'lucide-vue-next'
-import { useTrackingWebSocket } from '@/composables/useTrackingWebSocket'
+import { useTrackingWS } from '@/composables/useTrackingWS'
 import CamionTrackingDetalle from './CamionTrackingDetalle.vue'
 
 const props = defineProps({
@@ -19,13 +19,11 @@ const props = defineProps({
 const {
   trackingData,
   isConectado,
-  conectar,
-  desconectar,
   suscribirLote,
   desuscribirLote,
   suscribirCamion,
   desuscribirCamion
-} = useTrackingWebSocket()
+} = useTrackingWS()
 
 const camionSeleccionado = ref(null)
 const mostrarDetalleCamion = ref(false)
@@ -129,8 +127,6 @@ onMounted(async () => {
   console.log('🔌 Montando tab de transporte')
   
   try {
-    await conectar()
-    
     if (props.loteId) {
       console.log(`📡 Suscribiendo a lote ${props.loteId}`)
       suscribirLote(props.loteId)
@@ -151,8 +147,7 @@ onUnmounted(() => {
     if (camionSeleccionado.value?.id && !camionSeleccionado.value?.esCompletado) {
       desuscribirCamion(camionSeleccionado.value.id)
     }
-    
-    desconectar()
+
   } catch (error) {
     console.error('❌ Error desmontando tracking:', error)
   }

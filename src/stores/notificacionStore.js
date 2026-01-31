@@ -1,8 +1,7 @@
 // src/stores/notificacionStore.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { Client } from '@stomp/stompjs'
-import SockJS from 'sockjs-client'
+import { useWebSocket } from '@/composables/useWebSocket' // ⬅️ NUEVO
 import { useUIStore } from './uiStore'
 import { useSessionStore } from './sessionStore'
 import rutaApi from '../assets/rutaApi.js'
@@ -10,6 +9,7 @@ import rutaApi from '../assets/rutaApi.js'
 export const useNotificacionStore = defineStore('notificacion', () => {
   const uiStore = useUIStore()
   const sessionStore = useSessionStore()
+  const ws = useWebSocket() // ⬅️ USAR WEBSOCKET GLOBAL
 
   // State
   const notificaciones = ref([])
@@ -28,8 +28,6 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     size: 20
   })
   const error = ref(null)
-  const stompClient = ref(null)
-  const isConnected = ref(false)
 
   // Computed
   const unreadCount = computed(() => 
@@ -50,87 +48,59 @@ export const useNotificacionStore = defineStore('notificacion', () => {
   }
 
   /**
-   * Conectar al WebSocket
+   * Conectar al WebSocket y suscribirse a notificaciones
    */
-  const connectWebSocket = () => {
+  const connectWebSocket = async () => {
     if (!sessionStore.isAuthenticated || !sessionStore.user?.id) {
-      console.warn('Usuario no autenticado, no se conectará WebSocket')
+      console.warn('⚠️ Usuario no autenticado, no se conectará WebSocket')
       return
     }
-
-    if (isConnected.value && stompClient.value?.connected) {
-      console.log('WebSocket ya está conectado')
-      return
-    }
-
-    console.log('Conectando al WebSocket...')
 
     try {
-      const client = new Client({
-        webSocketFactory: () => new SockJS(`${rutaApi}/ws`),
-        
-        debug: (str) => {
-          console.log('STOMP: ' + str)
-        },
+      // Conectar al WebSocket global
+      await ws.conectar()
+      
+      const userId = sessionStore.user.id
+      const destino = `/user/queue/notificaciones`
+      const id = `notificaciones-${userId}`
 
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,
-        heartbeatOutgoing: 4000,
-
-        onConnect: () => {
-          console.log('WebSocket conectado')
-          isConnected.value = true
+      // Suscribirse si no existe ya
+      if (!ws.tieneSuscripcion(id)) {
+        ws.suscribirse(destino, (notificacion) => {
+          console.log('🔔 Nueva notificación recibida:', notificacion)
           
-          const userId = sessionStore.user.id
+          // Agregar al inicio del array
+          notificaciones.value.unshift(notificacion)
           
-          client.subscribe(`/user/${userId}/queue/notificaciones`, (message) => {
-            console.log('Nueva notificacion recibida:', message.body)
-            
-            try {
-              const notificacion = JSON.parse(message.body)
-              notificaciones.value.unshift(notificacion)
-              
-              if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(notificacion.titulo, {
-                  body: notificacion.mensaje,
-                  icon: '/favicon.ico'
-                })
-              }
-            } catch (e) {
-              console.error('Error al parsear notificacion:', e)
-            }
-          })
-        },
+          // Mostrar notificación del navegador
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(notificacion.titulo, {
+              body: notificacion.mensaje,
+              icon: '/favicon.ico'
+            })
+          }
+        }, id)
 
-        onStompError: (frame) => {
-          console.error('Error STOMP:', frame.headers['message'])
-          isConnected.value = false
-        },
-
-        onDisconnect: () => {
-          console.log('WebSocket desconectado')
-          isConnected.value = false
-        }
-      })
-
-      client.activate()
-      stompClient.value = client
+        console.log('✅ Suscrito a notificaciones WebSocket')
+      } else {
+        console.log('ℹ️ Ya estaba suscrito a notificaciones')
+      }
 
     } catch (err) {
-      console.error('Error al conectar WebSocket:', err)
+      console.error('❌ Error al conectar WebSocket de notificaciones:', err)
       error.value = err.message
     }
   }
 
   /**
-   * Desconectar del WebSocket
+   * Desconectar del WebSocket (solo desuscribirse)
    */
   const disconnectWebSocket = () => {
-    if (stompClient.value) {
-      console.log('Desconectando WebSocket...')
-      stompClient.value.deactivate()
-      stompClient.value = null
-      isConnected.value = false
+    const userId = sessionStore.user?.id
+    if (userId) {
+      const id = `notificaciones-${userId}`
+      ws.desuscribirse(id)
+      console.log('🔕 Desuscrito de notificaciones')
     }
   }
 
@@ -408,7 +378,7 @@ export const useNotificacionStore = defineStore('notificacion', () => {
       size: 20
     }
     error.value = null
-    disconnectWebSocket()
+    disconnectWebSocket() // ⬅️ Solo desuscribirse, no desconectar el WebSocket global
   }
 
   return {
@@ -417,11 +387,11 @@ export const useNotificacionStore = defineStore('notificacion', () => {
     paginacion,
     filtros,
     error,
-    isConnected,
     
     // Computed
     unreadCount,
     ultimasTres,
+    isConnected: ws.isConectado, // ⬅️ EXPONER ESTADO GLOBAL
     
     // Actions
     connectWebSocket,

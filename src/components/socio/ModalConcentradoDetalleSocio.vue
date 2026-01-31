@@ -2,7 +2,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useConcentradosSocioStore } from '@/stores/socio/concentradosSocioStore'
-import { useConcentradoWebSocket } from '@/composables/useConcentradoWebSocket'
+import { useConcentradoWS } from '@/composables/useConcentradoWS'
 import {
   X,
   PackageCheck,
@@ -14,7 +14,7 @@ import {
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from '@/components/ingenio/ConcentradoDetalleTabGeneral.vue'
 import ConcentradoDetalleTabKanbanSocio from '@/components/socio/ConcentradoDetalleTabKanbanSocio.vue'
-import ConcentradoDetalleTabHistorial from '@/components/ingenio/ConcentradoDetalleTabHistorial.vue'
+import ConcentradoDetalleTabHistorialSocio from '@/components/socio/ConcentradoDetalleTabHistorialSocio.vue' // ✅ CAMBIADO
 
 const props = defineProps({
   concentradoId: {
@@ -26,29 +26,23 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const concentradosStore = useConcentradosSocioStore()
-const concentradoWs = useConcentradoWebSocket()
+const concentradoWs = useConcentradoWS()
 
 const tabActual = ref('general')
-let subscription = null
 
-watch(() => props.concentradoId, async (newId) => {
+watch(() => props.concentradoId, async (newId, oldId) => {
+  if (oldId) {
+    concentradoWs.desuscribirConcentrado(oldId)
+  }
+  
   if (newId) {
-    // Cargar detalle inicial
     await concentradosStore.fetchConcentradoDetalle(newId)
     tabActual.value = 'general'
     
-    // Conectar WebSocket y suscribirse
     try {
-      await concentradoWs.conectar()
-      
-      // Desuscribirse de anterior si existe
-      if (subscription) subscription.unsubscribe()
-      
-      // Suscribirse al topic del concentrado específico
-      subscription = concentradoWs.suscribirConcentrado(newId, (data) => {
+      await concentradoWs.suscribirConcentrado(newId, (data) => {
         console.log('🔔 Actualización recibida en detalle:', data.evento)
         
-        // Actualizar store SIN hacer fetch adicional
         if (data.concentrado) {
           concentradosStore.concentradoDetalle = data.concentrado
           console.log('✅ Concentrado actualizado reactivamente')
@@ -60,7 +54,7 @@ watch(() => props.concentradoId, async (newId) => {
         }
       })
       
-      console.log('✅ Suscrito a actualizaciones del concentrado', newId)
+      console.log('✅ Suscrito a concentrado', newId)
     } catch (error) {
       console.error('❌ Error al suscribirse:', error)
     }
@@ -68,18 +62,18 @@ watch(() => props.concentradoId, async (newId) => {
 }, { immediate: true })
 
 onUnmounted(() => {
-  if (subscription) subscription.unsubscribe()
+  if (props.concentradoId) {
+    concentradoWs.desuscribirConcentrado(props.concentradoId)
+  }
 })
 
 const concentrado = computed(() => concentradosStore.concentradoDetalle)
 
-// Determinar qué tabs están disponibles según el estado
 const tabsDisponibles = computed(() => {
   const tabs = [
     { id: 'general', label: 'General', icon: Info, disponible: true }
   ]
 
-  // Kanban disponible desde "en_camino_a_planta" en adelante
   if (concentrado.value && concentrado.value.estado !== 'creado') {
     tabs.push({ id: 'kanban', label: 'Kanban', icon: Kanban, disponible: true })
   }
@@ -184,7 +178,7 @@ const tabsDisponibles = computed(() => {
               :concentrado-id="concentradoId"
             />
 
-            <ConcentradoDetalleTabHistorial 
+            <ConcentradoDetalleTabHistorialSocio 
               v-show="tabActual === 'historial'" 
               :concentrado="concentrado"
               :concentrado-id="concentradoId"

@@ -2,7 +2,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useConcentradosSocioStore } from '@/stores/socio/concentradosSocioStore'
-import { useConcentradoWebSocket } from '@/composables/useConcentradoWebSocket'
+import { useConcentradoWS } from '@/composables/useConcentradoWS'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
   PackageCheck,
@@ -20,7 +20,7 @@ import Paginacion from '@/components/socio/Paginacion.vue'
 import ModalConcentradoDetalleSocio from '@/components/socio/ModalConcentradoDetalleSocio.vue'
 
 const concentradosStore = useConcentradosSocioStore()
-const concentradoWs = useConcentradoWebSocket()
+const concentradoWs = useConcentradoWS()
 
 const mostrarModalDetalle = ref(false)
 const concentradoSeleccionadoId = ref(null)
@@ -28,35 +28,18 @@ const concentradoSeleccionadoId = ref(null)
 let subscription = null
 
 onMounted(async () => {
-  try {
-    await concentradoWs.conectar()
-    console.log('✅ WebSocket de concentrados conectado (Socio)')
-    
-    subscription = concentradoWs.suscribirCola((data) => {
-      console.log('🔔 Actualización de concentrado recibida:', data)
-      
-      concentradosStore.fetchConcentrados()
-      concentradosStore.fetchDashboard()
-    })
-    
-    console.log('✅ Suscrito a actualizaciones de concentrados')
-    
-  } catch (error) {
-    console.error('❌ Error al conectar WebSocket:', error)
-  }
-  
+  await concentradoWs.suscribirCola((data) => {
+    console.log('🔔 Actualización recibida:', data)
+    concentradosStore.fetchConcentrados()
+    concentradosStore.fetchDashboard()
+  })
+
   await concentradosStore.fetchConcentrados()
-  await concentradosStore.fetchDashboard()
+    await concentradosStore.fetchDashboard()
 })
 
 onUnmounted(() => {
-  console.log('🔌 Desmontando vista de concentrados...')
-  if (subscription) {
-    subscription.unsubscribe()
-    console.log('✅ Desuscrito de cola de concentrados')
-  }
-  concentradoWs.desconectar()
-  console.log('✅ WebSocket desconectado')
+  concentradoWs.desuscribirCola()
 })
 
 const verDetalle = (concentrado) => {

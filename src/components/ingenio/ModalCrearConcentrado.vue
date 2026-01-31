@@ -552,6 +552,16 @@ const getMineralesNombres = (lote) => {
                               <p class="text-xs text-secondary">Peso</p>
                               <p class="text-sm font-medium text-neutral">{{ lote.pesoTotalReal }} kg</p>
                             </div>
+                            <div>
+                              <p class="text-xs text-secondary">Creado</p>
+                              <p class="text-sm font-medium text-neutral">{{ formatDate(lote.fechaCreacion) }}</p>
+                            </div>
+                            <div>
+                              <p class="text-xs text-secondary">Socio</p>
+                              <p class="text-sm font-medium text-neutral truncate">
+                                {{ lote.socioNombres }} {{ lote.socioApellidos }}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </TransitionGroup>

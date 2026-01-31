@@ -340,6 +340,9 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
       }
       
       await fetchProcesos(concentradoId)
+      
+      await fetchConcentrados()
+      await fetchConcentradoDetalle(concentradoId)
       kanban.value = data.data
 
       uiStore.showSuccess(

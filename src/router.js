@@ -209,6 +209,14 @@ const routes = [
         meta: { 
           title: 'Notificaciones - Socio'
         }
+      },
+      {
+        path : 'concentrados',
+        name : 'SocioConcentrados',
+        component : () => import('./views/socio/Concentrados.vue'),
+        meta : {
+          title : 'Concentrados - Socio'
+        }
       }
       /*{
         path: 'liquidaciones',

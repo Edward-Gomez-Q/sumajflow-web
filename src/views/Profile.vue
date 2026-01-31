@@ -294,7 +294,7 @@ const userInitials = computed(() => {
             class="bg-green-500 rounded-lg p-3 shadow-sm"
           >
             <div class="flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 text-white flex-shrink-0" />
+              <CheckCircle2 class="w-4 h-4 text-white shrink-0" />
               <p class="text-sm font-medium text-white">
                 {{ successMessage }}
               </p>
@@ -308,7 +308,7 @@ const userInitials = computed(() => {
           class="bg-red-500 rounded-lg p-3 shadow-sm"
         >
           <div class="flex items-center gap-2">
-            <AlertCircle class="w-4 h-4 text-white flex-shrink-0" />
+            <AlertCircle class="w-4 h-4 text-white shrink-0" />
             <p class="text-sm font-medium text-white">
               {{ localError || profileStore.error }}
             </p>
@@ -320,7 +320,7 @@ const userInitials = computed(() => {
           <!-- Profile Header -->
           <div class="px-4 py-4 border-b border-border">
             <div class="flex items-center gap-3">
-              <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <span class="text-lg font-bold text-primary">{{ userInitials }}</span>
               </div>
               <div class="min-w-0 flex-1">
@@ -375,7 +375,7 @@ const userInitials = computed(() => {
                 class="bg-blue-500 rounded-lg p-3 shadow-sm"
               >
                 <div class="flex items-start gap-2">
-                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <Info class="w-4 h-4 text-white mt-0.5 shrink-0" />
                   <div class="text-xs text-white">
                     <p class="font-semibold mb-0.5">Restricciones para transportistas</p>
                     <p>
@@ -546,7 +546,7 @@ const userInitials = computed(() => {
             <div v-else-if="activeTab === 'email'" class="space-y-4">
               <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
                 <div class="flex items-start gap-2">
-                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <Info class="w-4 h-4 text-white mt-0.5 shrink-0" />
                   <p class="text-xs text-white">
                     Por seguridad, necesitas ingresar tu contraseña actual para cambiar tu correo electrónico.
                   </p>
@@ -611,7 +611,7 @@ const userInitials = computed(() => {
             <div v-else-if="activeTab === 'password'" class="space-y-4">
               <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
                 <div class="flex items-start gap-2">
-                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <Info class="w-4 h-4 text-white mt-0.5 shrink-0" />
                   <div class="text-xs text-white">
                     <p class="font-semibold mb-1">Requisitos de seguridad:</p>
                     <p>Mínimo 8 caracteres, combina mayúsculas, minúsculas, números y símbolos.</p>
@@ -739,7 +739,7 @@ const userInitials = computed(() => {
             <div v-else-if="activeTab === 'address'" class="space-y-4">
               <div class="bg-blue-500 rounded-lg p-3 shadow-sm">
                 <div class="flex items-start gap-2">
-                  <Info class="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+                  <Info class="w-4 h-4 text-white mt-0.5 shrink-0" />
                   <p class="text-xs text-white">
                     Esta información será utilizada para correspondencia y documentación oficial.
                   </p>

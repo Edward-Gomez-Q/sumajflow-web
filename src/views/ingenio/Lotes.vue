@@ -1,6 +1,6 @@
 <!-- src/views/ingenio/Lotes.vue -->
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useLotesIngenioStore } from '@/stores/ingenio/lotesIngenioStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { 
@@ -21,6 +21,12 @@ import LoteRechazoIngenioModal from '@/components/ingenio/LoteRechazoIngenioModa
 import LotesFiltrosIngenio from '@/components/ingenio/LotesFiltrosIngenio.vue'
 import Paginacion from '@/components/socio/Paginacion.vue'
 
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '../../stores/uiStore'
+
+const lotesWS = useLotesWS()
+const uiStore = useUIStore()
+
 const lotesStore = useLotesIngenioStore()
 
 const showDetalleModal = ref(false)
@@ -31,6 +37,44 @@ const loteSeleccionado = ref(null)
 
 onMounted(async () => {
   await lotesStore.fetchLotes()
+    lotesWS.suscribirCola((evento) => {
+    console.log('🔔 Evento de lote recibido:', evento)
+    lotesStore.fetchLotes()
+    
+    switch (evento.evento) {
+      case 'lote_aprobado_cooperativa':
+        uiStore.showToast(
+          `Lote #${evento.loteId} aprobado - ${evento.camioneAsignados} camiones asignados`,
+          'success'
+        )
+        break
+        
+      case 'lote_rechazado_cooperativa':
+        uiStore.showToast(
+          `Lote #${evento.loteId} rechazado: ${evento.motivoRechazo || 'Sin motivo especificado'}`,
+          'error'
+        )
+        break
+        
+      case 'transporte_iniciado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} inició transporte del lote #${evento.loteId}`,
+          'info'
+        )
+        break
+        
+      case 'transporte_finalizado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} completó transporte del lote #${evento.loteId}`,
+          'success'
+        )
+        break
+    }
+  })
+})
+
+onUnmounted(() => {
+  lotesWS.limpiarSuscripciones()
 })
 
 const openDetalleModal = (lote) => {

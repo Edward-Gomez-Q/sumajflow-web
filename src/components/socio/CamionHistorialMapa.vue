@@ -22,8 +22,9 @@ const props = defineProps({
 
 const mapContainer = ref(null)
 let map = null
-let polyline = null
-let marcadores = []
+let routeLines = [] // 🆕 Array para líneas segmentadas
+let historialMarkers = [] // 🆕 Marcadores de cambios de estado
+let puntosControlMarkers = [] // Marcadores de puntos de control
 const mostrarRuta = ref(true)
 const mostrarMarcadores = ref(false)
 
@@ -70,11 +71,12 @@ const inicializarMapa = () => {
     const lat = primerPunto?.lat || -19.5
     const lng = primerPunto?.lng || -65.8
 
-    // Crear mapa
+    // Crear mapa con Canvas para mejor rendimiento
     map = L.map(mapContainer.value, {
       center: [lat, lng],
       zoom: 13,
-      zoomControl: true
+      zoomControl: true,
+      preferCanvas: true // 🆕 Usar canvas para mejor rendimiento
     })
 
     // Agregar tiles
@@ -132,7 +134,7 @@ const agregarPuntosControl = () => {
       </div>
     `)
 
-    L.circle([punto.lat, punto.lng], {
+    const circle = L.circle([punto.lat, punto.lng], {
       radius: punto.radio || 1000,
       color: color,
       fillColor: color,
@@ -140,6 +142,9 @@ const agregarPuntosControl = () => {
       weight: 1,
       dashArray: '5, 5'
     }).addTo(map)
+
+    puntosControlMarkers.push(marker)
+    puntosControlMarkers.push(circle)
   })
 
   console.log(`✅ ${puntosControl.length} puntos de control agregados`)
@@ -163,65 +168,306 @@ const actualizarMapa = () => {
     new Date(a.timestamp) - new Date(b.timestamp)
   )
 
-  // Dibujar ruta (polyline)
+  // Simplificar si hay demasiados puntos
+  const puntosProcesados = puntosOrdenados.length > 500
+    ? simplificarUbicaciones(puntosOrdenados, 500)
+    : puntosOrdenados
+
+  console.log(`📊 Procesando ${puntosProcesados.length} puntos (simplificados de ${puntosOrdenados.length})`)
+
+  // Dibujar ruta segmentada (por estado de conexión)
   if (mostrarRuta.value) {
-    dibujarRuta(puntosOrdenados)
+    dibujarRutaSegmentada(puntosProcesados)
   }
 
-  // Agregar marcadores
+  // Agregar marcadores de puntos intermedios
   if (mostrarMarcadores.value) {
-    agregarMarcadoresPuntos(puntosOrdenados)
+    agregarMarcadoresPuntos(puntosProcesados)
   }
 
-  // Agregar marcadores de inicio y fin
-  agregarMarcadoresInicioFin(puntosOrdenados)
+  // Marcar cambios de estado importantes
+  marcarCambiosDeEstado(puntosOrdenados)
 
   // Ajustar vista
   ajustarVista()
 }
 
-const dibujarRuta = (puntos) => {
-  // Agrupar por estado para diferentes colores
-  const segmentosPorEstado = {}
-  
-  puntos.forEach(punto => {
-    const estado = punto.estadoViaje || 'Sin estado'
-    if (!segmentosPorEstado[estado]) {
-      segmentosPorEstado[estado] = []
+// 🆕 Simplificar ubicaciones manteniendo puntos importantes
+const simplificarUbicaciones = (ubicaciones, maxPuntos) => {
+  if (ubicaciones.length <= maxPuntos) return ubicaciones
+
+  const intervalo = Math.ceil(ubicaciones.length / maxPuntos)
+  const simplificadas = []
+
+  // Siempre incluir primer punto
+  simplificadas.push(ubicaciones[0])
+
+  // Incluir puntos intermedios cada 'intervalo'
+  for (let i = intervalo; i < ubicaciones.length - 1; i += intervalo) {
+    simplificadas.push(ubicaciones[i])
+  }
+
+  // Siempre incluir último punto
+  simplificadas.push(ubicaciones[ubicaciones.length - 1])
+
+  // Incluir todos los puntos donde hay cambio de estado offline/online
+  ubicaciones.forEach((ubicacion, index) => {
+    if (index > 0 && index < ubicaciones.length - 1) {
+      if (ubicacion.esOffline !== ubicaciones[index - 1].esOffline) {
+        if (!simplificadas.some(u => u.timestamp === ubicacion.timestamp)) {
+          simplificadas.push(ubicacion)
+        }
+      }
     }
-    segmentosPorEstado[estado].push([punto.lat, punto.lng])
   })
 
-  // Dibujar cada segmento con su color
-  Object.entries(segmentosPorEstado).forEach(([estado, coordenadas]) => {
-    const color = getColorEstado(estado)
+  // Ordenar por timestamp
+  simplificadas.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+
+  console.log(`🔄 Ubicaciones simplificadas: ${ubicaciones.length} → ${simplificadas.length}`)
+  return simplificadas
+}
+
+// 🆕 Dibujar ruta dividida en segmentos por estado de conexión
+const dibujarRutaSegmentada = (puntos) => {
+  if (puntos.length < 2) return
+
+  let segmentoActual = []
+  let esOfflineActual = puntos[0].esOffline
+
+  puntos.forEach((punto, index) => {
+    // Si cambia el estado de conexión, dibuja el segmento anterior
+    if (punto.esOffline !== esOfflineActual && segmentoActual.length > 0) {
+      // Dibujar segmento
+      crearSegmentoLinea(segmentoActual, esOfflineActual)
+      
+      // Iniciar nuevo segmento con el último punto del anterior (para continuidad)
+      segmentoActual = [segmentoActual[segmentoActual.length - 1]]
+      esOfflineActual = punto.esOffline
+    }
     
-    const line = L.polyline(coordenadas, {
-      color: color,
-      weight: 4,
-      opacity: 0.7,
-      smoothFactor: 1
+    segmentoActual.push([punto.lat, punto.lng])
+
+    // Si es el último punto, dibujar el segmento final
+    if (index === puntos.length - 1 && segmentoActual.length > 1) {
+      crearSegmentoLinea(segmentoActual, esOfflineActual)
+    }
+  })
+
+  console.log(`✅ Dibujadas ${routeLines.length} líneas segmentadas`)
+}
+
+// 🆕 Crear un segmento de línea con estilo según estado - ACTUALIZADO
+const crearSegmentoLinea = (puntos, esOffline) => {
+  if (puntos.length < 2) return
+
+  const linea = L.polyline(puntos, {
+    color: esOffline ? '#F59E0B' : '#3B82F6', // 🔥 Naranja brillante para offline
+    weight: esOffline ? 4 : 4, // 🔥 Mismo grosor para ambos
+    opacity: esOffline ? 0.75 : 0.75, // 🔥 Misma opacidad para ambos
+    dashArray: null, // 🔥 Sin punteado, línea sólida para ambos
+    smoothFactor: 1.5,
+    lineCap: 'round',
+    lineJoin: 'round'
+  }).addTo(map)
+
+  routeLines.push(linea)
+}
+
+// 🆕 Marcar solo cambios importantes de estado
+const marcarCambiosDeEstado = (ubicaciones) => {
+  let inicioOffline = null
+  let contadorDesconexiones = 0
+
+  ubicaciones.forEach((ubicacion, index) => {
+    // Detectar inicio de período offline
+    if (ubicacion.esOffline && (index === 0 || !ubicaciones[index - 1].esOffline)) {
+      inicioOffline = index
+    }
+    
+    // Detectar fin de período offline
+    if (inicioOffline !== null && !ubicacion.esOffline && index > 0 && ubicaciones[index - 1].esOffline) {
+      contadorDesconexiones++
+      
+      const ubicacionInicio = ubicaciones[inicioOffline]
+      const ubicacionFin = ubicacion
+      
+      const duracionMs = new Date(ubicacionFin.timestamp) - new Date(ubicacionInicio.timestamp)
+      const duracionMin = Math.round(duracionMs / 60000)
+
+      // Calcular distancia aproximada
+      const distanciaKm = calcularDistanciaTotal(ubicaciones.slice(inicioOffline, index + 1))
+
+      // Marcador de inicio de desconexión (rojo)
+      const markerInicio = L.circleMarker(
+        [ubicacionInicio.lat, ubicacionInicio.lng],
+        {
+          radius: 7,
+          fillColor: '#EF4444',
+          color: '#fff',
+          weight: 2,
+          fillOpacity: 0.9,
+          zIndexOffset: 500
+        }
+      ).bindPopup(`
+        <div style="min-width: 170px;">
+          <p style="margin: 0 0 6px 0; font-weight: 600; color: #EF4444; font-size: 13px;">
+            ⚠️ Pérdida de Conexión #${contadorDesconexiones}
+          </p>
+          <div style="font-size: 11px; color: #6B7280; line-height: 1.6;">
+            <p style="margin: 2px 0;"><strong>Estado:</strong> ${ubicacionInicio.estadoViaje || 'N/A'}</p>
+            <p style="margin: 2px 0;"><strong>Inicio:</strong> ${new Date(ubicacionInicio.timestamp).toLocaleTimeString('es-BO')}</p>
+            <p style="margin: 2px 0;"><strong>Duración:</strong> ${duracionMin} min</p>
+            <p style="margin: 2px 0;"><strong>Distancia:</strong> ${distanciaKm.toFixed(2)} km</p>
+            <p style="margin: 2px 0;"><strong>Velocidad:</strong> ${Math.round(ubicacionInicio.velocidad || 0)} km/h</p>
+          </div>
+        </div>
+      `).addTo(map)
+
+      historialMarkers.push(markerInicio)
+
+      // Marcador de recuperación de conexión (verde)
+      const markerFin = L.circleMarker(
+        [ubicacionFin.lat, ubicacionFin.lng],
+        {
+          radius: 7,
+          fillColor: '#10B981',
+          color: '#fff',
+          weight: 2,
+          fillOpacity: 0.9,
+          zIndexOffset: 500
+        }
+      ).bindPopup(`
+        <div style="min-width: 170px;">
+          <p style="margin: 0 0 6px 0; font-weight: 600; color: #10B981; font-size: 13px;">
+            ✓ Conexión Recuperada #${contadorDesconexiones}
+          </p>
+          <div style="font-size: 11px; color: #6B7280; line-height: 1.6;">
+            <p style="margin: 2px 0;"><strong>Estado:</strong> ${ubicacionFin.estadoViaje || 'N/A'}</p>
+            <p style="margin: 2px 0;"><strong>Hora:</strong> ${new Date(ubicacionFin.timestamp).toLocaleTimeString('es-BO')}</p>
+            <p style="margin: 2px 0;"><strong>Tiempo offline:</strong> ${duracionMin} min</p>
+            <p style="margin: 2px 0;"><strong>Velocidad:</strong> ${Math.round(ubicacionFin.velocidad || 0)} km/h</p>
+          </div>
+        </div>
+      `).addTo(map)
+
+      historialMarkers.push(markerFin)
+
+      inicioOffline = null
+    }
+  })
+
+  // Marcar inicio y fin del viaje
+  if (ubicaciones.length > 0) {
+    // Marcador de inicio del viaje
+    const inicio = ubicaciones[0]
+    const iconoInicio = L.divIcon({
+      html: `
+        <div style="position: relative; width: 36px; height: 36px;">
+          <div style="width: 36px; height: 36px; background: #8B5CF6; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.3);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div style="position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: #8B5CF6; color: white; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+            INICIO
+          </div>
+        </div>
+      `,
+      className: 'marcador-inicio',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    })
+
+    const marcadorInicio = L.marker([inicio.lat, inicio.lng], {
+      icon: iconoInicio,
+      zIndexOffset: 2000
     }).addTo(map)
 
-    // Agregar efecto de línea offline si corresponde
-    const puntosOfflineEnEstado = puntos.filter(p => 
-      p.estadoViaje === estado && p.esOffline
-    )
-    
-    if (puntosOfflineEnEstado.length > 0) {
-      const coordenadasOffline = puntosOfflineEnEstado.map(p => [p.lat, p.lng])
-      L.polyline(coordenadasOffline, {
-        color: '#F59E0B',
-        weight: 6,
-        opacity: 0.4,
-        dashArray: '10, 10'
-      }).addTo(map)
-    }
+    marcadorInicio.bindPopup(`
+      <div style="min-width: 170px;">
+        <h3 style="margin: 0 0 8px 0; font-weight: 600; color: #8B5CF6; font-size: 14px;">🏁 Inicio del Viaje</h3>
+        <div style="font-size: 11px; color: #6B7280; line-height: 1.6;">
+          <p style="margin: 4px 0;"><strong>Fecha/Hora:</strong><br>${new Date(inicio.timestamp).toLocaleString('es-BO')}</p>
+          <p style="margin: 4px 0;"><strong>Estado:</strong> ${inicio.estadoViaje || 'N/A'}</p>
+          <p style="margin: 4px 0;"><strong>Velocidad:</strong> ${Math.round(inicio.velocidad || 0)} km/h</p>
+          <p style="margin: 4px 0;"><strong>Coordenadas:</strong><br>${inicio.lat.toFixed(6)}, ${inicio.lng.toFixed(6)}</p>
+        </div>
+      </div>
+    `)
 
-    marcadores.push(line)
-  })
+    historialMarkers.push(marcadorInicio)
 
-  console.log('✅ Ruta dibujada')
+    // Marcador de fin del viaje
+    const fin = ubicaciones[ubicaciones.length - 1]
+    const iconoFin = L.divIcon({
+      html: `
+        <div style="position: relative; width: 36px; height: 36px;">
+          <div style="width: 36px; height: 36px; background: #F97316; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.3);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div style="position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: #F97316; color: white; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+            ÚLTIMO
+          </div>
+        </div>
+      `,
+      className: 'marcador-fin',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    })
+
+    const marcadorFin = L.marker([fin.lat, fin.lng], {
+      icon: iconoFin,
+      zIndexOffset: 2000
+    }).addTo(map)
+
+    marcadorFin.bindPopup(`
+      <div style="min-width: 170px;">
+        <h3 style="margin: 0 0 8px 0; font-weight: 600; color: #F97316; font-size: 14px;">🏁 Última Ubicación</h3>
+        <div style="font-size: 11px; color: #6B7280; line-height: 1.6;">
+          <p style="margin: 4px 0;"><strong>Fecha/Hora:</strong><br>${new Date(fin.timestamp).toLocaleString('es-BO')}</p>
+          <p style="margin: 4px 0;"><strong>Estado:</strong> ${fin.estadoViaje || 'N/A'}</p>
+          <p style="margin: 4px 0;"><strong>Velocidad:</strong> ${Math.round(fin.velocidad || 0)} km/h</p>
+          <p style="margin: 4px 0;"><strong>Coordenadas:</strong><br>${fin.lat.toFixed(6)}, ${fin.lng.toFixed(6)}</p>
+        </div>
+      </div>
+    `)
+
+    historialMarkers.push(marcadorFin)
+  }
+
+  console.log(`✅ Marcados ${contadorDesconexiones} cambios de estado + inicio/fin`)
+}
+
+// 🆕 Calcular distancia total de un segmento
+const calcularDistanciaTotal = (ubicaciones) => {
+  let distanciaTotal = 0
+
+  for (let i = 1; i < ubicaciones.length; i++) {
+    const lat1 = ubicaciones[i - 1].lat
+    const lng1 = ubicaciones[i - 1].lng
+    const lat2 = ubicaciones[i].lat
+    const lng2 = ubicaciones[i].lng
+
+    distanciaTotal += calcularDistancia(lat1, lng1, lat2, lng2)
+  }
+
+  return distanciaTotal
+}
+
+// 🆕 Calcular distancia entre dos puntos (fórmula de Haversine)
+const calcularDistancia = (lat1, lng1, lat2, lng2) => {
+  const R = 6371 // Radio de la Tierra en km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
 const agregarMarcadoresPuntos = (puntos) => {
@@ -245,109 +491,24 @@ const agregarMarcadoresPuntos = (puntos) => {
     const velocidad = punto.velocidad ? Math.round(punto.velocidad) : 0
     
     marker.bindPopup(`
-      <div style="min-width: 150px; font-size: 12px;">
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-          <div style="width: 8px; height: 8px; background: ${color}; border-radius: 50%;"></div>
-          <strong>${punto.esOffline ? 'Offline' : 'Online'}</strong>
+      <div style="min-width: 160px; font-size: 12px;">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <div style="width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></div>
+          <strong style="color: ${color};">${punto.esOffline ? 'Offline' : 'Online'}</strong>
         </div>
-        <p style="margin: 4px 0; color: #6B7280;">📍 ${punto.lat.toFixed(6)}, ${punto.lng.toFixed(6)}</p>
-        <p style="margin: 4px 0; color: #6B7280;">🚗 ${velocidad} km/h</p>
-        <p style="margin: 4px 0; color: #6B7280;">📊 ${punto.estadoViaje}</p>
-        <p style="margin: 4px 0; color: #9CA3AF;">⏰ ${timestamp}</p>
+        <div style="font-size: 11px; color: #6B7280; line-height: 1.6;">
+          <p style="margin: 3px 0;">📍 ${punto.lat.toFixed(6)}, ${punto.lng.toFixed(6)}</p>
+          <p style="margin: 3px 0;">🚗 ${velocidad} km/h</p>
+          <p style="margin: 3px 0;">📊 ${punto.estadoViaje || 'N/A'}</p>
+          <p style="margin: 3px 0; color: #9CA3AF;">⏰ ${timestamp}</p>
+        </div>
       </div>
     `)
 
-    marcadores.push(marker)
+    historialMarkers.push(marker)
   })
 
-  console.log('✅ Marcadores agregados')
-}
-
-const agregarMarcadoresInicioFin = (puntos) => {
-  if (puntos.length === 0) return
-
-  // Marcador de inicio
-  const primerPunto = puntos[0]
-  const iconoInicio = L.divIcon({
-    html: `
-      <div style="position: relative; width: 32px; height: 32px;">
-        <div style="width: 32px; height: 32px; background: #10B981; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
-        </div>
-        <div style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #10B981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap;">
-          Inicio
-        </div>
-      </div>
-    `,
-    className: 'marcador-inicio',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
-  })
-
-  const marcadorInicio = L.marker([primerPunto.lat, primerPunto.lng], {
-    icon: iconoInicio,
-    zIndexOffset: 2000
-  }).addTo(map)
-
-  marcadorInicio.bindPopup(`
-    <div style="min-width: 150px;">
-      <h3 style="margin: 0 0 8px 0; font-weight: 600; color: #10B981;">🚩 Inicio del Viaje</h3>
-      <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
-        ${new Date(primerPunto.timestamp).toLocaleString('es-BO')}
-      </p>
-      <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
-        Estado: ${primerPunto.estadoViaje}
-      </p>
-    </div>
-  `)
-
-  marcadores.push(marcadorInicio)
-
-  // Marcador de fin
-  const ultimoPunto = puntos[puntos.length - 1]
-  const iconoFin = L.divIcon({
-    html: `
-      <div style="position: relative; width: 32px; height: 32px;">
-        <div style="width: 32px; height: 32px; background: #EF4444; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          </svg>
-        </div>
-        <div style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #EF4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap;">
-          Último
-        </div>
-      </div>
-    `,
-    className: 'marcador-fin',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
-  })
-
-  const marcadorFin = L.marker([ultimoPunto.lat, ultimoPunto.lng], {
-    icon: iconoFin,
-    zIndexOffset: 2000
-  }).addTo(map)
-
-  marcadorFin.bindPopup(`
-    <div style="min-width: 150px;">
-      <h3 style="margin: 0 0 8px 0; font-weight: 600; color: #EF4444;">🏁 Última Ubicación</h3>
-      <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
-        ${new Date(ultimoPunto.timestamp).toLocaleString('es-BO')}
-      </p>
-      <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
-        Estado: ${ultimoPunto.estadoViaje}
-      </p>
-      <p style="margin: 4px 0; font-size: 12px; color: #6B7280;">
-        Velocidad: ${Math.round(ultimoPunto.velocidad || 0)} km/h
-      </p>
-    </div>
-  `)
-
-  marcadores.push(marcadorFin)
-
-  console.log('✅ Marcadores de inicio/fin agregados')
+  console.log('✅ Marcadores intermedios agregados')
 }
 
 const ajustarVista = () => {
@@ -369,47 +530,63 @@ const ajustarVista = () => {
 
   if (bounds.length > 0) {
     map.fitBounds(bounds, {
-      padding: [50, 50],
+      padding: [60, 60],
       maxZoom: 15
     })
   }
 }
 
 const limpiarElementos = () => {
-  if (polyline) {
-    map.removeLayer(polyline)
-    polyline = null
+  // Limpiar líneas segmentadas
+  if (routeLines.length > 0) {
+    routeLines.forEach(line => {
+      try {
+        if (map && map.hasLayer(line)) {
+          map.removeLayer(line)
+        }
+      } catch (e) {
+        console.warn('Error removiendo línea:', e)
+      }
+    })
+    routeLines = []
   }
-  
-  marcadores.forEach(marcador => {
-    try {
-      map.removeLayer(marcador)
-    } catch (e) {
-      // Ignorar errores si el marcador ya fue removido
-    }
-  })
-  marcadores = []
+
+  // Limpiar marcadores de historial
+  if (historialMarkers.length > 0) {
+    historialMarkers.forEach(marker => {
+      try {
+        if (map && map.hasLayer(marker)) {
+          map.removeLayer(marker)
+        }
+      } catch (e) {
+        console.warn('Error removiendo marcador:', e)
+      }
+    })
+    historialMarkers = []
+  }
 }
 
 const limpiarMapa = () => {
   limpiarElementos()
+  
+  // Limpiar puntos de control
+  if (puntosControlMarkers.length > 0) {
+    puntosControlMarkers.forEach(marker => {
+      try {
+        if (map && map.hasLayer(marker)) {
+          map.removeLayer(marker)
+        }
+      } catch (e) {
+        console.warn('Error removiendo punto de control:', e)
+      }
+    })
+    puntosControlMarkers = []
+  }
+
   if (map) {
     map.remove()
     map = null
   }
-}
-
-const getColorEstado = (estado) => {
-  const colores = {
-    'En camino a la mina': '#3B82F6',
-    'Esperando carguío': '#F59E0B',
-    'En camino balanza cooperativa': '#10B981',
-    'En camino balanza destino': '#8B5CF6',
-    'En camino almacén destino': '#EC4899',
-    'Descargando': '#14B8A6',
-    'Completado': '#22C55E'
-  }
-  return colores[estado] || '#6B7280'
 }
 
 defineExpose({
@@ -452,7 +629,7 @@ defineExpose({
         @click="mostrarMarcadores = !mostrarMarcadores"
         class="bg-white rounded-lg shadow-lg p-2 transition-colors"
         :class="mostrarMarcadores ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-700'"
-        title="Mostrar/Ocultar puntos"
+        title="Mostrar/Ocultar puntos intermedios"
       >
         <MapPin class="w-5 h-5" />
       </button>
@@ -461,32 +638,44 @@ defineExpose({
     <!-- Info de puntos -->
     <div class="absolute bottom-4 left-4 z-1000 bg-white rounded-lg shadow-lg px-3 py-2">
       <span class="text-xs font-medium text-gray-700">
-        {{ puntos.length.toLocaleString() }} ubicaciones
+        📊 {{ puntos.length.toLocaleString() }} ubicaciones registradas
       </span>
     </div>
 
-    <!-- Leyenda -->
-    <div class="absolute bottom-4 right-4 z-1000 bg-white rounded-lg shadow-lg p-3" style="max-width: 200px;">
+    <!-- Leyenda actualizada - 🔥 CAMBIADA -->
+    <div class="absolute bottom-4 right-4 z-1000 bg-white rounded-lg shadow-lg p-3" style="max-width: 220px;">
       <h4 class="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
         <Layers class="w-3 h-3" />
         Leyenda
       </h4>
       <div class="space-y-1.5 text-xs">
         <div class="flex items-center gap-2">
-          <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-          <span class="text-gray-600">Online</span>
+          <div class="w-8 h-0.5 bg-blue-500"></div>
+          <span class="text-gray-600">Ruta online</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-0.5 bg-orange-500"></div>
+          <span class="text-gray-600">Ruta offline</span>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-gray-200">
+          <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+          <span class="text-gray-600">Inicio viaje</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
-          <span class="text-gray-600">Offline</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span class="text-gray-600">Inicio</span>
+          <span class="text-gray-600">Último punto</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-          <span class="text-gray-600">Último</span>
+          <span class="text-gray-600">Pérdida conexión</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+          <span class="text-gray-600">Recuperación</span>
+        </div>
+        <div class="flex items-center gap-2 pt-1 border-t border-gray-200">
+          <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <span class="text-gray-600">Punto intermedio</span>
         </div>
       </div>
     </div>

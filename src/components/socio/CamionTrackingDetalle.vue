@@ -121,6 +121,18 @@ const cargarResumenFinal = async (asignacionId) => {
   }
 }
 
+const formatTiempoRelativo = (timestamp) => {
+  if (!timestamp) return '-'
+  const ahora = new Date()
+  const fecha = new Date(timestamp)
+  const diff = Math.floor((ahora - fecha) / 1000)
+  
+  if (diff < 60) return 'Justo ahora'
+  if (diff < 3600) return `Hace ${Math.floor(diff / 60)}min`
+  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)}h`
+  return `Hace ${Math.floor(diff / 86400)}d`
+}
+
 // 🆕 Cargar evidencias del viaje
 const cargarEvidencias = async () => {
   if (!props.camion?.id) return
@@ -340,14 +352,82 @@ const getImageUrl = (path) => {
                 <WifiOff class="w-8 h-8 text-white" />
               </div>
               <h3 class="text-lg font-semibold text-neutral mb-2">Sin datos de tracking</h3>
-              <p class="text-sm text-secondary">
-                Este camión aún no ha iniciado su viaje
-              </p>
             </div>
 
             <!-- Con tracking -->
             <div v-else class="space-y-6">
 
+              <div class="bg-base rounded-xl border border-border overflow-hidden">
+                <div class="p-4 border-b border-border bg-hover">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <MapPin class="w-4 h-4 text-primary" />
+                      <h3 class="text-sm font-semibold text-neutral">Mapa en Tiempo Real</h3>
+                    </div>
+                    <div 
+                      class="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                      :class="enLinea ? 'bg-green-500/10' : 'bg-red-500/10'"
+                    >
+                      <div 
+                        class="w-2 h-2 rounded-full"
+                        :class="enLinea ? 'bg-green-500 animate-pulse' : 'bg-red-500'"
+                      ></div>
+                      <span 
+                        class="text-xs font-medium"
+                        :class="enLinea ? 'text-green-700' : 'text-red-700'"
+                      >
+                        {{ enLinea ? 'En vivo' : 'Offline' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style="height: 400px;">
+                  <CamionTrackingMapa
+                    :tracking-data="tracking"
+                  />
+                </div>
+              </div>
+
+              <!-- Ubicación actual -->
+              <div 
+                v-if="ubicacionActual"
+                class="bg-base rounded-xl p-4 border border-border"
+              >
+                <h3 class="text-sm font-medium text-secondary mb-3 flex items-center gap-2">
+                  <MapPin class="w-4 h-4" />
+                  Ubicación Actual
+                </h3>
+                <div class="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <p class="text-xs text-tertiary">Coordenadas</p>
+                    <p class="font-mono text-sm text-neutral mt-1">
+                      {{ ubicacionActual.lat.toFixed(6) }}, {{ ubicacionActual.lng.toFixed(6) }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-tertiary">Última actualización</p>
+                    <p class="text-sm text-neutral mt-1">
+                      {{ formatTiempoRelativo(ubicacionActual.timestamp) }}
+                    </p>
+                  </div>
+                  <div v-if="ubicacionActual.velocidad !== undefined">
+                    <p class="text-xs text-tertiary">Velocidad</p>
+                    <p class="text-lg font-semibold text-neutral mt-1">
+                      {{ formatVelocidad(ubicacionActual.velocidad) }}
+                    </p>
+                  </div>
+                  <div v-if="ubicacionActual.rumbo !== undefined">
+                    <p class="text-xs text-tertiary">Rumbo</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <Navigation 
+                        class="w-4 h-4 text-primary"
+                        :style="{ transform: `rotate(${ubicacionActual.rumbo}deg)` }"
+                      />
+                      <span class="text-sm text-neutral">{{ Math.round(ubicacionActual.rumbo) }}°</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <!-- Métricas del viaje -->
               <div 
                 v-if="metricas"
@@ -538,7 +618,7 @@ const getImageUrl = (path) => {
                     <p class="text-xs text-tertiary">{{ formatDateTime(evidencias.llegadaMina.timestamp) }}</p>
                   </div>
                 </div>
-                <div class="space-y-2">
+                <div class="space-y-3">
                   <div v-if="evidencias.llegadaMina.observaciones" class="text-sm">
                     <p class="text-xs text-tertiary">Observaciones</p>
                     <p class="text-neutral">{{ evidencias.llegadaMina.observaciones }}</p>
@@ -554,6 +634,16 @@ const getImageUrl = (path) => {
                       <X v-else class="w-4 h-4 text-red-500" />
                       <span class="text-xs text-secondary">Mineral visible</span>
                     </div>
+                  </div>
+                  <!-- ⭐ FOTO SACADA DEL flex gap-3 Y CON SU PROPIO ESPACIO -->
+                  <div v-if="evidencias.llegadaMina.fotoReferenciaUrl" class="space-y-2">
+                    <p class="text-xs text-tertiary">Foto de referencia</p>
+                    <img 
+                      :src="getImageUrl(evidencias.llegadaMina.fotoReferenciaUrl)" 
+                      alt="Foto referencia mina"
+                      class="w-full max-w-md rounded-lg border border-border cursor-pointer hover:opacity-90 transition"
+                      @click="window.open(getImageUrl(evidencias.llegadaMina.fotoReferenciaUrl), '_blank')"
+                    />
                   </div>
                 </div>
               </div>

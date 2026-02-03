@@ -1,6 +1,6 @@
 <!-- src/views/cooperativa/LotesAprobacion.vue -->
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useLotesCooperativaStore } from '@/stores/cooperativa/lotesCooperativaStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { 
@@ -20,7 +20,11 @@ import LoteDetalleCooperativaModal from '@/components/cooperativa/LoteDetalleCoo
 import LoteAprobacionModal from '@/components/cooperativa/LoteAprobacionModal.vue'
 import LoteRechazoModal from '@/components/cooperativa/LoteRechazoModal.vue'
 import LotesFiltrosCooperativa from '@/components/cooperativa/LotesFiltrosCooperativa.vue'
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '@/stores/uiStore'
 
+const lotesWS = useLotesWS()
+const uiStore = useUIStore()
 const lotesStore = useLotesCooperativaStore()
 
 const showDetalleModal = ref(false)
@@ -37,6 +41,25 @@ const filtros = ref({
 
 onMounted(async () => {
   await lotesStore.fetchLotesPendientes()
+    lotesWS.suscribirCola((evento) => {
+    lotesStore.fetchLotesPendientes()
+    
+    if (evento.evento === 'lote_creado') {
+      uiStore.showToast(
+        `Nuevo lote #${evento.loteId} pendiente de aprobación`,
+        'info'
+      )
+    } else if (evento.evento === 'lote_aprobado_destino' || evento.evento === 'lote_rechazado_destino') {
+      uiStore.showToast(
+        `Lote #${evento.loteId} ha sido procesado por el destino`,
+        'success'
+      )
+    }
+    
+  })
+})
+onUnmounted(() => {
+  lotesWS.limpiarSuscripciones()
 })
 
 // Lotes filtrados

@@ -1,6 +1,6 @@
 <!-- src/components/cooperativa/LoteDetalleGeneralModal.vue -->
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useLotesCooperativaGeneralStore } from '@/stores/cooperativa/lotesCooperativaGeneralStore'
 import {
   X,
@@ -13,7 +13,8 @@ import {
 import LoteDetalleTabGeneral from '@/components/socio/LoteDetalleTabGeneral.vue'
 import LoteDetalleTabTransporte from '@/components/socio/LoteDetalleTabTransporte.vue'
 import LoteDetalleTabHistorial from '@/components/socio/LoteDetalleTabHistorial.vue'
-
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '@/stores/uiStore'
 const props = defineProps({
   loteId: {
     type: Number,
@@ -22,19 +23,60 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-
+const uiStore = useUIStore()
+const lotesWS = useLotesWS()
 const lotesStore = useLotesCooperativaGeneralStore()
 const tabActual = ref('general')
 
 onMounted(async () => {
   await lotesStore.fetchLoteDetalle(props.loteId)
+  lotesWS.suscribirLote(props.loteId, (evento) => {
+    console.log('🔔 Actualización en detalle:', evento)
+    
+    if (evento.lote) {
+      lotesStore.setLoteDetalle(evento.lote)
+    } else {
+      lotesStore.fetchLoteDetalle(props.loteId)
+    }
+    const toasts = {
+      lote_aprobado_destino: {
+        message: 'Lote completamente aprobado',
+        icon: 'success'
+      },
+      lote_rechazado_destino: {
+        message: `Rechazado por destino: ${evento.motivoRechazo || 'Sin motivo'}`,
+        icon: 'error'
+      },
+      transporte_iniciado: {
+        message: `Camión #${evento.numeroCamion} inició transporte`,
+        icon: 'info'
+      },
+      transporte_finalizado: {
+        message: `Camión #${evento.numeroCamion} completó transporte`,
+        icon: 'success'
+      }
+    }
+    
+    const toast = toasts[evento.evento]
+    if (toast) {
+      uiStore.showToast(toast.message, toast.icon)
+    }
+  })
+})
+onUnmounted(() => {
+  lotesWS.desuscribirLote(props.loteId)
 })
 
-watch(() => props.loteId, async (newId) => {
-  if (newId) {
-    await lotesStore.fetchLoteDetalle(newId)
+watch(
+  () => props.loteId,
+  async (newId, oldId) => {
+    if (oldId) lotesWS.desuscribirLote(oldId)
+    if (newId) {
+      await lotesStore.fetchLoteDetalle(newId)
+      lotesWS.suscribirLote(newId, handleEvento)
+    }
   }
-})
+)
 
 const lote = computed(() => lotesStore.loteDetalle)
 
@@ -70,27 +112,36 @@ const formatDateShort = (dateString) => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-              <PackageCheck class="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 class="text-xl font-semibold text-neutral">
-                Detalle del Lote #{{ loteId }}
-              </h2>
-              <p v-if="lote" class="text-sm text-secondary mt-0.5">
-                Creado el {{ formatDateShort(lote.fechaCreacion) }}
-              </p>
-            </div>
-          </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+<div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+      <PackageCheck class="w-6 h-6 text-white" />
+    </div>
+    <div>
+      <div class="flex items-center gap-2">
+        <h2 class="text-xl font-semibold text-neutral">
+          Detalle del Lote #{{ loteId }}
+        </h2>
+        <span
+          v-if="lote"
+          class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+          :class="getEstadoColorSolido(lote.estado)"
+        >
+          {{ lote.estado }}
+        </span>
+      </div>
+      <p v-if="lote" class="text-sm text-secondary mt-0.5">
+        Creado el {{ formatDateShort(lote.fechaCreacion) }}
+      </p>
+    </div>
+  </div>
+  <button
+    @click="emit('close')"
+    class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+  >
+    <X class="w-5 h-5" />
+  </button>
+</div>
 
         <!-- Loading -->
         <div v-if="lotesStore.loadingDetalle" class="p-12 text-center flex-1">
@@ -101,18 +152,6 @@ const formatDateShort = (dateString) => {
         <!-- Content -->
         <div v-else-if="lote" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6">
-            <!-- Estado Principal -->
-            <div class="mb-6">
-              <div class="flex items-center gap-3">
-                <span
-                  class="px-4 py-2 rounded-lg text-sm font-medium text-white"
-                  :class="getEstadoColorSolido(lote.estado)"
-                >
-                  {{ lote.estado }}
-                </span>
-                <div class="flex-1 h-px bg-border"></div>
-              </div>
-            </div>
 
             <!-- Tabs -->
             <div class="border-b border-border mb-6">

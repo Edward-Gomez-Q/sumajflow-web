@@ -1,6 +1,6 @@
 <!-- src/components/ingenio/LoteDetalleIngenioModal.vue -->
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import { useLotesIngenioStore } from '@/stores/ingenio/lotesIngenioStore'
 import {
   X,
@@ -15,6 +15,8 @@ import {
 import LoteDetalleTabGeneral from '@/components/socio/LoteDetalleTabGeneral.vue'
 import LoteDetalleTabTransporte from '@/components/socio/LoteDetalleTabTransporte.vue'
 import LoteDetalleTabHistorial from '@/components/socio/LoteDetalleTabHistorial.vue'
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '@/stores/uiStore'
 
 const props = defineProps({
   loteId: {
@@ -27,16 +29,60 @@ const emit = defineEmits(['close', 'aprobar', 'rechazar'])
 
 const lotesStore = useLotesIngenioStore()
 const tabActual = ref('general')
+const uiStore = useUIStore()
+const lotesWS = useLotesWS()
+
 
 onMounted(async () => {
   await lotesStore.fetchLoteDetalle(props.loteId)
+  lotesWS.suscribirLote(props.loteId, (evento) => {
+    console.log('🔔 Actualización en detalle:', evento)
+    
+    if (evento.lote) {
+      lotesStore.setLoteDetalle(evento.lote)
+    } else {
+      lotesStore.fetchLoteDetalle(props.loteId)
+    }
+    const toasts = {
+      lote_aprobado_cooperativa: {
+        message: 'Lote aprobado por cooperativa',
+        icon: 'success'
+      },
+      lote_rechazado_cooperativa: {
+        message: `Lote rechazado: ${evento.motivoRechazo || 'Sin motivo'}`,
+        icon: 'error'
+      },
+      transporte_iniciado: {
+        message: `Camión #${evento.numeroCamion} inició transporte`,
+        icon: 'info'
+      },
+      transporte_finalizado: {
+        message: `Camión #${evento.numeroCamion} completó transporte`,
+        icon: 'success'
+      }
+    }
+    
+    const toast = toasts[evento.evento]
+    if (toast) {
+      uiStore.showToast(toast.message, toast.icon)
+    }
+  })
+})
+onUnmounted(() => {
+  lotesWS.desuscribirLote(props.loteId)
 })
 
-watch(() => props.loteId, async (newId) => {
-  if (newId) {
-    await lotesStore.fetchLoteDetalle(newId)
+watch(
+  () => props.loteId,
+  async (newId, oldId) => {
+    if (oldId) lotesWS.desuscribirLote(oldId)
+    if (newId) {
+      await lotesStore.fetchLoteDetalle(newId)
+      lotesWS.suscribirLote(newId, handleEvento)
+    }
   }
-})
+)
+
 
 const lote = computed(() => lotesStore.loteDetalle)
 

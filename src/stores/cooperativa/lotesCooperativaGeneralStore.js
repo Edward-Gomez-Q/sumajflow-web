@@ -178,6 +178,10 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     }
   }
 
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
+
   const limpiarDetalle = () => {
     loteDetalle.value = null
   }
@@ -229,7 +233,9 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     // Actions
     fetchLotes,
     fetchLoteDetalle,
+    setLoteDetalle,
     cambiarPagina,
+
     cambiarTamanoPagina,
     aplicarFiltros,
     limpiarFiltros,

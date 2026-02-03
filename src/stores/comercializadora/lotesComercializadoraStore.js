@@ -163,6 +163,9 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       loadingDetalle.value = false
     }
   }
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
 
   const aprobarLote = async (loteId, aprobacionData) => {
     const confirmed = await uiStore.showConfirm(
@@ -307,6 +310,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     // Actions
     fetchLotes,
     fetchLoteDetalle,
+    setLoteDetalle,
     cambiarPagina,
     cambiarTamanoPagina,
     aplicarFiltros,

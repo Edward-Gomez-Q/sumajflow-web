@@ -1,6 +1,6 @@
 <!-- src/components/socio/LoteDetalleModal.vue -->
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useLotesStore } from '@/stores/socio/lotesStore'
 import {
   X,
@@ -13,6 +13,8 @@ import {
 import LoteDetalleTabGeneral from './LoteDetalleTabGeneral.vue'
 import LoteDetalleTabTransporte from './LoteDetalleTabTransporte.vue'
 import LoteDetalleTabHistorial from './LoteDetalleTabHistorial.vue'
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '@/stores/uiStore'
 
 const props = defineProps({
   loteId: {
@@ -22,19 +24,68 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-
+const uiStore = useUIStore()
+const lotesWS = useLotesWS()
 const lotesStore = useLotesStore()
 const tabActual = ref('general')
 
 onMounted(async () => {
   await lotesStore.fetchLoteDetalle(props.loteId)
+  lotesWS.suscribirLote(props.loteId, (evento) => {
+    console.log('🔔 Actualización en detalle:', evento)
+    
+    if (evento.lote) {
+      lotesStore.setLoteDetalle(evento.lote)
+    } else {
+      lotesStore.fetchLoteDetalle(props.loteId)
+    }
+    const toasts = {
+      lote_aprobado_cooperativa: {
+        message: 'Lote aprobado por cooperativa',
+        icon: 'success'
+      },
+      lote_rechazado_cooperativa: {
+        message: `Lote rechazado: ${evento.motivoRechazo || 'Sin motivo'}`,
+        icon: 'error'
+      },
+      lote_aprobado_destino: {
+        message: 'Lote completamente aprobado',
+        icon: 'success'
+      },
+      lote_rechazado_destino: {
+        message: `Rechazado por destino: ${evento.motivoRechazo || 'Sin motivo'}`,
+        icon: 'error'
+      },
+      transporte_iniciado: {
+        message: `Camión #${evento.numeroCamion} inició transporte`,
+        icon: 'info'
+      },
+      transporte_finalizado: {
+        message: `Camión #${evento.numeroCamion} completó transporte`,
+        icon: 'success'
+      }
+    }
+    
+    const toast = toasts[evento.evento]
+    if (toast) {
+      uiStore.showToast(toast.message, toast.icon)
+    }
+  })
+})
+onUnmounted(() => {
+  lotesWS.desuscribirLote(props.loteId)
 })
 
-watch(() => props.loteId, async (newId) => {
-  if (newId) {
-    await lotesStore.fetchLoteDetalle(newId)
+watch(
+  () => props.loteId,
+  async (newId, oldId) => {
+    if (oldId) lotesWS.desuscribirLote(oldId)
+    if (newId) {
+      await lotesStore.fetchLoteDetalle(newId)
+      lotesWS.suscribirLote(newId, handleEvento)
+    }
   }
-})
+)
 
 const lote = computed(() => lotesStore.loteDetalle)
 

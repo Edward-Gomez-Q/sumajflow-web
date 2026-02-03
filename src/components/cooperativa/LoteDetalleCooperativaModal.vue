@@ -69,7 +69,7 @@ const destinoMapa = computed(() => {
     longitudAlmacen: lote.value.destinoAlmacenLongitud,
     latitudBalanza: lote.value.destinoBalanzaLatitud,
     longitudBalanza: lote.value.destinoBalanzaLongitud,
-    municipio: lote.value.destinoDireccion // Usando dirección como fallback
+    municipio: lote.value.destinoDireccion
   }
 })
 
@@ -90,16 +90,18 @@ const tipoDestinoMapa = computed(() => {
   return lote.value.destinoTipo === 'comercializadora' ? 'comercializadora' : 'ingenio'
 })
 
-const formatDate = (dateString) => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('es-BO', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+
+const getEstadoColorSolido = (estado) => {
+  if (!estado) return 'bg-gray-500'
+  if (estado.includes('Pendiente')) {
+    return 'bg-yellow-500'
+  } else if (estado === 'Rechazado') {
+    return 'bg-red-500'
+  } else if (estado === 'Completado') {
+    return 'bg-green-500'
+  } else {
+    return 'bg-blue-500'
+  }
 }
 
 const formatDateShort = (dateString) => {
@@ -131,27 +133,36 @@ const handleRechazar = () => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-              <PackageCheck class="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 class="text-xl font-semibold text-neutral">
-                Detalle del Lote #{{ loteId }}
-              </h2>
-              <p v-if="lote" class="text-sm text-secondary mt-0.5">
-                Solicitado el {{ formatDateShort(lote.fechaCreacion) }}
-              </p>
-            </div>
-          </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
+<div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+      <PackageCheck class="w-6 h-6 text-white" />
+    </div>
+    <div>
+      <div class="flex items-center gap-2">
+        <h2 class="text-xl font-semibold text-neutral">
+          Detalle del Lote #{{ loteId }}
+        </h2>
+        <span
+          v-if="lote"
+          class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+          :class="getEstadoColorSolido(lote.estado)"
+        >
+          {{ lote.estado }}
+        </span>
+      </div>
+      <p v-if="lote" class="text-sm text-secondary mt-0.5">
+        Creado el {{ formatDateShort(lote.fechaCreacion) }}
+      </p>
+    </div>
+  </div>
+  <button
+    @click="emit('close')"
+    class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+  >
+    <X class="w-5 h-5" />
+  </button>
+</div>
 
         <!-- Loading -->
         <div v-if="lotesStore.loadingDetalle" class="p-12 text-center flex-1">
@@ -162,21 +173,6 @@ const handleRechazar = () => {
         <!-- Content -->
         <div v-else-if="lote" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6 space-y-6">
-            <!-- Estado Actual -->
-            <div class="bg-yellow-500 rounded-lg p-4 shadow-sm">
-              <div class="flex items-start gap-3">
-                <Info class="w-6 h-6 text-white shrink-0 mt-0.5" />
-                <div class="flex-1">
-                  <h3 class="font-semibold text-white text-base">
-                    Estado: {{ lote.estado }}
-                  </h3>
-                  <p class="text-sm text-white/95 mt-1.5">
-                    Este lote está esperando tu aprobación para continuar con el proceso
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <!-- Mapa de Ruta -->
             <div class="bg-base rounded-xl border border-border shadow-sm overflow-hidden">
               <div class="p-4 border-b border-border bg-hover">

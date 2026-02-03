@@ -98,6 +98,10 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
     }
   }
 
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
+
   /**
    * Obtener transportistas disponibles
    */
@@ -265,6 +269,7 @@ export const useLotesCooperativaStore = defineStore('lotesCooperativa', () => {
     // Actions
     fetchLotesPendientes,
     fetchLoteDetalle,
+    setLoteDetalle,
     fetchTransportistasDisponibles,
     aprobarLote,
     rechazarLote,

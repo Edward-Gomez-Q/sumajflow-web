@@ -191,6 +191,9 @@ export const useLotesStore = defineStore('lotes', () => {
       uiStore.hideLoading()
     }
   }
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
 
   /**
    * Obtener lote por ID (método legacy, mantener compatibilidad)
@@ -295,6 +298,7 @@ export const useLotesStore = defineStore('lotes', () => {
     // Actions
     fetchLotes,
     fetchLoteDetalle,
+    setLoteDetalle,
     cambiarPagina,
     cambiarTamanoPagina,
     aplicarFiltros,

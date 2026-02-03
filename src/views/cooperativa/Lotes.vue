@@ -1,13 +1,17 @@
 <!-- src/views/cooperativa/Lotes.vue -->
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useLotesCooperativaGeneralStore } from '@/stores/cooperativa/lotesCooperativaGeneralStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { PackageCheck, Eye, Truck, Clock, CheckCircle2, XCircle, User, MapPin, Calendar } from 'lucide-vue-next'
 import LoteDetalleGeneralModal from '@/components/cooperativa/LoteDetalleGeneralModal.vue'
 import LotesFiltrosGenerales from '@/components/cooperativa/LotesFiltrosGenerales.vue'
 import Paginacion from '@/components/socio/Paginacion.vue'
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '@/stores/uiStore'
 
+const lotesWS = useLotesWS()
+const uiStore = useUIStore()
 const lotesStore = useLotesCooperativaGeneralStore()
 
 const showDetalleModal = ref(false)
@@ -15,6 +19,44 @@ const loteIdSeleccionado = ref(null)
 
 onMounted(async () => {
   await lotesStore.fetchLotes()
+    
+  lotesWS.suscribirCola((evento) => {
+    console.log('🔔 Evento de lote recibido:', evento)
+    lotesStore.fetchLotes()
+    
+    switch (evento.evento) {
+      case 'lote_aprobado_destino':
+        uiStore.showToast(
+          `Lote #${evento.loteId} completamente aprobado. Ya puede transportarse`,
+          'success'
+        )
+        break
+        
+      case 'lote_rechazado_destino':
+        uiStore.showToast(
+          `Lote #${evento.loteId} rechazado por destino: ${evento.motivoRechazo || 'Sin motivo'}`,
+          'error'
+        )
+        break
+        
+      case 'transporte_iniciado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} inició transporte del lote #${evento.loteId}`,
+          'info'
+        )
+        break
+        
+      case 'transporte_finalizado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} completó transporte del lote #${evento.loteId}`,
+          'success'
+        )
+        break
+    }
+  })
+})
+onUnmounted(() => {
+  lotesWS.limpiarSuscripciones()
 })
 
 const openDetalleModal = (loteId) => {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useLotesStore } from '@/stores/socio/lotesStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { PackageCheck, Plus, Eye, Truck, MapPin, Clock, CheckCircle2 } from 'lucide-vue-next'
@@ -7,6 +7,11 @@ import LoteFormModal from '@/components/socio/LoteFormModal.vue'
 import LoteDetalleModal from '@/components/socio/LoteDetalleModal.vue'
 import LotesFiltros from '@/components/socio/LotesFiltros.vue'
 import Paginacion from '@/components/socio/Paginacion.vue'
+import { useLotesWS } from '@/composables/useLotesWS'
+import { useUIStore } from '../../stores/uiStore'
+
+const lotesWS = useLotesWS()
+const uiStore = useUIStore()
 
 const lotesStore = useLotesStore()
 
@@ -16,6 +21,59 @@ const loteIdSeleccionado = ref(null)
 
 onMounted(async () => {
   await lotesStore.fetchLotes()
+  
+  lotesWS.suscribirCola((evento) => {
+    console.log('🔔 Evento de lote recibido:', evento)
+    lotesStore.fetchLotes()
+    
+    switch (evento.evento) {
+      case 'lote_aprobado_cooperativa':
+        uiStore.showToast(
+          `Lote #${evento.loteId} aprobado - ${evento.camioneAsignados} camiones asignados`,
+          'success'
+        )
+        break
+        
+      case 'lote_rechazado_cooperativa':
+        uiStore.showToast(
+          `Lote #${evento.loteId} rechazado: ${evento.motivoRechazo || 'Sin motivo especificado'}`,
+          'error'
+        )
+        break
+        
+      case 'lote_aprobado_destino':
+        uiStore.showToast(
+          `Lote #${evento.loteId} completamente aprobado. Ya puede transportarse`,
+          'success'
+        )
+        break
+        
+      case 'lote_rechazado_destino':
+        uiStore.showToast(
+          `Lote #${evento.loteId} rechazado por destino: ${evento.motivoRechazo || 'Sin motivo'}`,
+          'error'
+        )
+        break
+        
+      case 'transporte_iniciado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} inició transporte del lote #${evento.loteId}`,
+          'info'
+        )
+        break
+        
+      case 'transporte_finalizado':
+        uiStore.showToast(
+          `Camión #${evento.numeroCamion} completó transporte del lote #${evento.loteId}`,
+          'success'
+        )
+        break
+    }
+  })
+})
+
+onUnmounted(() => {
+  lotesWS.limpiarSuscripciones()
 })
 
 const openCreateModal = () => {

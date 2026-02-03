@@ -120,6 +120,10 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
     }
   }
 
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
+
   /**
    * Aprobar lote
    */
@@ -257,6 +261,7 @@ export const useLotesDestinoStore = defineStore('lotesDestino', () => {
     setTipoDestino,
     fetchLotesPendientes,
     fetchLoteDetalle,
+    setLoteDetalle,
     aprobarLote,
     rechazarLote,
     limpiarDetalle,

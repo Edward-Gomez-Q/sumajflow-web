@@ -42,10 +42,6 @@ const destinosDisponibles = computed(() => {
   }
 })
 
-const puedeSeleccionarConcentrado = computed(() => {
-  return formData.value.tipoOperacion === 'venta_directa'
-})
-
 // Datos para el mapa
 const minaSeleccionada = computed(() => {
   if (!formData.value.minaId) return null
@@ -90,21 +86,12 @@ const balanzaCoopMapa = computed(() => {
   }
 })
 
-// Watch tipo de operación para resetear destino
 watch(() => formData.value.tipoOperacion, (newVal, oldVal) => {
   if (newVal !== oldVal) {
     formData.value.destinoId = null
-    formData.value.tipoMineral = newVal === 'procesamiento_planta' ? 'complejo' : formData.value.tipoMineral
   }
 })
 
-// Watch tipo mineral - Si selecciona concentrado, forzar venta_directa
-watch(() => formData.value.tipoMineral, (newVal) => {
-  if (newVal === 'concentrado') {
-    formData.value.tipoOperacion = 'venta_directa'
-    formData.value.destinoId = null
-  }
-})
 
 onMounted(async () => {
   await Promise.all([
@@ -135,9 +122,6 @@ const validate = () => {
     errors.value.destinoId = 'Debes seleccionar un destino'
   }
 
-  if (formData.value.tipoMineral === 'concentrado' && formData.value.tipoOperacion === 'procesamiento_planta') {
-    errors.value.tipoMineral = 'Mineral concentrado solo puede enviarse a comercializadora'
-  }
 
   return Object.keys(errors.value).length === 0
 }
@@ -268,41 +252,15 @@ const isMineralSelected = (mineralId) => {
               </div>
 
               <!-- Grid: Tipo de Operación y Tipo de Mineral -->
-              <div class="grid sm:grid-cols-2 gap-4">
-                <!-- Tipo de Operación -->
-                <div class="input-group">
-                  <label class="input-label">Tipo de Operación</label>
-                  <select
-                    v-model="formData.tipoOperacion"
-                    class="w-full"
-                    :disabled="formData.tipoMineral === 'concentrado'"
-                  >
-                    <option value="procesamiento_planta">Procesamiento en Planta</option>
-                    <option value="venta_directa">Venta Directa</option>
-                  </select>
-                  <p v-if="formData.tipoMineral === 'concentrado'" class="input-helper">
-                    El mineral concentrado solo puede venderse directamente
-                  </p>
-                </div>
-
-                <!-- Tipo de Mineral -->
-                <div class="input-group">
-                  <label class="input-label">Tipo de Mineral</label>
-                  <select
-                    v-model="formData.tipoMineral"
-                    class="w-full"
-                    :class="{ 'border-error': errors.tipoMineral }"
-                  >
-                    <option value="complejo">Complejo</option>
-                    <option
-                      value="concentrado"
-                      :disabled="!puedeSeleccionarConcentrado"
-                    >
-                      Concentrado {{ !puedeSeleccionarConcentrado ? '(Solo para venta directa)' : '' }}
-                    </option>
-                  </select>
-                  <p v-if="errors.tipoMineral" class="input-error">{{ errors.tipoMineral }}</p>
-                </div>
+              <div class="input-group">
+                <label class="input-label">Tipo de Operación</label>
+                <select
+                  v-model="formData.tipoOperacion"
+                  class="w-full"
+                >
+                  <option value="procesamiento_planta">Procesamiento en Planta</option>
+                  <option value="venta_directa">Venta Directa</option>
+                </select>
               </div>
 
               <!-- Destino -->

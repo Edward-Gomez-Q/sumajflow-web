@@ -183,6 +183,10 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
     }
   }
 
+  const setLoteDetalle = (detalle) => {
+    loteDetalle.value = detalle
+  }
+
   /**
    * Aprobar lote
    */
@@ -338,6 +342,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
     // Actions
     fetchLotes,
     fetchLoteDetalle,
+    setLoteDetalle,
     cambiarPagina,
     cambiarTamanoPagina,
     aplicarFiltros,

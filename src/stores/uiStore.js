@@ -133,7 +133,7 @@ export const useUIStore = defineStore('ui', () => {
         // Asegurar z-index para toast
         const container = document.querySelector('.swal2-container')
         if (container) {
-          container.style.zIndex = '10001'
+          container.style.zIndex = '10005'
         }
       }
     })

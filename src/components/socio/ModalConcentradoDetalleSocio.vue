@@ -3,18 +3,21 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useConcentradosSocioStore } from '@/stores/socio/concentradosSocioStore'
 import { useConcentradoWS } from '@/composables/useConcentradoWS'
+import { useUIStore } from '@/stores/uiStore'
 import {
   X,
   PackageCheck,
   Info,
   Kanban,
   AlertCircle,
-  History
+  History,
+  FileText
 } from 'lucide-vue-next'
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from '@/components/ingenio/ConcentradoDetalleTabGeneral.vue'
 import ConcentradoDetalleTabKanbanSocio from '@/components/socio/ConcentradoDetalleTabKanbanSocio.vue'
-import ConcentradoDetalleTabHistorialSocio from '@/components/socio/ConcentradoDetalleTabHistorialSocio.vue' // ✅ CAMBIADO
+import ConcentradoDetalleTabHistorialSocio from '@/components/socio/ConcentradoDetalleTabHistorialSocio.vue'
+import LoteDetalleTabLiquidacionToll from '@/components/socio/LoteDetalleTabLiquidacionToll.vue'
 
 const props = defineProps({
   concentradoId: {
@@ -27,6 +30,7 @@ const emit = defineEmits(['close'])
 
 const concentradosStore = useConcentradosSocioStore()
 const concentradoWs = useConcentradoWS()
+const uiStore = useUIStore()
 
 const tabActual = ref('general')
 
@@ -69,6 +73,11 @@ onUnmounted(() => {
 
 const concentrado = computed(() => concentradosStore.concentradoDetalle)
 
+// Verificar si tiene liquidación Toll
+const tieneLiquidacionToll = computed(() => {
+  return concentrado.value?.liquidacionToll && concentrado.value.liquidacionToll.id
+})
+
 const tabsDisponibles = computed(() => {
   const tabs = [
     { id: 'general', label: 'General', icon: Info, disponible: true }
@@ -78,10 +87,29 @@ const tabsDisponibles = computed(() => {
     tabs.push({ id: 'kanban', label: 'Kanban', icon: Kanban, disponible: true })
   }
 
+  // Tab de Liquidación Toll (solo si existe)
+  if (tieneLiquidacionToll.value) {
+    tabs.push({ 
+      id: 'liquidacion_toll', 
+      label: 'Liquidación Toll', 
+      icon: FileText, 
+      disponible: true,
+      badge: concentrado.value.liquidacionToll.estado === 'esperando_pago' ? 'Pendiente' :
+             concentrado.value.liquidacionToll.estado === 'pagado' ? 'Pagado' : null
+    })
+  }
+
   tabs.push({ id: 'historial', label: 'Historial', icon: History, disponible: true })
 
   return tabs
 })
+
+// Handler para cuando se registra un pago
+const handlePagoRegistrado = async (liquidacionActualizada) => {
+  // Recargar el detalle del concentrado para obtener datos actualizados
+  await concentradosStore.fetchConcentradoDetalle(props.concentradoId)
+  uiStore.showSuccess('El pago ha sido registrado exitosamente', 'Pago Confirmado')
+}
 </script>
 
 <template>
@@ -162,6 +190,17 @@ const tabsDisponibles = computed(() => {
                 >
                   <component :is="tab.icon" class="w-4 h-4" />
                   {{ tab.label }}
+                  
+                  <!-- Badge para Liquidación Toll -->
+                  <span 
+                    v-if="tab.id === 'liquidacion_toll' && tab.badge"
+                    class="ml-1 px-1.5 py-0.5 rounded-full text-xs"
+                    :class="tab.badge === 'Pendiente' 
+                      ? 'bg-orange-500/20 text-orange-700' 
+                      : 'bg-green-500/20 text-green-700'"
+                  >
+                    {{ tab.badge }}
+                  </span>
                 </button>
               </div>
             </div>
@@ -176,6 +215,15 @@ const tabsDisponibles = computed(() => {
               v-show="tabActual === 'kanban'" 
               :concentrado="concentrado"
               :concentrado-id="concentradoId"
+            />
+
+            <!-- Tab de Liquidación Toll (reutilizando componente de lotes) -->
+            <LoteDetalleTabLiquidacionToll
+              v-if="tieneLiquidacionToll"
+              v-show="tabActual === 'liquidacion_toll'"
+              :liquidacion="concentrado.liquidacionToll"
+              :es-socio="true"
+              @pago-registrado="handlePagoRegistrado"
             />
 
             <ConcentradoDetalleTabHistorialSocio 

@@ -15,7 +15,9 @@ import {
   Info,
   CheckCircle2,
   Factory,
-  ChevronRight
+  ChevronRight,
+  DollarSign,
+  Truck
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -37,7 +39,10 @@ const loteAncla = ref(null)
 
 const formulario = ref({
   pesoInicial: 0,
-  observacionesIniciales: ''
+  observacionesIniciales: '',
+  tipoCambio: 0,
+  cantidadRetroexcavadoraGrande: 0,
+  cantidadRetroexcavadoraPequena: 0
 })
 
 // ==================== FUNCIONES AUXILIARES ====================
@@ -187,7 +192,8 @@ const puedeAvanzar = computed(() => {
            todosMismoSocio.value && 
            validacionCupoMinimo.value.valido 
   } else if (paso.value === 2) {
-    return formulario.value.pesoInicial > 0
+    return formulario.value.pesoInicial > 0 && 
+           formulario.value.tipoCambio > 0
   }
   return false
 })
@@ -206,7 +212,10 @@ watch(() => props.modelValue, async (isOpen) => {
     loteAncla.value = null
     formulario.value = {
       pesoInicial: 0,
-      observacionesIniciales: ''
+      observacionesIniciales: '',
+      tipoCambio: 0,
+      cantidadRetroexcavadoraGrande: 0,
+      cantidadRetroexcavadoraPequena: 0
     }
   }
 })
@@ -285,7 +294,10 @@ const crearConcentrado = async () => {
   const datos = {
     lotesIds: lotesSeleccionados.value.map(l => l.id),
     pesoInicial: parseFloat(formulario.value.pesoInicial),
-    observacionesIniciales: formulario.value.observacionesIniciales || null
+    observacionesIniciales: formulario.value.observacionesIniciales || null,
+    tipoCambio: parseFloat(formulario.value.tipoCambio),
+    cantidadRetroexcavadoraGrande: parseInt(formulario.value.cantidadRetroexcavadoraGrande) || 0,
+    cantidadRetroexcavadoraPequena: parseInt(formulario.value.cantidadRetroexcavadoraPequena) || 0
   }
 
   const result = await concentradosStore.crearConcentrado(datos)
@@ -676,6 +688,7 @@ const getMineralesNombres = (lote) => {
                       <h3 class="text-sm font-semibold text-neutral mb-3">Detalles del Proceso</h3>
                       
                       <div class="space-y-3">
+                        <!-- Peso Total -->
                         <div class="input-group">
                           <label class="input-label flex items-center gap-2 text-xs">
                             <Scale class="w-3.5 h-3.5" />
@@ -691,16 +704,71 @@ const getMineralesNombres = (lote) => {
                           />
                         </div>
 
+                        <!-- Tipo de Cambio -->
+                        <div class="input-group">
+                          <label class="input-label flex items-center gap-2 text-xs">
+                            <DollarSign class="w-3.5 h-3.5" />
+                            Tipo de Cambio (BOB/USD) *
+                          </label>
+                          <input
+                            v-model="formulario.tipoCambio"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            placeholder="Ej: 6.96"
+                            class="text-sm py-2"
+                            required
+                          />
+                          <p class="text-xs text-secondary mt-1">Tipo de cambio actual del dólar en bolivianos</p>
+                        </div>
+
+                        <!-- Retroexcavadoras -->
+                        <div class="grid grid-cols-2 gap-3">
+                          <div class="input-group">
+                            <label class="input-label flex items-center gap-2 text-xs">
+                              <Truck class="w-3.5 h-3.5" />
+                              Retroexcavadora Grande
+                            </label>
+                            <input
+                              v-model="formulario.cantidadRetroexcavadoraGrande"
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              class="text-sm py-2"
+                            />
+                          </div>
+                          
+                          <div class="input-group">
+                            <label class="input-label flex items-center gap-2 text-xs">
+                              <Truck class="w-3.5 h-3.5" />
+                              Retroexcavadora Pequeña
+                            </label>
+                            <input
+                              v-model="formulario.cantidadRetroexcavadoraPequena"
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              class="text-sm py-2"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- Observaciones -->
                         <div class="input-group">
                           <label class="input-label text-xs">Observaciones (opcional)</label>
                           <textarea
                             v-model="formulario.observacionesIniciales"
                             rows="2"
+                            maxlength="500"
                             placeholder="Notas sobre el proceso..."
                             class="resize-none text-sm py-2"
                           ></textarea>
+                          <p class="text-xs text-secondary mt-1">
+                            {{ formulario.observacionesIniciales?.length || 0 }}/500 caracteres
+                          </p>
                         </div>
 
+                        <!-- Info del Socio -->
                         <div v-if="socioDelPrimerLote" class="flex items-center gap-2 p-2.5 bg-primary/5 rounded-md border border-primary/20">
                           <User class="w-4 h-4 text-primary shrink-0" />
                           <div>

@@ -1,25 +1,20 @@
-// src/stores/socio/concentradosSocioStore.js
+// src/stores/socio/liquidacionTollStore.js
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useUIStore } from '../uiStore'
 import { useSessionStore } from '../sessionStore'
 import rutaApi from '../../assets/rutaApi.js'
 
-export const useConcentradosSocioStore = defineStore('concentradosSocio', () => {
+export const useLiquidacionTollStore = defineStore('liquidacionToll', () => {
   const uiStore = useUIStore()
   const sessionStore = useSessionStore()
   
-  // Concentrados
-  const concentrados = ref([])
-  const concentradoDetalle = ref(null)
+  const liquidaciones = ref([])
+  const liquidacionDetalle = ref(null)
   const estadisticas = ref(null)
   const loadingDetalle = ref(false)
+  const loadingPago = ref(false)
   
-  // Kanban (solo lectura)
-  const kanban = ref(null)
-  const loadingKanban = ref(false)
-  
-  // Paginación y filtros
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -28,9 +23,9 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
     tieneSiguiente: false,
     tieneAnterior: false
   })
+  
   const filtros = ref({
     estado: null,
-    mineralPrincipal: null,
     fechaDesde: null,
     fechaHasta: null,
     page: 0,
@@ -39,34 +34,14 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
   
   const error = ref(null)
 
-  // ==================== COMPUTED ====================
-  
-  const concentradosEnProceso = computed(() => 
-    concentrados.value.filter(c => c.estado === 'en_proceso')
-  )
-
-  const concentradosEsperandoReporte = computed(() => 
-    concentrados.value.filter(c => c.estado === 'esperando_reporte_quimico')
-  )
-
-  const concentradosPendientePago = computed(() => 
-    concentrados.value.filter(c => 
-      c.estado.includes('liquidado') && !c.estado.includes('pagado')
-    )
-  )
-
-  const concentradosListoVenta = computed(() => 
-    concentrados.value.filter(c => c.estado === 'listo_para_venta')
-  )
-
-  // ==================== ACTIONS - CONCENTRADOS ====================
+  // ==================== ACTIONS ====================
 
   /**
-   * Fetch mis concentrados con paginación y filtros
-   * GET /socio/concentrados
+   * Listar liquidaciones de Toll del socio
+   * GET /socio/liquidaciones/toll
    */
-  const fetchConcentrados = async (nuevosFiltros = {}) => {
-    uiStore.showLoading('Cargando concentrados...')
+  const fetchLiquidaciones = async (nuevosFiltros = {}) => {
+    uiStore.showLoading('Cargando liquidaciones...')
     error.value = null
 
     if (Object.keys(nuevosFiltros).length > 0) {
@@ -82,7 +57,7 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
         }
       })
 
-      const response = await fetch(`${rutaApi}/socio/concentrados?${params.toString()}`, {
+      const response = await fetch(`${rutaApi}/socio/liquidaciones/toll?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -92,10 +67,10 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al cargar concentrados')
+        throw new Error(data.message || 'Error al cargar liquidaciones')
       }
 
-      concentrados.value = data.data
+      liquidaciones.value = data.data
       paginacion.value = {
         totalElementos: data.totalElements,
         totalPaginas: data.totalPages,
@@ -118,15 +93,15 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
   }
 
   /**
-   * Obtener detalle completo del concentrado
-   * GET /socio/concentrados/{id}
+   * Obtener detalle de liquidación de Toll
+   * GET /socio/liquidaciones/toll/{id}
    */
-  const fetchConcentradoDetalle = async (id) => {
+  const fetchLiquidacionDetalle = async (id) => {
     loadingDetalle.value = true
     error.value = null
 
     try {
-      const response = await fetch(`${rutaApi}/socio/concentrados/${id}`, {
+      const response = await fetch(`${rutaApi}/socio/liquidaciones/toll/${id}`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -136,10 +111,10 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al cargar detalle del concentrado')
+        throw new Error(data.message || 'Error al cargar detalle de la liquidación')
       }
 
-      concentradoDetalle.value = data.data
+      liquidacionDetalle.value = data.data
       return { success: true, data: data.data }
 
     } catch (err) {
@@ -153,12 +128,54 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
   }
 
   /**
-   * Obtener dashboard de estadísticas personales
-   * GET /socio/concentrados/dashboard
+   * Registrar pago de liquidación de Toll
+   * POST /socio/liquidaciones/toll/{id}/pagar
    */
-  const fetchDashboard = async () => {
+  const registrarPago = async (id, pagoData) => {
+    loadingPago.value = true
+    error.value = null
+
     try {
-      const response = await fetch(`${rutaApi}/socio/concentrados/dashboard`, {
+      const response = await fetch(`${rutaApi}/socio/liquidaciones/toll/${id}/pagar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(pagoData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al registrar el pago')
+      }
+
+      // Actualizar la liquidación detalle si está cargada
+      if (liquidacionDetalle.value?.id === id) {
+        liquidacionDetalle.value = data.data
+      }
+
+      uiStore.showSuccess(data.message || 'Pago registrado exitosamente', 'Pago Registrado')
+      return { success: true, data: data.data }
+
+    } catch (err) {
+      error.value = err.message
+      uiStore.showError(err.message, 'Error al Registrar Pago')
+      return { success: false, error: err.message }
+
+    } finally {
+      loadingPago.value = false
+    }
+  }
+
+  /**
+   * Obtener estadísticas de liquidaciones de Toll
+   * GET /socio/liquidaciones/toll/estadisticas
+   */
+  const fetchEstadisticas = async () => {
+    try {
+      const response = await fetch(`${rutaApi}/socio/liquidaciones/toll/estadisticas`, {
         headers: {
           'Authorization': `Bearer ${sessionStore.token}`,
           'Content-Type': 'application/json'
@@ -168,7 +185,7 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al cargar dashboard')
+        throw new Error(data.message || 'Error al cargar estadísticas')
       }
 
       estadisticas.value = data.data
@@ -180,92 +197,45 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
     }
   }
 
-  // ==================== ACTIONS - KANBAN (SOLO LECTURA) ====================
-
-  /**
-   * Obtener procesos del Kanban (solo lectura)
-   * GET /socio/concentrados/{concentradoId}/procesos
-   */
-  const fetchProcesos = async (concentradoId) => {
-    loadingKanban.value = true
-    error.value = null
-
-    try {
-      const response = await fetch(
-        `${rutaApi}/socio/concentrados/${concentradoId}/procesos`,
-        {
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al cargar procesos')
-      }
-
-      kanban.value = data.data
-      return { success: true, data: data.data }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Cargar Procesos')
-      return { success: false, error: err.message }
-
-    } finally {
-      loadingKanban.value = false
-    }
-  }
-
-
   // ==================== UTILITIES ====================
 
   const cambiarPagina = async (nuevaPagina) => {
     filtros.value.page = nuevaPagina
-    await fetchConcentrados()
+    await fetchLiquidaciones()
   }
 
   const cambiarTamanoPagina = async (nuevoTamano) => {
     filtros.value.size = nuevoTamano
     filtros.value.page = 0
-    await fetchConcentrados()
+    await fetchLiquidaciones()
   }
 
   const aplicarFiltros = async (nuevosFiltros) => {
     filtros.value = { ...filtros.value, ...nuevosFiltros, page: 0 }
-    await fetchConcentrados()
+    await fetchLiquidaciones()
   }
 
   const limpiarFiltros = async () => {
     filtros.value = {
       estado: null,
-      mineralPrincipal: null,
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
       size: 10
     }
-    await fetchConcentrados()
+    await fetchLiquidaciones()
   }
 
   const limpiarDetalle = () => {
-    concentradoDetalle.value = null
-  }
-
-  const limpiarKanban = () => {
-    kanban.value = null
+    liquidacionDetalle.value = null
   }
 
   const reset = () => {
-    concentrados.value = []
-    concentradoDetalle.value = null
-    kanban.value = null
+    liquidaciones.value = []
+    liquidacionDetalle.value = null
     estadisticas.value = null
     loadingDetalle.value = false
-    loadingKanban.value = false
+    loadingPago.value = false
     paginacion.value = {
       totalElementos: 0,
       totalPaginas: 0,
@@ -276,7 +246,6 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
     }
     filtros.value = {
       estado: null,
-      mineralPrincipal: null,
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
@@ -289,29 +258,20 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
 
   return {
     // State
-    concentrados,
-    concentradoDetalle,
-    kanban,
+    liquidaciones,
+    liquidacionDetalle,
     estadisticas,
     loadingDetalle,
-    loadingKanban,
+    loadingPago,
     paginacion,
     filtros,
     error,
     
-    // Computed
-    concentradosEnProceso,
-    concentradosEsperandoReporte,
-    concentradosPendientePago,
-    concentradosListoVenta,
-    
-    // Actions - Concentrados
-    fetchConcentrados,
-    fetchConcentradoDetalle,
-    fetchDashboard,
-    
-    // Actions - Kanban
-    fetchProcesos,
+    // Actions
+    fetchLiquidaciones,
+    fetchLiquidacionDetalle,
+    registrarPago,
+    fetchEstadisticas,
     
     // Utilities
     cambiarPagina,
@@ -319,7 +279,6 @@ export const useConcentradosSocioStore = defineStore('concentradosSocio', () => 
     aplicarFiltros,
     limpiarFiltros,
     limpiarDetalle,
-    limpiarKanban,
     reset
   }
 })

@@ -35,6 +35,18 @@ const observacionesFinProceso = ref('')
 const observacionesInicioProceso = ref('')
 const observacionesGenerales = ref('')
 
+// Después de las observaciones existentes
+const pesoTmh = ref(null)
+const pesoTms = ref(null)
+const numeroSacos = ref(null)
+
+// Validación
+const erroresCampos = ref({
+  pesoTmh: '',
+  pesoTms: '',
+  numeroSacos: ''
+})
+
 onMounted(async () => {
   await concentradosStore.fetchProcesos(props.concentradoId)
 })
@@ -280,9 +292,47 @@ const ejecutarMovimiento = async () => {
     )
   } 
   else if (tipoMovimiento.value === 'finalizar') {
+    // ========== VALIDACIONES ANTES DE ENVIAR ==========
+    erroresCampos.value = {
+      pesoTmh: '',
+      pesoTms: '',
+      numeroSacos: ''
+    }
+    
+    let hayErrores = false
+    
+    if (!pesoTmh.value || pesoTmh.value <= 0) {
+      erroresCampos.value.pesoTmh = 'El peso TMH es obligatorio y debe ser mayor a 0'
+      hayErrores = true
+    }
+    
+    if (!pesoTms.value || pesoTms.value <= 0) {
+      erroresCampos.value.pesoTms = 'El peso TMS es obligatorio y debe ser mayor a 0'
+      hayErrores = true
+    }
+    
+    if (!numeroSacos.value || numeroSacos.value < 1) {
+      erroresCampos.value.numeroSacos = 'El número de sacos es obligatorio y debe ser al menos 1'
+      hayErrores = true
+    }
+    
+    if (pesoTms.value && pesoTmh.value && pesoTms.value > pesoTmh.value) {
+      erroresCampos.value.pesoTms = 'El peso TMS no puede ser mayor al peso TMH'
+      hayErrores = true
+    }
+    
+    if (hayErrores) {
+      mostrarError('Por favor complete todos los campos obligatorios correctamente')
+      return
+    }
+    
+    // ========== ENVIAR DATOS COMPLETOS ==========
     result = await concentradosStore.finalizarProcesamiento(
       props.concentradoId,
       {
+        pesoTmh: parseFloat(pesoTmh.value),
+        pesoTms: parseFloat(pesoTms.value),
+        numeroSacos: parseInt(numeroSacos.value),
         observacionesFinProceso: observacionesFinProceso.value || null,
         observacionesGenerales: observacionesGenerales.value || null
       }
@@ -310,6 +360,14 @@ const cerrarModal = () => {
   observacionesFinProceso.value = ''
   observacionesInicioProceso.value = ''
   observacionesGenerales.value = ''
+  pesoTmh.value = null
+  pesoTms.value = null
+  numeroSacos.value = null
+  erroresCampos.value = {
+    pesoTmh: '',
+    pesoTms: '',
+    numeroSacos: ''
+  }
 }
 
 const mostrarError = (mensaje) => {
@@ -621,33 +679,145 @@ const formatDate = (dateString) => {
             </div>
 
             <template v-else-if="tipoMovimiento === 'finalizar'">
-              <div class="input-group">
-                <label class="input-label flex items-center gap-1.5">
-                  <FileText class="w-4 h-4" />
-                  Observaciones finales del último proceso
-                </label>
-                <textarea
-                  v-model="observacionesFinProceso"
-                  rows="3"
-                  placeholder="¿Cómo finalizó este proceso?..."
-                  class="w-full"
-                  autofocus
-                ></textarea>
-              </div>
+  <!-- ========== CAMPOS OBLIGATORIOS DE PESOS ========== -->
+  <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+    <div class="flex items-start gap-2">
+      <AlertCircle class="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+      <div>
+        <p class="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+          Datos obligatorios del procesamiento
+        </p>
+        <p class="text-xs text-yellow-600 dark:text-yellow-400">
+          Complete los pesos finales y cantidad de sacos obtenidos
+        </p>
+      </div>
+    </div>
+  </div>
 
-              <div class="input-group">
-                <label class="input-label flex items-center gap-1.5">
-                  <Sparkles class="w-4 h-4" />
-                  Observaciones generales del procesamiento completo
-                </label>
-                <textarea
-                  v-model="observacionesGenerales"
-                  rows="3"
-                  placeholder="Comentarios generales sobre todo el procesamiento..."
-                  class="w-full"
-                ></textarea>
-              </div>
-            </template>
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Peso TMH -->
+    <div class="input-group">
+      <label class="input-label flex items-center gap-1.5">
+        <Package class="w-4 h-4" />
+        Peso TMH (Ton) <span class="text-red-500">*</span>
+      </label>
+      <input
+        v-model.number="pesoTmh"
+        type="number"
+        step="0.01"
+        min="0.01"
+        placeholder="Ej: 100.50"
+        class="w-full"
+        :class="erroresCampos.pesoTmh ? 'border-red-500 focus:ring-red-500' : ''"
+        required
+      />
+      <p v-if="erroresCampos.pesoTmh" class="text-xs text-red-500 mt-1">
+        {{ erroresCampos.pesoTmh }}
+      </p>
+    </div>
+
+    <!-- Peso TMS -->
+    <div class="input-group">
+      <label class="input-label flex items-center gap-1.5">
+        <Package class="w-4 h-4" />
+        Peso TMS (Ton) <span class="text-red-500">*</span>
+      </label>
+      <input
+        v-model.number="pesoTms"
+        type="number"
+        step="0.01"
+        min="0.01"
+        placeholder="Ej: 98.30"
+        class="w-full"
+        :class="erroresCampos.pesoTms ? 'border-red-500 focus:ring-red-500' : ''"
+        required
+      />
+      <p v-if="erroresCampos.pesoTms" class="text-xs text-red-500 mt-1">
+        {{ erroresCampos.pesoTms }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Número de Sacos -->
+  <div class="input-group">
+    <label class="input-label flex items-center gap-1.5">
+      <Package class="w-4 h-4" />
+      Número de Sacos <span class="text-red-500">*</span>
+    </label>
+    <input
+      v-model.number="numeroSacos"
+      type="number"
+      min="1"
+      step="1"
+      placeholder="Ej: 12"
+      class="w-full"
+      :class="erroresCampos.numeroSacos ? 'border-red-500 focus:ring-red-500' : ''"
+      required
+    />
+    <p v-if="erroresCampos.numeroSacos" class="text-xs text-red-500 mt-1">
+      {{ erroresCampos.numeroSacos }}
+    </p>
+  </div>
+
+  <!-- Cálculos automáticos (vista previa) -->
+  <div v-if="pesoTms && pesoTmh" class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+    <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1.5">
+      <Sparkles class="w-4 h-4" />
+      Cálculos automáticos
+    </p>
+    <div class="grid grid-cols-3 gap-3 text-xs">
+      <div>
+        <p class="text-secondary mb-0.5">Merma ({{ concentrado.porcentajeMerma || 1 }}%)</p>
+        <p class="font-semibold text-neutral">
+          {{ (pesoTms * ((concentrado.porcentajeMerma || 1) / 100)).toFixed(2) }} Ton
+        </p>
+      </div>
+      <div>
+        <p class="text-secondary mb-0.5">Peso Final</p>
+        <p class="font-semibold text-neutral">
+          {{ (pesoTms - (pesoTms * ((concentrado.porcentajeMerma || 1) / 100))).toFixed(2) }} Ton
+        </p>
+      </div>
+      <div>
+        <p class="text-secondary mb-0.5">Diferencia TMH-TMS</p>
+        <p class="font-semibold text-neutral">
+          {{ (pesoTmh - pesoTms).toFixed(2) }} Ton
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Separador -->
+  <div class="border-t border-border my-1"></div>
+
+  <!-- Observaciones finales del proceso -->
+  <div class="input-group">
+    <label class="input-label flex items-center gap-1.5">
+      <FileText class="w-4 h-4" />
+      Observaciones finales del último proceso
+    </label>
+    <textarea
+      v-model="observacionesFinProceso"
+      rows="2"
+      placeholder="¿Cómo finalizó este proceso?..."
+      class="w-full"
+    ></textarea>
+  </div>
+
+  <!-- Observaciones generales -->
+  <div class="input-group">
+    <label class="input-label flex items-center gap-1.5">
+      <Sparkles class="w-4 h-4" />
+      Observaciones generales del procesamiento completo
+    </label>
+    <textarea
+      v-model="observacionesGenerales"
+      rows="2"
+      placeholder="Comentarios generales sobre todo el procesamiento..."
+      class="w-full"
+    ></textarea>
+  </div>
+</template>
 
             <template v-else>
               <div class="input-group">

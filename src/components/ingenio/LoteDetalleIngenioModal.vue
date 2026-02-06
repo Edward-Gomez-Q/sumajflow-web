@@ -10,11 +10,13 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  XCircle
+  XCircle,
+  DollarSign
 } from 'lucide-vue-next'
 import LoteDetalleTabGeneral from '@/components/socio/LoteDetalleTabGeneral.vue'
 import LoteDetalleTabTransporte from '@/components/socio/LoteDetalleTabTransporte.vue'
 import LoteDetalleTabHistorial from '@/components/socio/LoteDetalleTabHistorial.vue'
+import LoteDetalleTabLiquidacionToll from '@/components/socio/LoteDetalleTabLiquidacionToll.vue'
 import { useLotesWS } from '@/composables/useLotesWS'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -85,6 +87,11 @@ watch(
 
 
 const lote = computed(() => lotesStore.loteDetalle)
+
+// Computed para verificar si tiene liquidación Toll
+const tieneLiquidacionToll = computed(() => {
+  return lote.value?.liquidacionToll && lote.value.liquidacionToll.id
+})
 
 const esPendienteAprobacion = computed(() => {
   return lote.value?.estado === 'Pendiente de aprobación por Ingenio/Comercializadora'
@@ -197,6 +204,32 @@ const handleRechazar = () => {
                     {{ lote.camioneAsignados }}
                   </span>
                 </button>
+                
+                <!-- Tab de Liquidación Toll (solo si existe) -->
+                <button
+                  v-if="tieneLiquidacionToll"
+                  @click="tabActual = 'liquidacion'"
+                  class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
+                  :class="tabActual === 'liquidacion'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-secondary hover:text-neutral'"
+                >
+                  <DollarSign class="w-4 h-4" />
+                  Liquidación Toll
+                  <span 
+                    v-if="lote.liquidacionToll.estado === 'esperando_pago'"
+                    class="ml-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-700 text-xs"
+                  >
+                    Pendiente Pago
+                  </span>
+                  <span 
+                    v-else-if="lote.liquidacionToll.estado === 'pagado'"
+                    class="ml-1 px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-700 text-xs"
+                  >
+                    Pagado
+                  </span>
+                </button>
+                
                 <button
                   @click="tabActual = 'historial'"
                   class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
@@ -222,6 +255,13 @@ const handleRechazar = () => {
               v-show="tabActual === 'transporte'" 
               :lote="lote"
               :lote-id="loteId"
+            />
+            
+            <LoteDetalleTabLiquidacionToll
+              v-if="tieneLiquidacionToll"
+              v-show="tabActual === 'liquidacion'"
+              :liquidacion="lote.liquidacionToll"
+              :es-socio="false"
             />
             
             <LoteDetalleTabHistorial 

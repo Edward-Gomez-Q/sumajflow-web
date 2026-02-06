@@ -10,7 +10,8 @@ import {
   FlaskConical,
   DollarSign,
   AlertCircle,
-  History
+  History,
+  FileText
 } from 'lucide-vue-next'
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from './ConcentradoDetalleTabGeneral.vue'
@@ -18,6 +19,7 @@ import ConcentradoDetalleTabKanban from './ConcentradoDetalleTabKanban.vue'
 import ConcentradoDetalleTabReporte from './ConcentradoDetalleTabReporte.vue'
 import ConcentradoDetalleTabLiquidacion from './ConcentradoDetalleTabLiquidacion.vue'
 import ConcentradoDetalleTabHistorial from './ConcentradoDetalleTabHistorial.vue'
+import LoteDetalleTabLiquidacionToll from '@/components/socio/LoteDetalleTabLiquidacionToll.vue'
 
 const props = defineProps({
   concentradoId: {
@@ -40,6 +42,11 @@ watch(() => props.concentradoId, async (newId) => {
 
 const concentrado = computed(() => concentradosStore.concentradoDetalle)
 
+// Verificar si tiene liquidación Toll
+const tieneLiquidacionToll = computed(() => {
+  return concentrado.value?.liquidacionToll && concentrado.value.liquidacionToll.id
+})
+
 // Determinar qué tabs están disponibles según el estado
 const tabsDisponibles = computed(() => {
   const tabs = [
@@ -56,6 +63,18 @@ const tabsDisponibles = computed(() => {
     tabs.push({ id: 'reporte', label: 'Reporte Químico', icon: FlaskConical, disponible: true })
   }
 
+  // Tab de Liquidación Toll (solo si existe)
+  if (tieneLiquidacionToll.value) {
+    tabs.push({ 
+      id: 'liquidacion_toll', 
+      label: 'Liquidación Toll', 
+      icon: FileText, 
+      disponible: true,
+      badge: concentrado.value.liquidacionToll.estado === 'esperando_pago' ? 'Pendiente Pago' :
+             concentrado.value.liquidacionToll.estado === 'pagado' ? 'Pagado' : null
+    })
+  }
+
   // Liquidación disponible desde "liquidacion_servicio_solicitada" en adelante
   if (concentrado.value && [
     'liquidacion_servicio_solicitada',
@@ -66,6 +85,7 @@ const tabsDisponibles = computed(() => {
   ].includes(concentrado.value.estado)) {
     tabs.push({ id: 'liquidacion', label: 'Liquidación', icon: DollarSign, disponible: true })
   }
+  
   tabs.push({ id: 'historial', label: 'Historial', icon: History, disponible: true })
 
   return tabs
@@ -150,6 +170,17 @@ const tabsDisponibles = computed(() => {
                 >
                   <component :is="tab.icon" class="w-4 h-4" />
                   {{ tab.label }}
+                  
+                  <!-- Badge para Liquidación Toll -->
+                  <span 
+                    v-if="tab.id === 'liquidacion_toll' && tab.badge"
+                    class="ml-1 px-1.5 py-0.5 rounded-full text-xs"
+                    :class="tab.badge === 'Pendiente Pago' 
+                      ? 'bg-orange-500/20 text-orange-700' 
+                      : 'bg-green-500/20 text-green-700'"
+                  >
+                    {{ tab.badge }}
+                  </span>
                 </button>
               </div>
             </div>
@@ -170,6 +201,14 @@ const tabsDisponibles = computed(() => {
               v-show="tabActual === 'reporte'" 
               :concentrado="concentrado"
               :concentrado-id="concentradoId"
+            />
+            
+            <!-- Tab de Liquidación Toll (reutilizando componente de lotes) -->
+            <LoteDetalleTabLiquidacionToll
+              v-if="tieneLiquidacionToll"
+              v-show="tabActual === 'liquidacion_toll'"
+              :liquidacion="concentrado.liquidacionToll"
+              :es-socio="false"
             />
             
             <ConcentradoDetalleTabLiquidacion 

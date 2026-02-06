@@ -179,7 +179,7 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
   }
 
   /**
-   * Crear concentrado(s) - Soporta creación múltiple (Zn+Pb)
+   * Crear concentrado(s) 
    * POST /ingenio/concentrados
    */
   const crearConcentrado = async (datosConcentrado) => {
@@ -418,329 +418,55 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
    * POST /ingenio/kanban/concentrados/{concentradoId}/finalizar
    */
   const finalizarProcesamiento = async (concentradoId, observaciones) => {
-    uiStore.showLoading('Finalizando procesamiento...')
-    error.value = null
+  uiStore.showLoading('Finalizando procesamiento...')
+  error.value = null
 
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/finalizar`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            observacionesFinProceso: observaciones.observacionesFinProceso,
-            observacionesGenerales: observaciones.observacionesGenerales
-          })
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al finalizar procesamiento')
+  try {
+    const response = await fetch(
+      `${rutaApi}/ingenio/kanban/concentrados/${concentradoId}/finalizar`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sessionStore.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pesoTmh: observaciones.pesoTmh,           // ⬅️ NUEVO
+          pesoTms: observaciones.pesoTms,           // ⬅️ NUEVO
+          numeroSacos: observaciones.numeroSacos,   // ⬅️ NUEVO
+          observacionesFinProceso: observaciones.observacionesFinProceso,
+          observacionesGenerales: observaciones.observacionesGenerales
+        })
       }
-      
-      await fetchProcesos(concentradoId)
-      await fetchConcentrados()
-      await fetchConcentradoDetalle(concentradoId)
-      kanban.value = data.data
-
-      uiStore.showSuccess(
-        data.message || 'Procesamiento finalizado exitosamente',
-        'Procesamiento Finalizado'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Finalizar')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
-  }
-
-  // ==================== ACTIONS - REPORTES QUÍMICOS ====================
-
-  /**
-   * Registrar reporte químico
-   * POST /ingenio/reportes-quimicos/concentrados/{concentradoId}
-   */
-  const registrarReporteQuimico = async (concentradoId, datosReporte) => {
-    const confirmed = await uiStore.showConfirm(
-      '¿Está seguro que desea registrar este reporte químico?',
-      'Confirmar Registro'
     )
 
-    if (!confirmed) {
-      return { success: false, cancelled: true }
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al finalizar procesamiento')
     }
+    
+    await fetchProcesos(concentradoId)
+    await fetchConcentrados()
+    await fetchConcentradoDetalle(concentradoId)
+    kanban.value = data.data
 
-    uiStore.showLoading('Registrando reporte químico...')
-    error.value = null
-
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/reportes-quimicos/concentrados/${concentradoId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(datosReporte)
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al registrar reporte químico')
-      }
-
-      await fetchConcentradoDetalle(concentradoId)
-
-      uiStore.showSuccess(
-        data.message || 'Reporte químico registrado exitosamente',
-        'Reporte Registrado'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Registrar Reporte')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
-  }
-
-  /**
-   * Validar reporte químico
-   * PATCH /ingenio/reportes-quimicos/concentrados/{concentradoId}/validar
-   */
-  const validarReporteQuimico = async (concentradoId) => {
-    const confirmed = await uiStore.showConfirm(
-      '¿Está seguro que desea validar el reporte químico? El concentrado quedará listo para liquidación.',
-      'Confirmar Validación'
+    uiStore.showSuccess(
+      data.message || 'Procesamiento finalizado exitosamente',
+      'Procesamiento Finalizado'
     )
 
-    if (!confirmed) {
-      return { success: false, cancelled: true }
-    }
+    return { success: true, data: data.data, message: data.message }
 
-    uiStore.showLoading('Validando reporte químico...')
-    error.value = null
+  } catch (err) {
+    error.value = err.message
+    uiStore.showError(err.message, 'Error al Finalizar')
+    return { success: false, error: err.message }
 
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/reportes-quimicos/concentrados/${concentradoId}/validar`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al validar reporte químico')
-      }
-
-      await fetchConcentradoDetalle(concentradoId)
-
-      uiStore.showSuccess(
-        data.message || 'Reporte químico validado exitosamente',
-        'Reporte Validado'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Validar Reporte')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
+  } finally {
+    uiStore.hideLoading()
   }
-
-  // ==================== ACTIONS - LIQUIDACIONES DE SERVICIO ====================
-
-  /**
-   * Revisar solicitud de liquidación
-   * PATCH /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/revisar
-   */
-  const revisarLiquidacionServicio = async (concentradoId) => {
-    const confirmed = await uiStore.showConfirm(
-      '¿Marcar esta solicitud de liquidación como "en revisión"?',
-      'Confirmar Revisión'
-    )
-
-    if (!confirmed) {
-      return { success: false, cancelled: true }
-    }
-
-    uiStore.showLoading('Marcando liquidación en revisión...')
-    error.value = null
-
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/revisar`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al revisar liquidación')
-      }
-
-      await fetchConcentradoDetalle(concentradoId)
-
-      uiStore.showSuccess(
-        data.message || 'Liquidación marcada en revisión',
-        'En Revisión'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Revisar')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
-  }
-
-  /**
-   * Aprobar liquidación de servicio
-   * POST /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/aprobar
-   */
-  const aprobarLiquidacionServicio = async (concentradoId, datosLiquidacion) => {
-    const confirmed = await uiStore.showConfirm(
-      `¿Está seguro que desea aprobar la liquidación por ${datosLiquidacion.costoServicio} BOB?`,
-      'Confirmar Aprobación de Liquidación'
-    )
-
-    if (!confirmed) {
-      return { success: false, cancelled: true }
-    }
-
-    uiStore.showLoading('Aprobando liquidación...')
-    error.value = null
-
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/aprobar`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(datosLiquidacion)
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al aprobar liquidación')
-      }
-
-      await fetchConcentradoDetalle(concentradoId)
-
-      uiStore.showSuccess(
-        data.message || 'Liquidación aprobada exitosamente',
-        'Liquidación Aprobada'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Aprobar Liquidación')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
-  }
-
-  /**
-   * Registrar pago de servicio
-   * POST /ingenio/liquidaciones-servicio/concentrados/{concentradoId}/registrar-pago
-   */
-  const registrarPagoServicio = async (concentradoId, datosPago) => {
-    const confirmed = await uiStore.showConfirm(
-      `¿Confirmar registro de pago por ${datosPago.montoPagado} BOB?`,
-      'Confirmar Registro de Pago'
-    )
-
-    if (!confirmed) {
-      return { success: false, cancelled: true }
-    }
-
-    uiStore.showLoading('Registrando pago...')
-    error.value = null
-
-    try {
-      const response = await fetch(
-        `${rutaApi}/ingenio/liquidaciones-servicio/concentrados/${concentradoId}/registrar-pago`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${sessionStore.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(datosPago)
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al registrar pago')
-      }
-
-      await fetchConcentradoDetalle(concentradoId)
-
-      uiStore.showSuccess(
-        data.message || 'Pago registrado exitosamente',
-        'Pago Registrado'
-      )
-
-      return { success: true, data: data.data, message: data.message }
-
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Registrar Pago')
-      return { success: false, error: err.message }
-
-    } finally {
-      uiStore.hideLoading()
-    }
-  }
+}
 
   // ==================== UTILITIES ====================
 
@@ -841,15 +567,6 @@ export const useConcentradosIngenioStore = defineStore('concentradosIngenio', ()
     iniciarProcesamiento,
     moverAProceso,
     finalizarProcesamiento,
-    
-    // Actions - Reportes Químicos
-    registrarReporteQuimico,
-    validarReporteQuimico,
-    
-    // Actions - Liquidaciones de Servicio
-    revisarLiquidacionServicio,
-    aprobarLiquidacionServicio,
-    registrarPagoServicio,
     
     // Utilities
     cambiarPagina,

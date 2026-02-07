@@ -110,13 +110,6 @@ export const useSidebarStore = defineStore('sidebar', () => {
         icon: BarChart3,
         route: '/cooperativa/reportes',
         badge: null
-      },
-      {
-        id: 'configuracion',
-        label: 'Configuración',
-        icon: Settings,
-        route: '/cooperativa/configuracion',
-        badge: null
       }
     ],
     socio: [
@@ -152,14 +145,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
         id: 'liquidaciones',
         label: 'Liquidaciones',
         icon: FileText,
-        route: '/socio/liquidaciones',
-        badge: null
-      },
-      {
-        id: 'perfil',
-        label: 'Mi Perfil',
-        icon: UserCog,
-        route: '/socio/perfil',
+        route: '/socio/ventas/concentrados',
         badge: null
       }
     ],
@@ -198,34 +184,6 @@ export const useSidebarStore = defineStore('sidebar', () => {
         icon: Factory,
         route: '/ingenio/concentrados',
         badge: null
-      },
-      {
-        id: 'procesamiento',
-        label: 'Procesamiento',
-        icon: Factory,
-        route: '/ingenio/procesamiento',
-        badge: null
-      },
-      {
-        id: 'inventario',
-        label: 'Inventario',
-        icon: Package,
-        route: '/ingenio/inventario',
-        badge: null
-      },
-      {
-        id: 'reportes',
-        label: 'Reportes',
-        icon: BarChart3,
-        route: '/ingenio/reportes',
-        badge: null
-      },
-      {
-        id: 'configuracion',
-        label: 'Configuración',
-        icon: Settings,
-        route: '/ingenio/configuracion',
-        badge: null
       }
     ],
     comercializadora: [
@@ -261,37 +219,9 @@ export const useSidebarStore = defineStore('sidebar', () => {
         id: 'compras',
         label: 'Compras',
         icon: TrendingUp,
-        route: '/comercializadora/compras',
-        badge: null
-      },
-      {
-        id: 'inventario',
-        label: 'Inventario',
-        icon: Package,
-        route: '/comercializadora/inventario',
-        badge: null
-      },
-      {
-        id: 'ventas',
-        label: 'Ventas',
-        icon: FileText,
         route: '/comercializadora/ventas',
         badge: null
       },
-      {
-        id: 'reportes',
-        label: 'Reportes',
-        icon: BarChart3,
-        route: '/comercializadora/reportes',
-        badge: null
-      },
-      {
-        id: 'configuracion',
-        label: 'Configuración',
-        icon: Settings,
-        route: '/comercializadora/configuracion',
-        badge: null
-      }
     ]
   }
 

@@ -106,8 +106,9 @@ const tabsDisponibles = computed(() => {
 
 // Handler para cuando se registra un pago
 const handlePagoRegistrado = async (liquidacionActualizada) => {
-  // Recargar el detalle del concentrado para obtener datos actualizados
   await concentradosStore.fetchConcentradoDetalle(props.concentradoId)
+  await concentradosStore.fetchDashboard()
+  await concentradosStore.fetchConcentrados()
   uiStore.showSuccess('El pago ha sido registrado exitosamente', 'Pago Confirmado')
 }
 </script>
@@ -194,10 +195,10 @@ const handlePagoRegistrado = async (liquidacionActualizada) => {
                   <!-- Badge para Liquidación Toll -->
                   <span 
                     v-if="tab.id === 'liquidacion_toll' && tab.badge"
-                    class="ml-1 px-1.5 py-0.5 rounded-full text-xs"
-                    :class="tab.badge === 'Pendiente' 
-                      ? 'bg-orange-500/20 text-orange-700' 
-                      : 'bg-green-500/20 text-green-700'"
+                    class="ml-1 px-2 py-0.5 rounded-md text-white text-xs font-semibold"
+                    :class="tab.badge === 'Pendiente Pago' 
+                      ? 'bg-orange-500' 
+                      : 'bg-green-600'"
                   >
                     {{ tab.badge }}
                   </span>

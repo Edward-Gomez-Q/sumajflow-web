@@ -24,8 +24,8 @@ export const ESTADOS_CONCENTRADO = {
     textColor: 'text-white',
     fase: 'procesamiento'
   },
-  'esperando_reporte_quimico': {
-    label: 'Esperando reporte químico',
+  'esperando_pago': {
+    label: 'Esperando pago',
     color: 'bg-orange-500',
     textColor: 'text-white',
     fase: 'procesamiento'
@@ -50,8 +50,8 @@ export const ESTADOS_CONCENTRADO = {
     textColor: 'text-white',
     fase: 'liquidacion'
   },
-  'liquidacion_servicio_en_revision': {
-    label: 'Liquidación en revisión',
+  'en_venta': {
+    label: 'En venta',
     color: 'bg-yellow-600',
     textColor: 'text-white',
     fase: 'liquidacion'
@@ -194,6 +194,6 @@ export const TIPOS_OPERACION = {
 export const METODOS_PAGO = [
   { value: 'efectivo', label: 'Efectivo' },
   { value: 'transferencia', label: 'Transferencia Bancaria' },
-  { value: 'cheque', label: 'Cheque' },
+
   { value: 'deposito', label: 'Depósito Bancario' }
 ]

@@ -35,7 +35,7 @@ onMounted(async () => {
   })
 
   await concentradosStore.fetchConcentrados()
-    await concentradosStore.fetchDashboard()
+  await concentradosStore.fetchDashboard()
 })
 
 onUnmounted(() => {
@@ -246,7 +246,7 @@ const formatPeso = (peso) => {
                   Peso Inicial
                 </p>
                 <p class="text-sm font-medium text-neutral mt-0.5">
-                  {{ formatPeso(concentrado.pesoInicial) }} kg
+                  {{ formatPeso(concentrado.pesoInicial) }} Ton
                 </p>
               </div>
               <div>

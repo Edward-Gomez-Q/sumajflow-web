@@ -762,7 +762,6 @@ const formatDate = (dateString) => {
   <!-- Cálculos automáticos (vista previa) -->
   <div v-if="pesoTms && pesoTmh" class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
     <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-1.5">
-      <Sparkles class="w-4 h-4" />
       Cálculos automáticos
     </p>
     <div class="grid grid-cols-3 gap-3 text-xs">

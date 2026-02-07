@@ -218,13 +218,13 @@ const handleRechazar = () => {
                   Liquidación Toll
                   <span 
                     v-if="lote.liquidacionToll.estado === 'esperando_pago'"
-                    class="ml-1 px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-700 text-xs"
+                    class="ml-1 px-2 py-0.5 rounded-md bg-orange-500 text-white text-xs font-semibold"
                   >
                     Pendiente Pago
                   </span>
                   <span 
                     v-else-if="lote.liquidacionToll.estado === 'pagado'"
-                    class="ml-1 px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-700 text-xs"
+                    class="ml-1 px-2 py-0.5 rounded-md bg-green-600 text-white text-xs font-semibold"
                   >
                     Pagado
                   </span>

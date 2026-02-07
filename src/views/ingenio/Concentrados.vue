@@ -1,8 +1,10 @@
 <!-- src/views/ingenio/Concentrados.vue -->
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useConcentradosIngenioStore } from '@/stores/ingenio/concentradosIngenioStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { useConcentradoWS } from '@/composables/useConcentradoWS'
+
 import {
   PackageCheck,
   Eye,
@@ -23,14 +25,30 @@ import ModalCrearConcentrado from '@/components/ingenio/ModalCrearConcentrado.vu
 import ModalConcentradoDetalle from '@/components/ingenio/ModalConcentradoDetalle.vue'
 
 const concentradosStore = useConcentradosIngenioStore()
-
+const concentradoWs = useConcentradoWS()
 const mostrarModalCrear = ref(false)
 const mostrarModalDetalle = ref(false)
 const concentradoSeleccionadoId = ref(null)
 
+
 onMounted(async () => {
+  await concentradoWs.suscribirCola((data) => {
+    console.log('🔔 Actualización recibida:', data)
+    if (data.evento === 'listo_para_venta') {
+      console.log('🔔 Concentrado listo para venta, actualizando lista...')
+      concentradosStore.fetchConcentrados()
+      concentradosStore.fetchDashboard()
+    } else {
+      console.log('🔔 Concentrado actualizado pero no listo para venta, no se actualiza la lista')
+    }
+  })
+
   await concentradosStore.fetchConcentrados()
   await concentradosStore.fetchDashboard()
+})
+
+onUnmounted(() => {
+  concentradoWs.desuscribirCola()
 })
 
 const verDetalle = (concentrado) => {
@@ -240,7 +258,7 @@ const formatPeso = (peso) => {
                   Peso Inicial
                 </p>
                 <p class="text-sm font-medium text-neutral mt-0.5">
-                  {{ formatPeso(concentrado.pesoInicial) }} kg
+                  {{ formatPeso(concentrado.pesoInicial) }} Ton
                 </p>
               </div>
               <div>

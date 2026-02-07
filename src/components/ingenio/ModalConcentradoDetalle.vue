@@ -74,17 +74,6 @@ const tabsDisponibles = computed(() => {
              concentrado.value.liquidacionToll.estado === 'pagado' ? 'Pagado' : null
     })
   }
-
-  // Liquidación disponible desde "liquidacion_servicio_solicitada" en adelante
-  if (concentrado.value && [
-    'liquidacion_servicio_solicitada',
-    'liquidacion_servicio_en_revision',
-    'servicio_ingenio_liquidado',
-    'servicio_ingenio_pagado',
-    'listo_para_venta'
-  ].includes(concentrado.value.estado)) {
-    tabs.push({ id: 'liquidacion', label: 'Liquidación', icon: DollarSign, disponible: true })
-  }
   
   tabs.push({ id: 'historial', label: 'Historial', icon: History, disponible: true })
 
@@ -174,10 +163,10 @@ const tabsDisponibles = computed(() => {
                   <!-- Badge para Liquidación Toll -->
                   <span 
                     v-if="tab.id === 'liquidacion_toll' && tab.badge"
-                    class="ml-1 px-1.5 py-0.5 rounded-full text-xs"
+                    class="ml-1 px-2 py-0.5 rounded-md text-white text-xs font-semibold"
                     :class="tab.badge === 'Pendiente Pago' 
-                      ? 'bg-orange-500/20 text-orange-700' 
-                      : 'bg-green-500/20 text-green-700'"
+                      ? 'bg-orange-500' 
+                      : 'bg-green-600'"
                   >
                     {{ tab.badge }}
                   </span>
@@ -210,14 +199,8 @@ const tabsDisponibles = computed(() => {
               :liquidacion="concentrado.liquidacionToll"
               :es-socio="false"
             />
-            
-            <ConcentradoDetalleTabLiquidacion 
-              v-show="tabActual === 'liquidacion'" 
-              :concentrado="concentrado"
-              :concentrado-id="concentradoId"
-            />
 
-            <!-- ✅ Pasar tabActual y concentradoId -->
+            <!-- Pasar tabActual y concentradoId -->
             <ConcentradoDetalleTabHistorial 
               v-show="tabActual === 'historial'" 
               :concentrado="concentrado"

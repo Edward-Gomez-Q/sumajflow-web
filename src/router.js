@@ -141,22 +141,6 @@ const routes = [
         }
       }
       
-      /*{
-        path: 'reportes',
-        name: 'CooperativaReportes',
-        component: () => import('./views/cooperativa/Reportes.vue'),
-        meta: { 
-          title: 'Reportes - Cooperativa'
-        }
-      },
-      {
-        path: 'configuracion',
-        name: 'CooperativaConfiguracion',
-        component: () => import('./views/cooperativa/Configuracion.vue'),
-        meta: { 
-          title: 'Configuración - Cooperativa'
-        }
-      }*/
     ]
   },
 
@@ -217,23 +201,16 @@ const routes = [
         meta : {
           title : 'Concentrados - Socio'
         }
-      }
-      /*{
-        path: 'liquidaciones',
-        name: 'SocioLiquidaciones',
-        component: () => import('./views/socio/Liquidaciones.vue'),
-        meta: { 
-          title: 'Liquidaciones - Socio'
-        }
       },
       {
-        path: 'perfil',
-        name: 'SocioPerfil',
-        component: () => import('./views/socio/Perfil.vue'),
-        meta: { 
-          title: 'Mi Perfil - Socio'
+        path: 'ventas/concentrados',
+        name: 'SocioVentaConcentrados',
+        component: () => import('./views/socio/VentaConcentrados.vue'),
+        meta: {
+          title: 'Venta de Concentrados - Socio'
         }
-      }*/
+      },
+      
     ]
   },
 
@@ -303,38 +280,7 @@ const routes = [
           title: 'Concentrados - Ingenio'
         }
       },
-      /*{
-        path: 'procesamiento',
-        name: 'IngenioProcesamiento',
-        component: () => import('./views/ingenio/Procesamiento.vue'),
-        meta: { 
-          title: 'Procesamiento - Ingenio'
-        }
-      },
-      {
-        path: 'inventario',
-        name: 'IngenioInventario',
-        component: () => import('./views/ingenio/Inventario.vue'),
-        meta: { 
-          title: 'Inventario - Ingenio'
-        }
-      },
-      {
-        path: 'reportes',
-        name: 'IngenioReportes',
-        component: () => import('./views/ingenio/Reportes.vue'),
-        meta: { 
-          title: 'Reportes - Ingenio'
-        }
-      },
-      {
-        path: 'configuracion',
-        name: 'IngenioConfiguracion',
-        component: () => import('./views/ingenio/Configuracion.vue'),
-        meta: { 
-          title: 'Configuración - Ingenio'
-        }
-      }*/
+      
     ]
   },
 
@@ -395,47 +341,16 @@ const routes = [
         meta : {
           title : 'Lotes - Comercializadora'
         }
-      }
-      /*{
-        path: 'compras',
-        name: 'ComercializadoraCompras',
-        component: () => import('./views/comercializadora/Compras.vue'),
-        meta: { 
-          title: 'Compras - Comercializadora'
-        }
-      },
-      {
-        path: 'inventario',
-        name: 'ComercializadoraInventario',
-        component: () => import('./views/comercializadora/Inventario.vue'),
-        meta: { 
-          title: 'Inventario - Comercializadora'
-        }
       },
       {
         path: 'ventas',
         name: 'ComercializadoraVentas',
         component: () => import('./views/comercializadora/Ventas.vue'),
-        meta: { 
+        meta: {
           title: 'Ventas - Comercializadora'
         }
       },
-      {
-        path: 'reportes',
-        name: 'ComercializadoraReportes',
-        component: () => import('./views/comercializadora/Reportes.vue'),
-        meta: { 
-          title: 'Reportes - Comercializadora'
-        }
-      },
-      {
-        path: 'configuracion',
-        name: 'ComercializadoraConfiguracion',
-        component: () => import('./views/comercializadora/Configuracion.vue'),
-        meta: { 
-          title: 'Configuración - Comercializadora'
-        }
-      }*/
+      
     ]
   },
   

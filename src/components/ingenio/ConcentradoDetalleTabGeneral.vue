@@ -70,7 +70,7 @@ const concentradosHermanos = computed(() => {
             <Scale class="w-4 h-4" />
             Peso Inicial
           </p>
-          <p class="text-base font-medium text-neutral">{{ formatPeso(concentrado.pesoInicial) }} kg</p>
+          <p class="text-base font-medium text-neutral">{{ formatPeso(concentrado.pesoInicial) }} Ton</p>
         </div>
 
         <!-- Peso Final -->

@@ -3,6 +3,7 @@
 import { ref, computed, watch } from 'vue'
 import { useConcentradosIngenioStore } from '@/stores/ingenio/concentradosIngenioStore'
 import { useLotesIngenioStore } from '@/stores/ingenio/lotesIngenioStore'
+import {TIPO_CAMBIO_DEFAULT} from '@/utils/ventaEstados'
 import { useUIStore } from '@/stores/uiStore'
 import {
   PackageCheck,
@@ -16,7 +17,6 @@ import {
   CheckCircle2,
   Factory,
   ChevronRight,
-  DollarSign,
   Truck
 } from 'lucide-vue-next'
 
@@ -40,7 +40,7 @@ const loteAncla = ref(null)
 const formulario = ref({
   pesoInicial: 0,
   observacionesIniciales: '',
-  tipoCambio: 0,
+  tipoCambio: TIPO_CAMBIO_DEFAULT,
   cantidadRetroexcavadoraGrande: 0,
   cantidadRetroexcavadoraPequena: 0
 })
@@ -192,8 +192,7 @@ const puedeAvanzar = computed(() => {
            todosMismoSocio.value && 
            validacionCupoMinimo.value.valido 
   } else if (paso.value === 2) {
-    return formulario.value.pesoInicial > 0 && 
-           formulario.value.tipoCambio > 0
+    return formulario.value.pesoInicial > 0
   }
   return false
 })
@@ -213,7 +212,7 @@ watch(() => props.modelValue, async (isOpen) => {
     formulario.value = {
       pesoInicial: 0,
       observacionesIniciales: '',
-      tipoCambio: 0,
+      tipoCambio: TIPO_CAMBIO_DEFAULT,
       cantidadRetroexcavadoraGrande: 0,
       cantidadRetroexcavadoraPequena: 0
     }
@@ -702,24 +701,6 @@ const getMineralesNombres = (lote) => {
                             readonly
                             class="bg-hover cursor-not-allowed text-sm py-2"
                           />
-                        </div>
-
-                        <!-- Tipo de Cambio -->
-                        <div class="input-group">
-                          <label class="input-label flex items-center gap-2 text-xs">
-                            <DollarSign class="w-3.5 h-3.5" />
-                            Tipo de Cambio (BOB/USD) *
-                          </label>
-                          <input
-                            v-model="formulario.tipoCambio"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            placeholder="Ej: 6.96"
-                            class="text-sm py-2"
-                            required
-                          />
-                          <p class="text-xs text-secondary mt-1">Tipo de cambio actual del dólar en bolivianos</p>
                         </div>
 
                         <!-- Retroexcavadoras -->

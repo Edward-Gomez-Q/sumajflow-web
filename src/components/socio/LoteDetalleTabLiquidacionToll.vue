@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next'
 import { useLiquidacionTollStore } from '@/stores/socio/liquidacionTollStore'
 import { useUIStore } from '@/stores/uiStore'
+import {useFilesStore} from '@/stores/filesStore'
 
 import { useSessionStore } from '@/stores/sessionStore'
 import rutaApi from '@/assets/rutaApi.js'
@@ -35,7 +36,7 @@ const emit = defineEmits(['pago-registrado'])
 
 const liquidacionStore = useLiquidacionTollStore()
 const uiStore = useUIStore()
-
+const filesStore = useFilesStore()
 const sessionStore = useSessionStore()
 
 // Estado del formulario de pago
@@ -63,20 +64,20 @@ const getEstadoBadge = (estado) => {
   const badges = {
     'pendiente_procesamiento': {
       text: 'Pendiente Procesamiento',
-      class: 'bg-yellow-500/10 text-yellow-700 border border-yellow-500/20'
+      class: 'bg-yellow-500 text-white'  
     },
     'esperando_pago': {
       text: 'Esperando Pago',
-      class: 'bg-orange-500/10 text-orange-700 border border-orange-500/20'
+      class: 'bg-orange-500 text-white'  
     },
     'pagado': {
       text: 'Pagado',
-      class: 'bg-green-500/10 text-green-700 border border-green-500/20'
+      class: 'bg-green-600 text-white'   
     }
   }
   return badges[estado] || { 
     text: estado, 
-    class: 'bg-gray-500/10 text-gray-700 border border-gray-500/20' 
+    class: 'bg-gray-500 text-white'      
   }
 }
 
@@ -86,6 +87,11 @@ const formatCurrency = (value, currency = 'BOB') => {
     style: 'currency',
     currency: currency
   }).format(value)
+}
+
+// Open modal para previsualizar comprobante
+const openModal = (url) => {
+  filesStore.openFile(url)
 }
 
 const formatDate = (dateString) => {
@@ -490,35 +496,34 @@ const formatFileSize = (bytes) => {
     <!-- Información de Pago (si ya está pagado) -->
     <div 
       v-if="liquidacion.estado === 'pagado' && liquidacion.metodoPago"
-      class="bg-green-50 dark:bg-green-900/10 rounded-xl p-4 border border-green-200 dark:border-green-800"
+      class="bg-green-500/10 rounded-xl p-4 border border-green-500/30"
     >
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center shrink-0">
           <CheckCircle2 class="w-5 h-5 text-white" />
         </div>
         <div class="flex-1">
-          <h3 class="text-sm font-semibold text-green-900 dark:text-green-100 mb-3">
+          <h3 class="text-sm font-semibold text-green-600 dark:text-green-400 mb-3">
             Pago Registrado Exitosamente
           </h3>
           <div class="grid sm:grid-cols-2 gap-3 text-sm">
             <div>
-              <p class="text-xs text-green-700 dark:text-green-300">Método de Pago</p>
-              <p class="font-medium text-green-900 dark:text-green-100">{{ liquidacion.metodoPago }}</p>
+              <p class="text-xs text-secondary">Método de Pago</p>
+              <p class="font-medium text-neutral">{{ liquidacion.metodoPago }}</p>
             </div>
             <div>
-              <p class="text-xs text-green-700 dark:text-green-300">Número de Comprobante</p>
-              <p class="font-medium text-green-900 dark:text-green-100">{{ liquidacion.numeroComprobante }}</p>
+              <p class="text-xs text-secondary">Número de Comprobante</p>
+              <p class="font-medium text-neutral">{{ liquidacion.numeroComprobante }}</p>
             </div>
             <div v-if="liquidacion.urlComprobante" class="sm:col-span-2">
-              <p class="text-xs text-green-700 dark:text-green-300 mb-1">Comprobante</p>
-              <a 
-                :href="liquidacion.urlComprobante" 
-                target="_blank"
-                class="inline-flex items-center gap-2 text-green-600 dark:text-green-400 hover:underline"
+              <p class="text-xs text-secondary mb-1">Comprobante</p>
+              <button
+                @click="openModal(liquidacion.urlComprobante)"
+                class="inline-flex items-center gap-2 text-green-600 dark:text-green-400 hover:underline cursor-pointer"
               >
                 <FileCheck class="w-4 h-4" />
                 Ver comprobante
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -528,16 +533,16 @@ const formatFileSize = (bytes) => {
     <!-- Formulario de pago -->
     <div v-if="puedeRegistrarPago" class="space-y-4">
       <!-- Alerta informativa -->
-      <div class="bg-orange-50 dark:bg-orange-900/10 rounded-xl p-4 border border-orange-200 dark:border-orange-800">
+      <div class="bg-orange-500 rounded-xl p-4 border border-orange-500/30">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
+          <div class="w-10 h-10 flex items-center justify-center shrink-0">
             <Clock class="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-1">
+            <h3 class="text-sm font-semibold text-white mb-1">
               Pago Pendiente
             </h3>
-            <p class="text-sm text-orange-700 dark:text-orange-300">
+            <p class="text-sm text-white/90">
               Para que tu concentrado esté listo para la venta, debes registrar el pago del servicio de procesamiento.
             </p>
           </div>
@@ -581,7 +586,6 @@ const formatFileSize = (bytes) => {
             <option value="transferencia_bancaria">Transferencia Bancaria</option>
             <option value="deposito">Depósito</option>
             <option value="efectivo">Efectivo</option>
-            <option value="cheque">Cheque</option>
           </select>
         </div>
         <!-- Número de Comprobante -->

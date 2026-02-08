@@ -350,6 +350,14 @@ const routes = [
           title: 'Ventas - Comercializadora'
         }
       },
+        {
+          path: 'concentrados',
+          name: 'ComercializadoraConcentrados',
+          component: () => import('./views/comercializadora/Concentrados.vue'),
+          meta: {
+            title: 'Concentrados - Comercializadora'
+          }
+        },
       
     ]
   },

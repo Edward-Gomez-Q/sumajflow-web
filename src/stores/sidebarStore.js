@@ -222,6 +222,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
         route: '/comercializadora/ventas',
         badge: null
       },
+      {
+        id: 'concentrados',
+        label: 'Concentrados',
+        icon: Factory,
+        route: '/comercializadora/concentrados',
+        badge: null
+      },
     ]
   }
 

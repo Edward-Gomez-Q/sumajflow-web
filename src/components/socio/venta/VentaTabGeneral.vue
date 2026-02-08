@@ -3,15 +3,18 @@
 import {
   PackageCheck, Building2, User, Calendar, DollarSign,
   Scale, CheckCircle2, Clock, FileText, Package, TrendingUp,
-  FileCheck
+  FileCheck, Layers, Droplet, Mountain, AlertCircle
 } from 'lucide-vue-next'
 import { useFilesStore } from '@/stores/filesStore'
+import { computed } from 'vue'
 
 const props = defineProps({
   venta: { type: Object, required: true }
 })
 
 const filesStore = useFilesStore()
+
+const esLoteComplejo = computed(() => props.venta.tipoLiquidacion === 'venta_lote_complejo')
 
 const formatDate = (d) => {
   if (!d) return '-'
@@ -31,15 +34,29 @@ const totalSacos = () => {
   return props.venta.concentrados?.reduce((sum, c) => sum + (c.numeroSacos || 0), 0) || 0
 }
 
+const totalLotes = computed(() => props.venta.lotes?.length || 0)
+
+const pesoTotalLotes = computed(() => {
+  return props.venta.lotes?.reduce((sum, l) => sum + (l.pesoTotalReal || 0), 0) || 0
+})
+
 const openModal = (url) => {
   filesStore.openFile(url)
 }
+
+const tieneInformacionFinanciera = computed(() => {
+  return props.venta.valorBrutoUsd || props.venta.valorNetoUsd || props.venta.valorNetoBob
+})
+
+const tieneInformacionPesos = computed(() => {
+  return props.venta.pesoTms || props.venta.pesoFinalTms
+})
 </script>
 
 <template>
   <div class="space-y-6">
-    <!-- Resumen financiero (si hay datos) -->
-    <div v-if="venta.valorBrutoUsd" class="grid md:grid-cols-3 gap-4">
+    <!-- Resumen financiero (solo si hay datos) -->
+    <div v-if="tieneInformacionFinanciera" class="grid md:grid-cols-3 gap-4">
       <div class="bg-surface rounded-lg p-4 border border-border">
         <div class="flex items-center gap-2 mb-2">
           <div class="w-8 h-8 rounded-lg bg-blue-500/10 center">
@@ -47,7 +64,9 @@ const openModal = (url) => {
           </div>
           <p class="text-xs text-secondary">Valor Bruto</p>
         </div>
-        <p class="text-2xl font-bold text-neutral">{{ formatCurrency(venta.valorBrutoUsd, 'USD') }}</p>
+        <p class="text-2xl font-bold text-neutral">
+          {{ venta.valorBrutoUsd ? formatCurrency(venta.valorBrutoUsd, 'USD') : 'Pendiente' }}
+        </p>
       </div>
       <div class="bg-surface rounded-lg p-4 border border-border">
         <div class="flex items-center gap-2 mb-2">
@@ -56,7 +75,9 @@ const openModal = (url) => {
           </div>
           <p class="text-xs text-secondary">Deducciones</p>
         </div>
-        <p class="text-2xl font-bold text-neutral">{{ formatCurrency(venta.totalDeduccionesUsd, 'USD') }}</p>
+        <p class="text-2xl font-bold text-neutral">
+          {{ venta.totalDeduccionesUsd ? formatCurrency(venta.totalDeduccionesUsd, 'USD') : 'Pendiente' }}
+        </p>
       </div>
       <div class="bg-linear-to-br from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
         <div class="flex items-center gap-2 mb-2">
@@ -65,25 +86,42 @@ const openModal = (url) => {
           </div>
           <p class="text-xs text-secondary font-medium">Valor Neto</p>
         </div>
-        <p class="text-2xl font-bold text-primary">{{ formatCurrency(venta.valorNetoBob) }}</p>
-        <p class="text-xs text-tertiary mt-1">{{ formatCurrency(venta.valorNetoUsd, 'USD') }} @ TC: {{ venta.tipoCambio }}</p>
+        <p class="text-2xl font-bold text-primary">
+          {{ venta.valorNetoBob ? formatCurrency(venta.valorNetoBob) : 'Pendiente' }}
+        </p>
+        <p v-if="venta.valorNetoUsd && venta.tipoCambio" class="text-xs text-tertiary mt-1">
+          {{ formatCurrency(venta.valorNetoUsd, 'USD') }} @ TC: {{ venta.tipoCambio }}
+        </p>
       </div>
     </div>
 
-    <!-- Header con estado -->
+    <!-- Header con tipo de liquidación -->
     <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-start gap-3">
-          <div class="w-12 h-12 rounded-lg bg-indigo-500 center shrink-0">
-            <FileText class="w-6 h-6 text-white" />
+          <div 
+            class="w-12 h-12 rounded-lg center shrink-0"
+            :class="esLoteComplejo ? 'bg-amber-600' : 'bg-blue-600'"
+          >
+            <component :is="esLoteComplejo ? Layers : Droplet" class="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 class="text-lg font-semibold text-neutral mb-1">
               Liquidación #{{ venta.id }}
             </h3>
-            <p class="text-sm text-secondary">
-              {{ venta.tipoLiquidacion === 'venta_concentrado' ? 'Venta de Concentrado' : 'Venta de Lote Complejo' }}
-            </p>
+            <div class="flex items-center gap-2">
+              <p class="text-sm text-secondary">
+                {{ esLoteComplejo ? 'Venta de Lote Complejo' : 'Venta de Concentrado' }}
+              </p>
+              <span 
+                class="text-xs px-2 py-1 rounded-lg font-medium border"
+                :class="esLoteComplejo 
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'"
+              >
+                {{ esLoteComplejo ? 'Lote Complejo' : 'Concentrado' }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -122,8 +160,8 @@ const openModal = (url) => {
       </div>
     </div>
 
-    <!-- Resumen de Pesos -->
-    <div class="grid md:grid-cols-3 gap-4">
+    <!-- Resumen de Pesos (solo si hay datos) -->
+    <div v-if="tieneInformacionPesos || venta.pesoTmh" class="grid md:grid-cols-3 gap-4">
       <div class="bg-surface rounded-lg p-4 border border-border">
         <div class="flex items-center gap-2 mb-2">
           <div class="w-8 h-8 rounded-lg bg-purple-500/10 center">
@@ -135,7 +173,7 @@ const openModal = (url) => {
         <p class="text-xs text-tertiary mt-1">Toneladas Métricas Húmedas</p>
       </div>
 
-      <div class="bg-surface rounded-lg p-4 border border-border">
+      <div v-if="venta.pesoTms" class="bg-surface rounded-lg p-4 border border-border">
         <div class="flex items-center gap-2 mb-2">
           <div class="w-8 h-8 rounded-lg bg-indigo-500/10 center">
             <Scale class="w-4 h-4 text-indigo-500" />
@@ -146,7 +184,7 @@ const openModal = (url) => {
         <p class="text-xs text-tertiary mt-1">Toneladas Métricas Secas</p>
       </div>
 
-      <div class="bg-linear-to-br from-indigo-500/10 to-purple-500/10 rounded-lg p-4 border border-indigo-500/20">
+      <div v-if="venta.pesoFinalTms" class="bg-linear-to-br from-indigo-500/10 to-purple-500/10 rounded-lg p-4 border border-indigo-500/20">
         <div class="flex items-center gap-2 mb-2">
           <div class="w-8 h-8 rounded-lg bg-indigo-500/20 center">
             <Scale class="w-4 h-4 text-indigo-600" />
@@ -158,14 +196,14 @@ const openModal = (url) => {
       </div>
     </div>
 
-    <!-- Información adicional -->
+    <!-- Información adicional (mineral y cotización) -->
     <div class="grid md:grid-cols-2 gap-4">
-      <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
+      <div v-if="venta.mineralPrincipal" class="bg-base rounded-xl p-4 border border-border shadow-sm">
         <div class="flex items-center gap-2 mb-2">
           <TrendingUp class="w-4 h-4 text-secondary" />
           <h3 class="text-sm font-medium text-secondary">Mineral Principal</h3>
         </div>
-        <p class="font-semibold text-neutral text-lg">{{ venta.mineralPrincipal || '-' }}</p>
+        <p class="font-semibold text-neutral text-lg">{{ venta.mineralPrincipal }}</p>
       </div>
 
       <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
@@ -175,10 +213,52 @@ const openModal = (url) => {
         </div>
         <p class="font-semibold text-neutral text-lg">{{ venta.moneda || 'BOB' }}</p>
       </div>
+
+      <div v-if="venta.cotizacionInternacionalUsd" class="bg-base rounded-xl p-4 border border-border shadow-sm">
+        <div class="flex items-center gap-2 mb-2">
+          <TrendingUp class="w-4 h-4 text-secondary" />
+          <h3 class="text-sm font-medium text-secondary">Cotización Internacional</h3>
+        </div>
+        <p class="font-semibold text-neutral text-lg">{{ formatCurrency(venta.cotizacionInternacionalUsd, 'USD') }}</p>
+      </div>
     </div>
 
-    <!-- Concentrados -->
-    <div v-if="venta.concentrados && venta.concentrados.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
+    <!-- Lotes (solo para lote complejo) -->
+    <div v-if="esLoteComplejo && venta.lotes && venta.lotes.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-neutral flex items-center gap-2">
+          <Layers class="w-4 h-4" />
+          Lotes ({{ totalLotes }})
+        </h3>
+        <div class="text-sm text-secondary">
+          Peso total: <span class="font-semibold text-neutral">{{ formatPeso(pesoTotalLotes, 2) }} kg</span>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div
+          v-for="lote in venta.lotes"
+          :key="lote.id"
+          class="flex items-center justify-between p-3 bg-surface rounded-lg border border-border"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-600 center shrink-0">
+              <Mountain class="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p class="font-medium text-neutral">{{ lote.minaNombre }}</p>
+              <p class="text-xs text-secondary">{{ lote.tipoMineral }}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="font-semibold text-neutral">{{ formatPeso(lote.pesoTotalReal, 2) }} kg</p>
+            <p class="text-xs text-tertiary capitalize">{{ lote.estado }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Concentrados (solo para venta de concentrado) -->
+    <div v-if="!esLoteComplejo && venta.concentrados && venta.concentrados.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-semibold text-neutral flex items-center gap-2">
           <Package class="w-4 h-4" />
@@ -195,7 +275,7 @@ const openModal = (url) => {
           class="flex items-center justify-between p-3 bg-surface rounded-lg border border-border"
         >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-indigo-500 center shrink-0">
+            <div class="w-10 h-10 rounded-lg bg-blue-600 center shrink-0">
               <PackageCheck class="w-5 h-5 text-white" />
             </div>
             <div>
@@ -211,9 +291,12 @@ const openModal = (url) => {
       </div>
     </div>
 
-    <!-- Deducciones -->
+    <!-- Deducciones (solo si hay) -->
     <div v-if="venta.deducciones && venta.deducciones.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
-      <h3 class="text-sm font-semibold text-neutral mb-4">Deducciones</h3>
+      <h3 class="text-sm font-semibold text-neutral mb-4 flex items-center gap-2">
+        <FileText class="w-4 h-4" />
+        Deducciones
+      </h3>
       <div class="bg-surface rounded-xl border border-border overflow-hidden">
         <table class="w-full text-sm">
           <thead class="bg-hover">
@@ -226,7 +309,12 @@ const openModal = (url) => {
           </thead>
           <tbody>
             <tr v-for="(ded, i) in venta.deducciones" :key="i" class="border-t border-border">
-              <td class="p-3 text-neutral">{{ ded.nombre }}</td>
+              <td class="p-3 text-neutral">
+                <div>
+                  <p class="font-medium">{{ ded.nombre }}</p>
+                  <p v-if="ded.descripcion" class="text-xs text-secondary mt-0.5">{{ ded.descripcion }}</p>
+                </div>
+              </td>
               <td class="p-3 text-right text-neutral">{{ ded.porcentaje }}%</td>
               <td class="p-3 text-right text-neutral">{{ formatCurrency(ded.montoUsd, 'USD') }}</td>
               <td class="p-3 text-right text-neutral">{{ formatCurrency(ded.montoBob) }}</td>
@@ -236,7 +324,7 @@ const openModal = (url) => {
             <tr>
               <td class="p-3 text-neutral" colspan="2">Total Deducciones</td>
               <td class="p-3 text-right text-neutral">{{ formatCurrency(venta.totalDeduccionesUsd, 'USD') }}</td>
-              <td class="p-3 text-right text-neutral">-</td>
+              <td class="p-3 text-right text-neutral">{{ formatCurrency(venta.totalDeduccionesBob || (venta.totalDeduccionesUsd * venta.tipoCambio)) }}</td>
             </tr>
           </tfoot>
         </table>
@@ -284,7 +372,7 @@ const openModal = (url) => {
           <div class="grid sm:grid-cols-2 gap-3 text-sm">
             <div>
               <p class="text-xs text-secondary">Método de Pago</p>
-              <p class="font-medium text-neutral">{{ venta.metodoPago }}</p>
+              <p class="font-medium text-neutral capitalize">{{ venta.metodoPago.replace(/_/g, ' ') }}</p>
             </div>
             <div>
               <p class="text-xs text-secondary">Número de Comprobante</p>
@@ -297,7 +385,7 @@ const openModal = (url) => {
                 class="inline-flex items-center gap-2 text-green-600 dark:text-green-400 hover:underline"
               >
                 <FileCheck class="w-4 h-4" />
-                Ver comprobante
+                Ver comprobante de pago
               </button>
             </div>
           </div>
@@ -305,9 +393,33 @@ const openModal = (url) => {
       </div>
     </div>
 
+    <!-- Estado Pendiente -->
+    <div 
+      v-if="venta.estado === 'pendiente_aprobacion'"
+      class="bg-yellow-500/10 rounded-xl p-4 border border-yellow-500/30"
+    >
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-lg bg-yellow-500 center shrink-0">
+          <Clock class="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-yellow-600 dark:text-yellow-400 mb-1">
+            Pendiente de Aprobación
+          </h3>
+          <p class="text-sm text-secondary">
+            Esta liquidación está esperando ser revisada y aprobada por la comercializadora. 
+            Una vez aprobada, podrás continuar con el proceso.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Observaciones -->
     <div v-if="venta.observaciones" class="bg-base rounded-xl p-4 border border-border shadow-sm">
-      <h3 class="text-sm font-medium text-secondary mb-2">Observaciones</h3>
+      <h3 class="text-sm font-medium text-secondary mb-2 flex items-center gap-2">
+        <FileText class="w-4 h-4" />
+        Observaciones
+      </h3>
       <p class="text-sm text-neutral whitespace-pre-wrap">{{ venta.observaciones }}</p>
     </div>
   </div>

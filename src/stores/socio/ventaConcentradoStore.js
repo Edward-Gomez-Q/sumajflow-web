@@ -21,6 +21,9 @@ export const useVentaConcentradoStore = defineStore('ventaConcentrado', () => {
   const loadingCerrar = ref(false)
   const loadingReporte = ref(false)
 
+  const lotesDisponibles = ref([])
+  const loadingCrearLote = ref(false)
+
   const paginacion = ref({
     totalElementos: 0,
     totalPaginas: 0,
@@ -305,6 +308,50 @@ export const useVentaConcentradoStore = defineStore('ventaConcentrado', () => {
   }
 }
 
+const fetchLotesDisponibles = async () => {
+  try {
+    const response = await fetch(`${rutaApi}/socio/ventas/lotes-disponibles`, {
+      headers: _headers()
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.message || 'Error al cargar lotes')
+    lotesDisponibles.value = data.data
+    return { success: true, data: data.data }
+  } catch (err) {
+    error.value = err.message
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Crear venta de lote complejo
+ * POST /socio/ventas/lote-complejo
+ */
+const crearVentaLote = async (createData) => {
+  loadingCrearLote.value = true
+  error.value = null
+
+  try {
+    const response = await fetch(`${rutaApi}/socio/ventas/lote-complejo`, {
+      method: 'POST',
+      headers: _headers(),
+      body: JSON.stringify(createData)
+    })
+    const data = await response.json()
+
+    if (!response.ok) throw new Error(data.message || 'Error al crear venta de lote')
+
+    uiStore.showSuccess(data.message || 'Venta de lote creada exitosamente', 'Venta Creada')
+    return { success: true, data: data.data }
+  } catch (err) {
+    error.value = err.message
+    uiStore.showError(err.message, 'Error al Crear Venta')
+    return { success: false, error: err.message }
+  } finally {
+    loadingCrearLote.value = false
+  }
+}
+
   // ==================== UTILITIES ====================
 
   const cambiarPagina = async (nuevaPagina) => {
@@ -343,6 +390,8 @@ export const useVentaConcentradoStore = defineStore('ventaConcentrado', () => {
     loadingDetalle.value = false
     loadingCrear.value = false
     loadingCerrar.value = false
+    lotesDisponibles.value = []
+loadingCrearLote.value = false
     loadingReporte.value = false
     paginacion.value = {
       totalElementos: 0, totalPaginas: 0, paginaActual: 0,
@@ -361,6 +410,9 @@ export const useVentaConcentradoStore = defineStore('ventaConcentrado', () => {
     concentradosDisponibles, comercializadoras,
     loadingDetalle, loadingCrear, loadingCerrar, loadingReporte,
     paginacion, filtros, error,
+
+    lotesDisponibles, loadingCrearLote,
+fetchLotesDisponibles, crearVentaLote,
     // Computed
     ventasPendientes, ventasAprobadas, ventasEsperandoCierre, ventasCerradas, ventasPagadas,
     // Actions

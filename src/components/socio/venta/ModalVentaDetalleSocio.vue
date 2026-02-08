@@ -20,6 +20,7 @@ import { getVentaEstadoConfig } from '@/utils/ventaEstados'
 import VentaTabGeneral from '@/components/socio/venta/VentaTabGeneral.vue'
 import VentaTabReporteQuimico from '@/components/socio/venta/VentaTabReporteQuimico.vue'
 import VentaTabCierreVenta from '@/components/socio/venta/VentaTabCierreVenta.vue'
+import VentaTabCierreLote from '@/components/socio/venta/VentaTabCierreLote.vue'
 
 const props = defineProps({
   ventaId: { type: Number, required: true }
@@ -190,8 +191,15 @@ const handleActualizado = () => {
               @actualizado="handleActualizado"
             />
 
+            <VentaTabCierreLote
+              v-if="tabsDisponibles.some(t => t.id === 'cierre') && venta.tipoLiquidacion === 'venta_lote_complejo'"
+              v-show="tabActual === 'cierre'"
+              :venta="venta"
+              @actualizado="handleActualizado"
+            />
+
             <VentaTabCierreVenta
-              v-if="tabsDisponibles.some(t => t.id === 'cierre')"
+              v-if="tabsDisponibles.some(t => t.id === 'cierre') && venta.tipoLiquidacion !== 'venta_lote_complejo'"
               v-show="tabActual === 'cierre'"
               :venta="venta"
               @actualizado="handleActualizado"

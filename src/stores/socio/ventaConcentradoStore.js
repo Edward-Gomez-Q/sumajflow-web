@@ -272,33 +272,38 @@ export const useVentaConcentradoStore = defineStore('ventaConcentrado', () => {
    * POST /socio/ventas/{id}/cerrar
    */
   const cerrarVenta = async (liquidacionId, cierreData) => {
-    loadingCerrar.value = true
-    error.value = null
+  loadingCerrar.value = true
+  error.value = null
 
-    try {
-      const response = await fetch(`${rutaApi}/socio/ventas/${liquidacionId}/cerrar`, {
-        method: 'POST',
-        headers: _headers(),
-        body: JSON.stringify(cierreData)
-      })
-      const data = await response.json()
-
-      if (!response.ok) throw new Error(data.message || 'Error al cerrar venta')
-
-      if (ventaDetalle.value?.id === liquidacionId) {
-        ventaDetalle.value = data.data
-      }
-
-      uiStore.showSuccess(data.message || 'Venta cerrada exitosamente', 'Venta Cerrada')
-      return { success: true, data: data.data }
-    } catch (err) {
-      error.value = err.message
-      uiStore.showError(err.message, 'Error al Cerrar Venta')
-      return { success: false, error: err.message }
-    } finally {
-      loadingCerrar.value = false
+  try {
+    // Solo enviamos las observaciones (opcional)
+    const payload = {
+      observaciones: cierreData.observaciones || ''
     }
+
+    const response = await fetch(`${rutaApi}/socio/ventas/${liquidacionId}/cerrar`, {
+      method: 'POST',
+      headers: _headers(),
+      body: JSON.stringify(payload)
+    })
+    const data = await response.json()
+
+    if (!response.ok) throw new Error(data.message || 'Error al cerrar venta')
+
+    if (ventaDetalle.value?.id === liquidacionId) {
+      ventaDetalle.value = data.data
+    }
+
+    uiStore.showSuccess(data.message || 'Venta cerrada exitosamente', 'Venta Cerrada')
+    return { success: true, data: data.data }
+  } catch (err) {
+    error.value = err.message
+    uiStore.showError(err.message, 'Error al Cerrar Venta')
+    return { success: false, error: err.message }
+  } finally {
+    loadingCerrar.value = false
   }
+}
 
   // ==================== UTILITIES ====================
 

@@ -47,13 +47,13 @@ export const useLotesStore = defineStore('lotes', () => {
   const lotesEnProceso = computed(() => 
     lotes.value.filter(l => 
       !l.estado.includes('Pendiente') && 
-      l.estado !== 'Completado' &&
+      l.estado !== 'Procesado' &&
       l.estado !== 'Rechazado'
     )
   )
 
   const lotesCompletados = computed(() => 
-    lotes.value.filter(l => l.estado === 'Completado')
+    lotes.value.filter(l => l.estado === 'Procesado' || l.estado === 'Vendido')
   )
 
   /**

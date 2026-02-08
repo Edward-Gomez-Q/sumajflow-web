@@ -148,7 +148,7 @@ const getEstadoColorSolido = (estado) => {
     return 'bg-yellow-500'
   } else if (estado === 'Rechazado') {
     return 'bg-red-500'
-  } else if (estado === 'Completado') {
+  } else if (estado == 'Vendido' || estado === 'Completado') {
     return 'bg-green-500'
   } else {
     return 'bg-blue-500'

@@ -95,7 +95,7 @@ export const ESTADOS_CONCENTRADO = {
     fase: 'venta'
   },
   'vendido': {
-    label: 'Vendido ✅',
+    label: 'Vendido',
     color: 'bg-green-800',
     textColor: 'text-white',
     fase: 'completado'

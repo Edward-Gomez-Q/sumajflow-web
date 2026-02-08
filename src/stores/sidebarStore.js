@@ -137,13 +137,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
       {
         id: 'concentrados',
         label: 'Mis Concentrados',
-        icon: ClipboardList,
+        icon: Factory,
         route: '/socio/concentrados',
         badge: null
       },
       {
         id: 'liquidaciones',
-        label: 'Liquidaciones',
+        label: 'Mis Liquidaciones',
         icon: FileText,
         route: '/socio/ventas/concentrados',
         badge: null

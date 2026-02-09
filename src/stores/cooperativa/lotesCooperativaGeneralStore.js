@@ -17,7 +17,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     totalElementos: 0,
     totalPaginas: 0,
     paginaActual: 0,
-    elementosPorPagina: 10,
+    elementosPorPagina: 20,
     tieneSiguiente: false,
     tieneAnterior: false
   })
@@ -31,7 +31,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
     minaId: null,
     sectorId: null,
     page: 0,
-    size: 10,
+    size: 20,
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
@@ -51,7 +51,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
   )
 
   const lotesCompletados = computed(() => 
-    lotes.value.filter(l => l.estado === 'Completado')
+    lotes.value.filter(l => l.estado === 'Procesado' || l.estado === 'Vendido a comercializadora')
   )
 
   const lotesRechazados = computed(() => 
@@ -194,7 +194,7 @@ export const useLotesCooperativaGeneralStore = defineStore('lotesCooperativaGene
       totalElementos: 0,
       totalPaginas: 0,
       paginaActual: 0,
-      elementosPorPagina: 10,
+      elementosPorPagina: 20,
       tieneSiguiente: false,
       tieneAnterior: false
     }

@@ -1,6 +1,6 @@
 <!-- src/views/comercializadora/Ventas.vue -->
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useVentaComercializadoraStore } from '@/stores/comercializadora/ventaComercializadoraStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
@@ -12,6 +12,11 @@ import { getVentaEstadoConfig, ESTADOS_FILTRO_COMERCIALIZADORA } from '@/utils/v
 import Paginacion from '@/components/socio/Paginacion.vue'
 import ModalVentaDetalleComercializadora from '@/components/comercializadora/venta/ModalVentaDetalleComercializadora.vue'
 
+import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
+import { useUIStore } from '@/stores/uiStore'
+
+const liquidacionesWS = useLiquidacionesWS()
+const uiStore = useUIStore()
 const ventaStore = useVentaComercializadoraStore()
 
 const mostrarModalDetalle = ref(false)
@@ -20,8 +25,33 @@ const mostrarFiltros = ref(false)
 const filtrosLocales = ref({ estado: null, fechaDesde: null, fechaHasta: null })
 
 onMounted(async () => {
+  await liquidacionesWS.suscribirCola((data) => {
+    console.log('🔔 Liquidación event (Comercializadora):', data.evento)
+    ventaStore.fetchVentas()
+    ventaStore.fetchEstadisticas()
+    switch (data.evento) {
+      case 'venta_creada':
+        uiStore.showToast('Nueva solicitud de venta recibida', 'info')
+        break
+      case 'reporte_quimico_subido':
+        if (data.tipoReporte === 'socio') {
+          uiStore.showToast('El socio ha subido su reporte químico', 'info')
+        }
+        break
+      case 'venta_cerrada':
+        uiStore.showToast(`Venta cerrada - Monto: ${data.valorNetoBob} BOB`, 'success')
+        break
+      default:
+        console.log('Evento recibido:', data.evento)
+    }
+  })
+
   await ventaStore.fetchVentas()
   await ventaStore.fetchEstadisticas()
+})
+
+onUnmounted(() => {
+  liquidacionesWS.limpiarSuscripciones()
 })
 
 const verDetalle = (venta) => {

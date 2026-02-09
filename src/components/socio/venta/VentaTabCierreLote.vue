@@ -13,7 +13,7 @@ import {
 const props = defineProps({
   venta: { type: Object, required: true }
 })
-const emit = defineEmits(['actualizado'])
+const emit = defineEmits(['actualizado', 'cerrado'])
 
 const ventaStore = useVentaConcentradoStore()
 const uiStore = useUIStore()
@@ -41,7 +41,7 @@ const cargarPrecios = async () => {
   loadingPrecios.value = true
   errorPrecios.value = null
   try {
-    const comercializadoraId = props.venta.comercializadoraId
+    const comercializadoraId = props.venta.comercializadora.id
 
     // Cargar tabla de precios de la comercializadora
     const response = await fetch(
@@ -52,7 +52,7 @@ const cargarPrecios = async () => {
 
     if (!data.success) throw new Error(data.message || 'Error al cargar tabla de precios')
 
-    preciosData.value = data.data // { precios: [...], deducciones: [...], dolarOficial: 6.96 }
+    preciosData.value = data.data // Array de precios
     deduccionesConfig.value = data.deducciones || []
     tipoCambioRef.value = data.dolarOficial || 6.96
 
@@ -65,23 +65,36 @@ const cargarPrecios = async () => {
 }
 
 // ========== DATOS DEL REPORTE ACORDADO ==========
-const leyPb = computed(() => props.venta.reporteAcordado?.leyPb || 0)
-const leyZn = computed(() => props.venta.reporteAcordado?.leyZn || 0)
-const leyAgDm = computed(() => props.venta.reporteAcordado?.leyAgDm || 0)
+// Corregir la ruta de acceso a reporteAcordado
+const leyPb = computed(() => {
+  return props.venta.reportesQuimicos?.reporteAcordado?.leyPb || 0
+})
+const leyZn = computed(() => {
+  return props.venta.reportesQuimicos?.reporteAcordado?.leyZn || 0
+})
+const leyAgDm = computed(() => {
+  return props.venta.reportesQuimicos?.reporteAcordado?.leyAgDm || 0
+})
 
 // ========== PESO ==========
 const pesoToneladas = computed(() => {
-  if (props.venta.pesoTmh && props.venta.pesoTmh > 0) return props.venta.pesoTmh
-  if (props.venta.pesoTms && props.venta.pesoTms > 0) return props.venta.pesoTms
+  // Primero intentar con pesos.pesoTmh
+  if (props.venta.pesos?.pesoTmh && props.venta.pesos.pesoTmh > 0) {
+    return props.venta.pesos.pesoTmh
+  }
+  // Luego intentar con pesos.pesoTms
+  if (props.venta.pesos?.pesoTms && props.venta.pesos.pesoTms > 0) {
+    return props.venta.pesos.pesoTms
+  }
   // Fallback: peso en kg → ton
-  const pesoKg = props.venta.pesoTotalEntrada || 0
+  const pesoKg = props.venta.pesos?.pesoTotalEntrada || 0
   return pesoKg > 0 ? pesoKg / 1000 : 0
 })
 
 // ========== BUSCAR PRECIO EN TABLA ==========
 const buscarPrecioEnTabla = (mineral, valor) => {
   if (!preciosData.value || !valor || valor <= 0) return 0
-  const precios = Array.isArray(preciosData.value) ? preciosData.value : preciosData.value.precios || []
+  const precios = Array.isArray(preciosData.value) ? preciosData.value : []
 
   const encontrado = precios.find(p =>
     p.mineral === mineral &&
@@ -176,7 +189,7 @@ const cerrarVenta = async () => {
   const resultado = await ventaStore.cerrarVenta(props.venta.id, {
     observaciones: form.value.observaciones
   })
-  if (resultado.success) emit('actualizado')
+  if (resultado.success) emit('cerrado') // ✅ Esto está bien
 }
 
 // ========== FORMATO ==========
@@ -211,24 +224,24 @@ const formatNumber = (v, d = 4) => (v === null || v === undefined) ? '0.00' : pa
       <div class="grid md:grid-cols-3 gap-4">
         <div class="bg-surface rounded-lg p-4 border border-border text-center">
           <p class="text-xs text-secondary mb-1">Valor Bruto</p>
-          <p class="text-xl font-bold text-neutral">{{ formatCurrency(venta.valorBrutoUsd, 'USD') }}</p>
+          <p class="text-xl font-bold text-neutral">{{ formatCurrency(venta.resultadoFinal?.valorBrutoUsd || 0, 'USD') }}</p>
         </div>
         <div class="bg-red-500/10 rounded-lg p-4 border border-red-500/30 text-center">
           <p class="text-xs text-red-600 dark:text-red-400 mb-1">Deducciones</p>
-          <p class="text-xl font-bold text-red-600 dark:text-red-400">-{{ formatCurrency(venta.totalDeduccionesUsd, 'USD') }}</p>
+          <p class="text-xl font-bold text-red-600 dark:text-red-400">-{{ formatCurrency(venta.resultadoFinal?.totalDeduccionesUsd || 0, 'USD') }}</p>
         </div>
         <div class="bg-primary/10 rounded-lg p-4 border border-primary/20 text-center">
           <p class="text-xs text-secondary mb-1">Valor Neto</p>
-          <p class="text-xl font-bold text-primary">{{ formatCurrency(venta.valorNetoBob) }}</p>
-          <p class="text-xs text-secondary mt-1">{{ formatCurrency(venta.valorNetoUsd, 'USD') }}</p>
+          <p class="text-xl font-bold text-primary">{{ formatCurrency(venta.resultadoFinal?.valorNetoBob || 0) }}</p>
+          <p class="text-xs text-secondary mt-1">{{ formatCurrency(venta.resultadoFinal?.valorNetoUsd || 0, 'USD') }}</p>
         </div>
       </div>
 
       <!-- Deducciones guardadas -->
-      <div v-if="venta.deducciones && venta.deducciones.length > 0">
+      <div v-if="venta.deducciones?.deducciones && venta.deducciones.deducciones.length > 0">
         <h4 class="text-sm font-semibold text-neutral mb-3">Deducciones Aplicadas</h4>
         <div class="space-y-2">
-          <div v-for="(ded, idx) in venta.deducciones" :key="idx" class="grid grid-cols-3 gap-2 items-center p-3 bg-surface rounded-lg border border-border text-sm">
+          <div v-for="(ded, idx) in venta.deducciones.deducciones" :key="idx" class="grid grid-cols-3 gap-2 items-center p-3 bg-surface rounded-lg border border-border text-sm">
             <span class="font-medium text-neutral">{{ ded.nombre }}</span>
             <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
             <span class="text-right font-medium text-red-600">{{ formatCurrency(ded.montoUsd, 'USD') }}</span>

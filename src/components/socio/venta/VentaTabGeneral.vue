@@ -432,18 +432,95 @@ const getTipoMineral = (lote) => {
       </div>
     </div>
 
-    <!-- Observaciones historial -->
-    <div v-if="venta.historialObservaciones && venta.historialObservaciones.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
-      <h3 class="text-sm font-medium text-secondary mb-3 flex items-center gap-2">
-        <FileText class="w-4 h-4" />
-        Historial de Observaciones
-      </h3>
-      <div class="space-y-2">
-        <div v-for="(obs, idx) in venta.historialObservaciones" :key="idx" class="p-3 bg-surface rounded-lg border border-border text-sm">
-          <p class="text-neutral whitespace-pre-wrap">{{ obs.observacion }}</p>
-          <p class="text-xs text-tertiary mt-1">{{ formatDate(obs.fecha) }}</p>
+    <!-- Historial de Estados -->
+<div v-if="venta.historialObservaciones && venta.historialObservaciones.length > 0" class="bg-base rounded-xl p-4 border border-border shadow-sm">
+  <h3 class="text-sm font-semibold text-neutral mb-4 flex items-center gap-2">
+    <FileText class="w-4 h-4" />
+    Historial de Estados
+  </h3>
+  <div class="space-y-3">
+    <div 
+      v-for="(historial, idx) in venta.historialObservaciones" 
+      :key="idx" 
+      class="relative pl-8 pb-4 last:pb-0"
+    >
+      <!-- Línea de tiempo -->
+      <div 
+        v-if="idx < venta.historialObservaciones.length - 1"
+        class="absolute left-3 top-8 bottom-0 w-0.5 bg-border"
+      ></div>
+      
+      <!-- Punto de estado -->
+      <div 
+        class="absolute left-0 top-1 w-6 h-6 rounded-full center border-2 border-border"
+        :class="{
+          'bg-green-500 border-green-500': historial.estado === 'pagado',
+          'bg-blue-500 border-blue-500': historial.estado === 'aprobado',
+          'bg-purple-500 border-purple-500': historial.estado === 'cerrado',
+          'bg-yellow-500 border-yellow-500': historial.estado === 'esperando_cierre_venta',
+          'bg-gray-500 border-gray-500': !['pagado', 'aprobado', 'cerrado', 'esperando_cierre_venta'].includes(historial.estado)
+        }"
+      >
+        <CheckCircle2 v-if="historial.estado === 'pagado'" class="w-3 h-3 text-white" />
+        <Clock v-else-if="historial.estado === 'esperando_cierre_venta'" class="w-3 h-3 text-white" />
+        <FileCheck v-else class="w-3 h-3 text-white" />
+      </div>
+
+      <!-- Contenido -->
+      <div class="bg-surface rounded-lg p-3 border border-border">
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <div>
+            <span 
+              class="text-xs px-2 py-1 rounded-md font-medium"
+              :class="{
+                'bg-green-500/20 text-green-700 dark:text-green-400': historial.estado === 'pagado',
+                'bg-blue-500/20 text-blue-700 dark:text-blue-400': historial.estado === 'aprobado',
+                'bg-purple-500/20 text-purple-700 dark:text-purple-400': historial.estado === 'cerrado',
+                'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400': historial.estado === 'esperando_cierre_venta',
+                'bg-gray-500/20 text-gray-700 dark:text-gray-400': !['pagado', 'aprobado', 'cerrado', 'esperando_cierre_venta'].includes(historial.estado)
+              }"
+            >
+              {{ historial.estado.replace(/_/g, ' ').toUpperCase() }}
+            </span>
+            <p v-if="historial.estadoAnterior" class="text-xs text-tertiary mt-1">
+              Desde: {{ historial.estadoAnterior.replace(/_/g, ' ') }}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-secondary capitalize">{{ historial.tipoUsuario }}</p>
+            <p class="text-xs text-tertiary">{{ formatDate(historial.timestamp) }}</p>
+          </div>
+        </div>
+
+        <p class="text-sm text-neutral mt-2">{{ historial.descripcion }}</p>
+        
+        <!-- Observaciones adicionales -->
+        <p v-if="historial.observaciones" class="text-sm text-secondary mt-2 italic">
+          "{{ historial.observaciones }}"
+        </p>
+
+        <!-- Metadata adicional (para pagos) -->
+        <div v-if="historial.metadataAdicional" class="mt-3 pt-3 border-t border-border">
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div v-if="historial.metadataAdicional.monto_bob">
+              <p class="text-tertiary">Monto</p>
+              <p class="font-semibold text-neutral">{{ formatCurrency(historial.metadataAdicional.monto_bob) }}</p>
+            </div>
+            <div v-if="historial.metadataAdicional.metodo_pago">
+              <p class="text-tertiary">Método</p>
+              <p class="font-medium text-neutral capitalize">
+                {{ historial.metadataAdicional.metodo_pago.replace(/_/g, ' ') }}
+              </p>
+            </div>
+            <div v-if="historial.metadataAdicional.numero_comprobante" class="col-span-2">
+              <p class="text-tertiary">Comprobante</p>
+              <p class="font-medium text-neutral">{{ historial.metadataAdicional.numero_comprobante }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
   </div>
 </template>

@@ -1,8 +1,7 @@
 <!-- src/components/comercializadora/venta/ModalVentaDetalleComercializadora.vue -->
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useVentaComercializadoraStore } from '@/stores/comercializadora/ventaComercializadoraStore'
-import { useUIStore } from '@/stores/uiStore'
 import {
   X, ShoppingCart, Info, FileText, DollarSign, AlertCircle,
   CheckCircle2, XCircle, Clock, Calculator
@@ -12,7 +11,8 @@ import VentaTabGeneral from '@/components/socio/venta/VentaTabGeneral.vue'
 import VentaTabReporteQuimico from '@/components/socio/venta/VentaTabReporteQuimico.vue'
 import VentaTabLiquidacion from '@/components/shared/VentaTabLiquidacion.vue'
 import VentaTabPago from '@/components/comercializadora/venta/VentaTabPago.vue'
-
+import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
+import { useUIStore } from '@/stores/uiStore'
 const props = defineProps({
   ventaId: { type: Number, required: true }
 })
@@ -20,18 +20,57 @@ const props = defineProps({
 const emit = defineEmits(['close', 'actualizado'])
 
 const ventaStore = useVentaComercializadoraStore()
+const liquidacionesWS = useLiquidacionesWS()
 const uiStore = useUIStore()
 
 const tabActual = ref('general')
 const motivoRechazo = ref('')
 const mostrarRechazo = ref(false)
 
-watch(() => props.ventaId, async (newId) => {
+watch(() => props.ventaId, async (newId, oldId) => {
   if (newId) {
+    // Fetch inicial
     await ventaStore.fetchVentaDetalle(newId)
+    
+    // Desuscribirse de la anterior si existía
+    if (oldId) {
+      liquidacionesWS.desuscribirLiquidacion(oldId)
+    }
+    
+    // Suscribirse a actualizaciones en tiempo real
+    await liquidacionesWS.suscribirLiquidacion(newId, (data) => {
+      console.log('📥 Liquidación actualizada:', data.evento)
+      
+      // Refrescar detalle
+      ventaStore.fetchVentaDetalle(newId)
+      
+      // Notificar al padre para refrescar lista
+      emit('actualizado')
+      
+      // Mostrar notificación
+      switch (data.evento) {
+        case 'reporte_quimico_subido':
+          if (data.tipoReporte === 'socio') {
+            uiStore.showToast('El socio ha subido su reporte químico', 'info')
+          }
+          break
+        case 'venta_cerrada':
+          uiStore.showToast('Venta cerrada por el socio', 'success')
+          break
+        default:
+          console.log('Evento:', data.evento)
+      }
+    })
+    
     tabActual.value = 'general'
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (props.ventaId) {
+    liquidacionesWS.desuscribirLiquidacion(props.ventaId)
+  }
+})
 
 const venta = computed(() => ventaStore.ventaDetalle)
 const puedeAprobar = computed(() => venta.value?.estado === 'pendiente_aprobacion')
@@ -83,6 +122,12 @@ const handleActualizado = () => {
   ventaStore.fetchVentaDetalle(props.ventaId)
   emit('actualizado')
 }
+const handleClose = () => {
+  if (props.ventaId) {
+    liquidacionesWS.desuscribirLiquidacion(props.ventaId)
+  }
+  emit('close')
+}
 
 // Acciones
 const aprobar = async () => {
@@ -116,7 +161,7 @@ const rechazar = async () => {
   <Teleport to="body">
     <div
       class="fixed inset-0 z-9999 flex items-center justify-center bg-neutral-900/20 backdrop-blur-sm p-4"
-      @click.self="emit('close')"
+      @click.self="handleClose"
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-[1200px] max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
@@ -151,7 +196,7 @@ const rechazar = async () => {
             </div>
           </div>
           <button
-            @click="emit('close')"
+            @click="handleClose"
             class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
           >
             <X class="w-5 h-5" />
@@ -270,6 +315,7 @@ const rechazar = async () => {
               v-if="tabsDisponibles.some(t => t.id === 'reportes')"
               v-show="tabActual === 'reportes'"
               :venta="venta"
+              tipo="comercializadora"
               @actualizado="handleActualizado"
             />
 

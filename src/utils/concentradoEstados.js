@@ -99,6 +99,12 @@ export const ESTADOS_CONCENTRADO = {
     color: 'bg-green-800',
     textColor: 'text-white',
     fase: 'completado'
+  },
+    'vendido_a_comercializadora': {
+    label: 'Vendido',
+    color: 'bg-green-800',
+    textColor: 'text-white',
+    fase: 'completado'
   }
 }
 

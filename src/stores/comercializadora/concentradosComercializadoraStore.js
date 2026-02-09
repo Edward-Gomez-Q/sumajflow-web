@@ -47,7 +47,7 @@ export const useConcentradosComercializadoraStore = defineStore('concentradosCom
   )
 
   const concentradosVendidos = computed(() => 
-    concentrados.value.filter(c => c.estado === 'vendido')
+    concentrados.value.filter(c => c.estado === 'vendido_a_comercializadora' || c.estado === 'vendido')
   )
 
   // ==================== ACTIONS ====================

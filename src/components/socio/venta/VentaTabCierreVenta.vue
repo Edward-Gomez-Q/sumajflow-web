@@ -11,7 +11,7 @@ import {
 const props = defineProps({
   venta: { type: Object, required: true }
 })
-const emit = defineEmits(['actualizado'])
+const emit = defineEmits(['actualizado', 'cerrado'])
 
 const ventaStore = useVentaConcentradoStore()
 const uiStore = useUIStore()
@@ -119,51 +119,61 @@ const cargarCotizaciones = async () => {
   }
 }
 
-// ========== DATOS BASE ==========
+// ========== DATOS BASE - CORREGIDO PARA ACCEDER A LA ESTRUCTURA CORRECTA ==========
+const mineralPrincipal = computed(() => {
+  // Obtener mineral principal desde concentrados o lotes
+  if (props.venta.concentrados && props.venta.concentrados.length > 0) {
+    return props.venta.concentrados[0].mineralPrincipal
+  }
+  if (props.venta.lotes && props.venta.lotes.length > 0) {
+    return props.venta.lotes[0].tipoMineral || 'Pb'
+  }
+  return 'Pb'
+})
+
 const leyMineral = computed(() => 
-  props.venta.leyMineralPrincipalPromedio || 
-  props.venta.reporteAcordado?.leyMineralPrincipal || 
+  props.venta.reportesQuimicos?.reporteAcordado?.leyMineralPrincipal || 
   0
 )
 
 const leyAgGmt = computed(() => 
-  props.venta.reporteAcordado?.leyAgGmt || 
-  props.venta.reporteAcordado?.leyAgDm || 
+  props.venta.reportesQuimicos?.reporteAcordado?.leyAgGmt || 
+  props.venta.reportesQuimicos?.reporteAcordado?.leyAgDm || 
   0
 )
 
-// ========== PESO OFICIAL ==========
+// ========== PESO OFICIAL - CORREGIDO PARA ACCEDER A venta.pesos ==========
 const pesoFinalTms = computed(() => {
-  if (props.venta.pesoFinalTms && props.venta.pesoFinalTms > 0) {
-    return props.venta.pesoFinalTms
+  if (props.venta.pesos?.pesoFinalTms && props.venta.pesos.pesoFinalTms > 0) {
+    return props.venta.pesos.pesoFinalTms
   }
-  if (props.venta.pesoTms && props.venta.pesoTms > 0) {
-    return props.venta.pesoTms
+  if (props.venta.pesos?.pesoTms && props.venta.pesos.pesoTms > 0) {
+    return props.venta.pesos.pesoTms
   }
-  if (props.venta.pesoTmh && props.venta.pesoTmh > 0) {
-    return props.venta.pesoTmh
+  if (props.venta.pesos?.pesoTmh && props.venta.pesos.pesoTmh > 0) {
+    return props.venta.pesos.pesoTmh
   }
   return 0
 })
 
 const infoPeso = computed(() => {
-  if (props.venta.pesoFinalTms && props.venta.pesoFinalTms > 0) {
+  if (props.venta.pesos?.pesoFinalTms && props.venta.pesos.pesoFinalTms > 0) {
     return {
-      valor: props.venta.pesoFinalTms,
+      valor: props.venta.pesos.pesoFinalTms,
       tipo: 'Peso Final TMS',
       esFinal: true
     }
   }
-  if (props.venta.pesoTms && props.venta.pesoTms > 0) {
+  if (props.venta.pesos?.pesoTms && props.venta.pesos.pesoTms > 0) {
     return {
-      valor: props.venta.pesoTms,
+      valor: props.venta.pesos.pesoTms,
       tipo: 'Peso TMS (sin merma)',
       esFinal: false
     }
   }
-  if (props.venta.pesoTmh && props.venta.pesoTmh > 0) {
+  if (props.venta.pesos?.pesoTmh && props.venta.pesos.pesoTmh > 0) {
     return {
-      valor: props.venta.pesoTmh,
+      valor: props.venta.pesos.pesoTmh,
       tipo: 'Peso TMH',
       esFinal: false
     }
@@ -174,7 +184,7 @@ const infoPeso = computed(() => {
 // ========== COTIZACIONES ==========
 const cotizacionPrincipal = computed(() => {
   if (!cotizacionesData.value) return null
-  const mineral = props.venta.mineralPrincipal
+  const mineral = mineralPrincipal.value
   return cotizacionesData.value[mineral] || null
 })
 
@@ -232,7 +242,7 @@ const deducciones = computed(() => {
     return []
   }
 
-  const mineral = props.venta.mineralPrincipal
+  const mineral = mineralPrincipal.value
   const deds = []
 
   console.log('🔍 Filtrando deducciones para mineral:', mineral)
@@ -319,7 +329,7 @@ const cerrarVenta = async () => {
 
   const resultado = await ventaStore.cerrarVenta(props.venta.id, payload)
   if (resultado.success) {
-    emit('actualizado')
+    emit('cerrado') // ✅ Esto está bien
   }
 }
 
@@ -363,7 +373,7 @@ const formatNumber = (v, decimals = 2) => {
       <!-- Resumen -->
       <div class="grid md:grid-cols-4 gap-4">
         <div class="bg-surface rounded-lg p-4 border border-border text-center">
-          <p class="text-xs text-secondary mb-1">Cotización {{ venta.mineralPrincipal }}</p>
+          <p class="text-xs text-secondary mb-1">Cotización {{ mineralPrincipal }}</p>
           <p class="text-xl font-bold text-neutral">
             {{ formatCurrency(venta.cotizacionInternacionalUsd, 'USD') }}/ton
           </p>
@@ -459,10 +469,10 @@ const formatNumber = (v, decimals = 2) => {
           <div class="grid sm:grid-cols-4 gap-4 text-sm">
             <div>
               <p class="text-xs text-secondary mb-1">Mineral Principal</p>
-              <p class="font-medium text-neutral text-lg">{{ venta.mineralPrincipal || '-' }}</p>
+              <p class="font-medium text-neutral text-lg">{{ mineralPrincipal || '-' }}</p>
             </div>
             <div>
-              <p class="text-xs text-secondary mb-1">Ley {{ venta.mineralPrincipal }} (%)</p>
+              <p class="text-xs text-secondary mb-1">Ley {{ mineralPrincipal }} (%)</p>
               <p class="font-bold text-neutral text-lg">{{ formatNumber(leyMineral) }}%</p>
             </div>
             <div>
@@ -492,7 +502,7 @@ const formatNumber = (v, decimals = 2) => {
             <!-- Principal -->
             <div v-if="cotizacionPrincipal" class="bg-hover rounded-lg p-4 border border-border">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-secondary">{{ venta.mineralPrincipal }}</span>
+                <span class="text-xs text-secondary">{{ mineralPrincipal }}</span>
                 <span class="text-xs px-2 py-1 rounded-md bg-primary text-white font-semibold">
                   Principal
                 </span>
@@ -543,7 +553,7 @@ const formatNumber = (v, decimals = 2) => {
           </h4>
           <div class="grid sm:grid-cols-4 gap-3 text-sm">
             <div class="text-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-              <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">{{ venta.mineralPrincipal }}</p>
+              <p class="text-xs text-blue-600 dark:text-blue-400 mb-1">{{ mineralPrincipal }}</p>
               <p class="font-bold text-blue-600 dark:text-blue-400 text-lg">
                 ${{ formatNumber(valorPrincipalUsdTon) }}
               </p>

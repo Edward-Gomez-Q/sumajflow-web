@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* Andes Digitales - La Fusión Perfecta */
   --color-primary: #1E3A8A;
   --color-secondary: #475569;
   --color-accent: #0891B2;

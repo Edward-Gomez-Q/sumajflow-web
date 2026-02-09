@@ -1,6 +1,6 @@
 <!-- src/views/comercializadora/Concentrados.vue -->
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useConcentradosComercializadoraStore } from '@/stores/comercializadora/concentradosComercializadoraStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
@@ -15,14 +15,23 @@ import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradosFiltrosComercializadora from '@/components/comercializadora/ConcentradosFiltrosComercializadora.vue'
 import Paginacion from '@/components/socio/Paginacion.vue'
 import ModalConcentradoDetalleComercializadora from '@/components/comercializadora/ModalConcentradoDetalleComercializadora.vue'
-
+import { useConcentradoWS } from '@/composables/useConcentradoWS'
 const concentradosStore = useConcentradosComercializadoraStore()
 
 const mostrarModalDetalle = ref(false)
 const concentradoSeleccionadoId = ref(null)
+const concentradoWs = useConcentradoWS()
 
 onMounted(async () => {
+  await concentradoWs.suscribirCola((data) => {
+    console.log('🔔 Actualización recibida:', data)
+    concentradosStore.fetchConcentrados()
+  })
   await concentradosStore.fetchConcentrados()
+})
+
+onUnmounted(() => {
+  concentradoWs.desuscribirCola()
 })
 
 const verDetalle = (concentrado) => {

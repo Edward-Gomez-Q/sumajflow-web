@@ -4,8 +4,16 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useVentaConcentradoStore } from '@/stores/socio/ventaConcentradoStore'
 import { useUIStore } from '@/stores/uiStore'
 import {
-  X, Layers, CheckCircle2, Building2, AlertCircle, Truck
+  X,
+  Layers,
+  CheckCircle2,
+  Building2,
+  AlertCircle,
+  Truck,
+  Eye,
+  DollarSign
 } from 'lucide-vue-next'
+import ModalVistaPreciosComercializadora from './ModalVistaPreciosComercializadora.vue'
 
 const emit = defineEmits(['close', 'creado'])
 
@@ -15,6 +23,8 @@ const uiStore = useUIStore()
 const seleccionados = ref([])
 const comercializadoraId = ref(null)
 const observaciones = ref('')
+const mostrarPrecios = ref(false)
+const comercializadoraSeleccionada = ref(null)
 
 onMounted(async () => {
   await ventaStore.fetchComercializadoras()
@@ -52,6 +62,16 @@ const pesoTotalSeleccionado = computed(() => {
     .reduce((sum, l) => sum + (l.pesoTotalReal || 0), 0)
 })
 
+const comercializadoraActual = computed(() => {
+  if (!comercializadoraId.value) return null
+  return ventaStore.comercializadoras.find(c => c.id === comercializadoraId.value)
+})
+
+const verPrecios = (comercializadora) => {
+  comercializadoraSeleccionada.value = comercializadora
+  mostrarPrecios.value = true
+}
+
 const crearVenta = async () => {
   if (!puedeCrear.value) return
 
@@ -74,11 +94,6 @@ const crearVenta = async () => {
 
 const formatTon = (kg) => kg ? (kg / 1000).toFixed(4) : '0.0000'
 const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
-
-const comercializadoraSeleccionada = computed(() => {
-  if (!comercializadoraId.value) return null
-  return ventaStore.comercializadoras.find(c => c.id === comercializadoraId.value)
-})
 </script>
 
 <template>
@@ -107,11 +122,13 @@ const comercializadoraSeleccionada = computed(() => {
         <!-- Content -->
         <div class="flex-1 overflow-y-auto scrollbar-custom p-4 sm:p-6 space-y-6">
           <!-- Info -->
-          <div class="bg-amber-500/10 rounded-lg p-3 border border-amber-500/30">
-            <p class="text-sm text-amber-700 dark:text-amber-400 flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-              El precio se calculará usando la tabla de precios de la comercializadora (no cotizaciones internacionales).
-            </p>
+          <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+            <div class="flex items-start gap-2">
+              <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p class="text-sm text-amber-700 dark:text-amber-300">
+                El precio se calculará usando la tabla de precios de la comercializadora (no cotizaciones internacionales).
+              </p>
+            </div>
           </div>
 
           <!-- Paso 1: Comercializadora -->
@@ -120,26 +137,110 @@ const comercializadoraSeleccionada = computed(() => {
               <Building2 class="w-4 h-4 inline mr-1" />
               Paso 1: Seleccionar Comercializadora <span class="text-error">*</span>
             </label>
-            <select
-              v-model="comercializadoraId"
-              class="w-full px-4 py-3 rounded-lg border border-border bg-surface text-neutral focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option :value="null">-- Selecciona una comercializadora --</option>
-              <option
+            
+            <div class="space-y-2">
+              <div
                 v-for="com in ventaStore.comercializadoras"
                 :key="com.id"
-                :value="com.id"
+                :class="[
+                  'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
+                  comercializadoraId === com.id
+                    ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500'
+                    : 'border-border bg-surface hover:bg-hover'
+                ]"
+                @click="comercializadoraId = com.id"
               >
-                {{ com.razonSocial }} {{ com.nit ? '(NIT: ' + com.nit + ')' : '' }}
-              </option>
-            </select>
+                <div
+                  class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                  :class="comercializadoraId === com.id
+                    ? 'bg-amber-600 border-amber-600'
+                    : 'border-border'"
+                >
+                  <div v-if="comercializadoraId === com.id" class="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+                
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-neutral">{{ com.razonSocial }}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <p v-if="com.nit" class="text-xs text-secondary">NIT: {{ com.nit }}</p>
+                    <span v-if="com.nit && com.departamento" class="text-tertiary">•</span>
+                    <p v-if="com.departamento" class="text-xs text-secondary">{{ com.departamento }}</p>
+                  </div>
+                </div>
+
+                <!-- Indicador de precios y botón ver -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <!-- Indicador de configuración -->
+                  <div
+                    v-if="com.tablaPrecios?.tieneConfiguracion"
+                    class="flex items-center gap-1 px-2 py-1 rounded bg-green-500/10 border border-green-500/20"
+                    title="Configuración completa"
+                  >
+                    <CheckCircle2 class="w-3 h-3 text-green-600 dark:text-green-400" />
+                    <span class="text-xs font-medium text-green-700 dark:text-green-300">
+                      Configurado
+                    </span>
+                  </div>
+                  <div
+                    v-else
+                    class="flex items-center gap-1 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20"
+                    title="Configuración incompleta"
+                  >
+                    <AlertCircle class="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                    <span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                      Incompleto
+                    </span>
+                  </div>
+                  
+                  <!-- Botón ver precios -->
+                  <button
+                    @click.stop="verPrecios(com)"
+                    class="p-2 hover:bg-amber-500/10 rounded-lg text-amber-600 transition-colors"
+                    title="Ver tabla de precios"
+                  >
+                    <Eye class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="ventaStore.comercializadoras.length === 0" class="text-center py-6 bg-hover rounded-lg border border-border">
+                <AlertCircle class="w-8 h-8 text-tertiary mx-auto mb-2" />
+                <p class="text-sm text-secondary">No hay comercializadoras disponibles</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advertencia si comercializadora no tiene configuración completa -->
+          <div 
+            v-if="comercializadoraId && comercializadoraActual && !comercializadoraActual.tablaPrecios?.tieneConfiguracion"
+            class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800"
+          >
+            <div class="flex items-start gap-2">
+              <AlertCircle class="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+              <div class="flex-1">
+                <p class="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                  Configuración de precios incompleta
+                </p>
+                <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">
+                  Esta comercializadora no podrá aprobar la venta hasta completar su tabla de precios. 
+                  Puedes crear la venta pero quedará en espera.
+                </p>
+                <button
+                  @click="verPrecios(comercializadoraActual)"
+                  class="inline-flex items-center gap-1 mt-2 text-xs text-yellow-700 dark:text-yellow-300 hover:text-yellow-900 dark:hover:text-yellow-100 font-medium"
+                >
+                  <DollarSign class="w-3 h-3" />
+                  Ver detalles de configuración
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Paso 2: Lotes (solo visible si hay comercializadora) -->
           <div v-if="comercializadoraId">
             <label class="block text-sm font-semibold text-neutral mb-3">
               <Truck class="w-4 h-4 inline mr-1" />
-              Paso 2: Seleccionar Lotes de {{ comercializadoraSeleccionada?.razonSocial }}
+              Paso 2: Seleccionar Lotes de {{ comercializadoraActual?.razonSocial }}
               <span class="text-error">*</span>
               <span class="text-xs text-secondary ml-2">({{ seleccionados.length }} seleccionados)</span>
             </label>
@@ -208,14 +309,14 @@ const comercializadoraSeleccionada = computed(() => {
             </div>
 
             <!-- Resumen selección -->
-            <div v-if="seleccionados.length > 0" class="mt-3 bg-amber-500/10 rounded-lg p-4 border border-amber-500/20">
+            <div v-if="seleccionados.length > 0" class="mt-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
               <div class="flex justify-between items-center">
-                <span class="text-sm text-amber-700 dark:text-amber-400 font-medium">Peso total seleccionado:</span>
+                <span class="text-sm text-amber-700 dark:text-amber-300 font-medium">Peso total seleccionado:</span>
                 <div class="text-right">
-                  <p class="text-xl font-bold text-amber-700 dark:text-amber-400">
+                  <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
                     {{ formatTon(pesoTotalSeleccionado) }} Ton
                   </p>
-                  <p class="text-xs text-amber-600/70">
+                  <p class="text-xs text-amber-600 dark:text-amber-400">
                     {{ formatKg(pesoTotalSeleccionado) }} kg
                   </p>
                 </div>
@@ -256,5 +357,12 @@ const comercializadoraSeleccionada = computed(() => {
         </div>
       </div>
     </div>
+
+    <!-- Modal de Vista Previa de Precios -->
+    <ModalVistaPreciosComercializadora
+      v-if="mostrarPrecios && comercializadoraSeleccionada"
+      :comercializadora="comercializadoraSeleccionada"
+      @close="mostrarPrecios = false; comercializadoraSeleccionada = null"
+    />
   </Teleport>
 </template>

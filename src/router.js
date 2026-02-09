@@ -350,14 +350,22 @@ const routes = [
           title: 'Ventas - Comercializadora'
         }
       },
-        {
-          path: 'concentrados',
-          name: 'ComercializadoraConcentrados',
-          component: () => import('./views/comercializadora/Concentrados.vue'),
-          meta: {
-            title: 'Concentrados - Comercializadora'
-          }
-        },
+      {
+        path: 'concentrados',
+        name: 'ComercializadoraConcentrados',
+        component: () => import('./views/comercializadora/Concentrados.vue'),
+        meta: {
+          title: 'Concentrados - Comercializadora'
+        }
+      },
+      {
+        path: 'tabla-precios',
+        name: 'ComercializadoraTablaPrecios',
+        component: () => import('./views/comercializadora/TablaPrecios.vue'),
+        meta: {
+          title: 'Tabla de Precios - Comercializadora'
+        }
+      }
       
     ]
   },

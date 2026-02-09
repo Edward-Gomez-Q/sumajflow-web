@@ -15,7 +15,8 @@ import {
   Scale,
   ClipboardList,
   BarChart3,
-  UserCog
+  UserCog,
+  DollarSign
 } from 'lucide-vue-next'
 
 export const useSidebarStore = defineStore('sidebar', () => {
@@ -216,6 +217,13 @@ export const useSidebarStore = defineStore('sidebar', () => {
         badge: null
       },
       {
+        id: 'concentrados',
+        label: 'Concentrados',
+        icon: Factory,
+        route: '/comercializadora/concentrados',
+        badge: null
+      },
+      {
         id: 'compras',
         label: 'Compras',
         icon: TrendingUp,
@@ -223,10 +231,10 @@ export const useSidebarStore = defineStore('sidebar', () => {
         badge: null
       },
       {
-        id: 'concentrados',
-        label: 'Concentrados',
-        icon: Factory,
-        route: '/comercializadora/concentrados',
+        id: 'tabla-precios',
+        label: 'Tabla de Precios',
+        icon: DollarSign,
+        route: '/comercializadora/tabla-precios',
         badge: null
       },
     ]

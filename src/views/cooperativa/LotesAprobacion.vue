@@ -371,7 +371,7 @@ const getTipoOperacionIcon = (tipo) => {
 
         <!-- Estado vacío -->
         <div v-if="lotesFiltrados.length === 0 && !lotesStore.loading" class="col-span-full text-center py-12">
-          <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 center mx-auto mb-4">
+          <div class="w-16 h-16 rounded-full  center mx-auto mb-4">
             <CheckCircle2 class="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
           <h3 class="text-lg font-semibold text-neutral mb-2">

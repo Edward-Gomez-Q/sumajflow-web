@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useVentaConcentradoStore } from '@/stores/socio/ventaConcentradoStore'
-import { useConcentradoWS } from '@/composables/useConcentradoWS'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
   ShoppingCart,
@@ -25,26 +24,55 @@ import Paginacion from '@/components/socio/Paginacion.vue'
 import ModalCrearVentaConcentrado from '@/components/socio/venta/ModalCrearVentaConcentrado.vue'
 import ModalVentaDetalleSocio from '@/components/socio/venta/ModalVentaDetalleSocio.vue'
 import ModalCrearVentaLote from '@/components/socio/venta/ModalCrearVentaLote.vue'
+import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
+import { useUIStore } from '@/stores/uiStore'
 
 const ventaStore = useVentaConcentradoStore()
-const concentradoWs = useConcentradoWS()
+const liquidacionesWS = useLiquidacionesWS()
+const uiStore = useUIStore()
 
 const mostrarModalCrear = ref(false)
 const mostrarModalDetalle = ref(false)
 const ventaSeleccionadaId = ref(null)
 const mostrarModalCrearLote = ref(false)
 
+
 onMounted(async () => {
-  await concentradoWs.suscribirCola((data) => {
+  // Suscribir a liquidaciones (NUEVO)
+  await liquidacionesWS.suscribirCola((data) => {
+    console.log('🔔 Liquidación event (Socio):', data.evento)
+    
+    // Refrescar datos
     ventaStore.fetchVentas()
     ventaStore.fetchEstadisticas()
+    
+    // Mostrar notificaciones según evento
+    switch (data.evento) {
+      case 'venta_aprobada':
+        uiStore.showToast('¡Venta aprobada por la comercializadora!', 'success')
+        break
+      case 'venta_rechazada':
+        uiStore.showToast(`Venta rechazada: ${data.motivoRechazo || 'Sin motivo'}`, 'error')
+        break
+      case 'reporte_quimico_subido':
+        if (data.tipoReporte === 'comercializadora') {
+          uiStore.showToast('La comercializadora ha subido su reporte químico', 'info')
+        }
+        break
+      case 'venta_pagada':
+        uiStore.showToast(`¡Pago recibido! ${data.valorNetoBob} BOB`, 'success')
+        break
+      default:
+        console.log('Evento recibido:', data.evento)
+    }
   })
+
   await ventaStore.fetchVentas()
   await ventaStore.fetchEstadisticas()
 })
 
 onUnmounted(() => {
-  concentradoWs.desuscribirCola()
+  liquidacionesWS.limpiarSuscripciones()
 })
 
 const verDetalle = (venta) => {

@@ -1,6 +1,6 @@
 <!-- src/components/socio/venta/ModalVentaDetalleSocio.vue -->
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted  } from 'vue'
 import { useVentaConcentradoStore } from '@/stores/socio/ventaConcentradoStore'
 import { useFilesStore } from '@/stores/filesStore'
 import {
@@ -13,6 +13,8 @@ import VentaTabReporteQuimico from '@/components/socio/venta/VentaTabReporteQuim
 import VentaTabLiquidacion from '@/components/shared/VentaTabLiquidacion.vue'
 import VentaTabCierreLote from '@/components/socio/venta/VentaTabCierreLote.vue'
 import VentaTabCierreVenta from '@/components/socio/venta/VentaTabCierreVenta.vue'
+import { useUIStore } from '@/stores/uiStore'
+import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
 
 const props = defineProps({
   ventaId: { type: Number, required: true }
@@ -21,16 +23,62 @@ const props = defineProps({
 const emit = defineEmits(['close', 'actualizado'])
 
 const ventaStore = useVentaConcentradoStore()
+const liquidacionesWS = useLiquidacionesWS()
 const filesStore = useFilesStore()
+const uiStore = useUIStore()
 
 const tabActual = ref('general')
 
-watch(() => props.ventaId, async (newId) => {
+watch(() => props.ventaId, async (newId, oldId) => {
   if (newId) {
+    // Fetch inicial
     await ventaStore.fetchVentaDetalle(newId)
+    
+    // Desuscribirse de la anterior si existía
+    if (oldId) {
+      liquidacionesWS.desuscribirLiquidacion(oldId)
+    }
+    
+    // Suscribirse a actualizaciones en tiempo real
+    await liquidacionesWS.suscribirLiquidacion(newId, (data) => {
+      console.log('📥 Liquidación actualizada:', data.evento)
+      
+      // Refrescar detalle
+      ventaStore.fetchVentaDetalle(newId)
+      
+      // Notificar al padre para refrescar lista
+      emit('actualizado')
+      
+      // Mostrar notificación
+      switch (data.evento) {
+        case 'venta_aprobada':
+          uiStore.showToast('¡Venta aprobada!', 'success')
+          break
+        case 'venta_rechazada':
+          uiStore.showToast(`Venta rechazada: ${data.motivoRechazo}`, 'error')
+          break
+        case 'reporte_quimico_subido':
+          if (data.tipoReporte === 'comercializadora') {
+            uiStore.showToast('Comercializadora subió su reporte', 'info')
+          }
+          break
+        case 'venta_pagada':
+          uiStore.showToast('¡Pago confirmado!', 'success')
+          break
+        default:
+          console.log('Evento:', data.evento)
+      }
+    })
+    
     tabActual.value = 'general'
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (props.ventaId) {
+    liquidacionesWS.desuscribirLiquidacion(props.ventaId)
+  }
+})
 
 const venta = computed(() => ventaStore.ventaDetalle)
 
@@ -93,6 +141,30 @@ const handleActualizado = () => {
   emit('actualizado')
 }
 
+// ⭐ NUEVO: Handler específico para cuando se cierra la venta
+const handleCerradoVenta = async () => {
+  console.log('🎯 Venta cerrada, actualizando vista...')
+  
+  // Refrescar datos de la venta
+  await ventaStore.fetchVentaDetalle(props.ventaId)
+  
+  // Notificar al padre para refrescar lista
+  emit('actualizado')
+  
+  // Cambiar al tab General (porque el tab de cierre ya no existirá)
+  tabActual.value = 'general'
+  
+  // Mostrar notificación de éxito
+  uiStore.showToast('Venta cerrada exitosamente. Esperando confirmación de pago.', 'success')
+}
+
+const handleClose = () => {
+  if (props.ventaId) {
+    liquidacionesWS.desuscribirLiquidacion(props.ventaId)
+  }
+  emit('close')
+}
+
 const abrirComprobante = (url) => {
   filesStore.openFile(url)
 }
@@ -118,7 +190,7 @@ const formatDate = (date) => {
   <Teleport to="body">
     <div
       class="fixed inset-0 z-9999 flex items-center justify-center bg-neutral-900/20 backdrop-blur-sm p-4"
-      @click.self="emit('close')"
+      @click.self="handleClose"
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-[1200px] max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
@@ -153,7 +225,7 @@ const formatDate = (date) => {
             </div>
           </div>
           <button
-            @click="emit('close')"
+            @click="handleClose"
             class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
           >
             <X class="w-5 h-5" />
@@ -217,6 +289,7 @@ const formatDate = (date) => {
               v-if="tabsDisponibles.some(t => t.id === 'reporte')"
               v-show="tabActual === 'reporte'"
               :venta="venta"
+              tipo="socio"
               @actualizado="handleActualizado"
             />
 
@@ -231,6 +304,7 @@ const formatDate = (date) => {
               v-show="tabActual === 'cierre'"
               :venta="venta"
               @actualizado="handleActualizado"
+              @cerrado="handleCerradoVenta"
             />
 
             <VentaTabCierreVenta
@@ -238,6 +312,7 @@ const formatDate = (date) => {
               v-show="tabActual === 'cierre'"
               :venta="venta"
               @actualizado="handleActualizado"
+              @cerrado="handleCerradoVenta"
             />
 
             <!-- Tab de Pago (Solo información para el socio) -->
@@ -255,10 +330,10 @@ const formatDate = (date) => {
                         La liquidación ha sido cerrada. La comercializadora debe confirmar el pago de:
                       </p>
                       <p class="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-3">
-                        {{ formatCurrency(venta.resultadoFinal?.valorNetoBob) }}
+                        {{ formatCurrency(venta.valorNetoBob) }}
                       </p>
                       <p class="text-sm text-secondary mt-1">
-                        {{ formatCurrency(venta.resultadoFinal?.valorNetoUsd, 'USD') }}
+                        {{ formatCurrency(venta.valorNetoUsd, 'USD') }}
                       </p>
                     </div>
                   </div>
@@ -303,7 +378,7 @@ const formatDate = (date) => {
                         <div class="bg-surface rounded-lg p-3 border border-border">
                           <p class="text-xs text-secondary mb-1">Monto Recibido</p>
                           <p class="text-lg font-bold text-green-600">
-                            {{ formatCurrency(venta.resultadoFinal?.valorNetoBob) }}
+                            {{ formatCurrency(venta.valorNetoBob) }}
                           </p>
                         </div>
                       </div>

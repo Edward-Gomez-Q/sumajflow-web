@@ -282,7 +282,7 @@ const cambiarPagina = async (nuevaPagina) => {
           >
             <div class="flex gap-4">
               <!-- Icono -->
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <div
                   :class="[
                     'w-12 h-12 rounded-full flex items-center justify-center',
@@ -314,13 +314,13 @@ const cambiarPagina = async (nuevaPagina) => {
                   <!-- Badge no leído -->
                   <span
                     v-if="!notificacion.leido"
-                    class="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-1"
+                    class="shrink-0 w-2 h-2 bg-primary rounded-full mt-1"
                   ></span>
                 </div>
               </div>
 
               <!-- Acciones -->
-              <div class="flex-shrink-0 flex gap-2">
+              <div class="shrink-0 flex gap-2">
                 <button
                   v-if="!notificacion.leido"
                   @click="handleMarcarComoLeida(notificacion.id)"

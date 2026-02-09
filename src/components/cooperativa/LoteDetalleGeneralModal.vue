@@ -8,13 +8,17 @@ import {
   Info,
   Truck,
   Clock,
-  AlertCircle
+  AlertCircle,
+  DollarSign
 } from 'lucide-vue-next'
 import LoteDetalleTabGeneral from '@/components/socio/LoteDetalleTabGeneral.vue'
 import LoteDetalleTabTransporte from '@/components/socio/LoteDetalleTabTransporte.vue'
 import LoteDetalleTabHistorial from '@/components/socio/LoteDetalleTabHistorial.vue'
+import LoteDetalleTabDeducciones from '@/components/cooperativa/LoteDetalleTabDeducciones.vue'
+import LoteDetalleTabDeduccionesConcentrados from '@/components/cooperativa/LoteDetalleTabDeduccionesConcentrados.vue'
 import { useLotesWS } from '@/composables/useLotesWS'
 import { useUIStore } from '@/stores/uiStore'
+
 const props = defineProps({
   loteId: {
     type: Number,
@@ -63,6 +67,7 @@ onMounted(async () => {
     }
   })
 })
+
 onUnmounted(() => {
   lotesWS.desuscribirLote(props.loteId)
 })
@@ -73,7 +78,39 @@ watch(
     if (oldId) lotesWS.desuscribirLote(oldId)
     if (newId) {
       await lotesStore.fetchLoteDetalle(newId)
-      lotesWS.suscribirLote(newId, handleEvento)
+      lotesWS.suscribirLote(newId, (evento) => {
+        console.log('🔔 Actualización en detalle:', evento)
+        
+        if (evento.lote) {
+          lotesStore.setLoteDetalle(evento.lote)
+        } else {
+          lotesStore.fetchLoteDetalle(newId)
+        }
+        
+        const toasts = {
+          lote_aprobado_destino: {
+            message: 'Lote completamente aprobado',
+            icon: 'success'
+          },
+          lote_rechazado_destino: {
+            message: `Rechazado por destino: ${evento.motivoRechazo || 'Sin motivo'}`,
+            icon: 'error'
+          },
+          transporte_iniciado: {
+            message: `Camión #${evento.numeroCamion} inició transporte`,
+            icon: 'info'
+          },
+          transporte_finalizado: {
+            message: `Camión #${evento.numeroCamion} completó transporte`,
+            icon: 'success'
+          }
+        }
+        
+        const toast = toasts[evento.evento]
+        if (toast) {
+          uiStore.showToast(toast.message, toast.icon)
+        }
+      })
     }
   }
 )
@@ -86,7 +123,7 @@ const getEstadoColorSolido = (estado) => {
     return 'bg-yellow-500'
   } else if (estado === 'Rechazado') {
     return 'bg-red-500'
-  } else if (estado === 'Completado') {
+  } else if (estado === 'Procesado' || estado === 'Vendido a comercializadora') {
     return 'bg-green-500'
   } else {
     return 'bg-blue-500'
@@ -102,6 +139,32 @@ const formatDateShort = (dateString) => {
     day: 'numeric'
   })
 }
+
+// Determinar qué tab de deducciones mostrar
+const mostrarTabDeduccionesVentaDirecta = computed(() => {
+  return lote.value?.estado === 'Vendido a comercializadora'
+})
+
+const mostrarTabDeduccionesConcentrados = computed(() => {
+  return lote.value?.estado === 'Procesado' && 
+         lote.value?.concentradosVendidos && 
+         lote.value.concentradosVendidos.length > 0
+})
+
+const mostrarTabDeducciones = computed(() => {
+  return mostrarTabDeduccionesVentaDirecta.value || mostrarTabDeduccionesConcentrados.value
+})
+
+// Contador para el badge del tab de deducciones
+const contadorDeducciones = computed(() => {
+  if (mostrarTabDeduccionesVentaDirecta.value && lote.value?.deduccionesVenta) {
+    return lote.value.deduccionesVenta.length
+  }
+  if (mostrarTabDeduccionesConcentrados.value && lote.value?.concentradosVendidos) {
+    return lote.value.concentradosVendidos.length
+  }
+  return 0
+})
 </script>
 
 <template>
@@ -112,36 +175,39 @@ const formatDateShort = (dateString) => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-<div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
-  <div class="flex items-center gap-3">
-    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-      <PackageCheck class="w-6 h-6 text-white" />
-    </div>
-    <div>
-      <div class="flex items-center gap-2">
-        <h2 class="text-xl font-semibold text-neutral">
-          Detalle del Lote #{{ loteId }}
-        </h2>
-        <span
-          v-if="lote"
-          class="px-3 py-1 rounded-lg text-xs font-medium text-white"
-          :class="getEstadoColorSolido(lote.estado)"
-        >
-          {{ lote.estado }}
-        </span>
-      </div>
-      <p v-if="lote" class="text-sm text-secondary mt-0.5">
-        Creado el {{ formatDateShort(lote.fechaCreacion) }}
-      </p>
-    </div>
-  </div>
-  <button
-    @click="emit('close')"
-    class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-  >
-    <X class="w-5 h-5" />
-  </button>
-</div>
+        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
+          <div class="flex items-center gap-3">
+            <div 
+              class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"      
+              :class="lote ? getEstadoColorSolido(lote.estado) : 'bg-gray-500'"
+            >
+              <PackageCheck class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-semibold text-neutral">
+                  Detalle del Lote #{{ loteId }}
+                </h2>
+                <span
+                  v-if="lote"
+                  class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+                  :class="getEstadoColorSolido(lote.estado)"
+                >
+                  {{ lote.estado }}
+                </span>
+              </div>
+              <p v-if="lote" class="text-sm text-secondary mt-0.5">
+                Creado el {{ formatDateShort(lote.fechaCreacion) }}
+              </p>
+            </div>
+          </div>
+          <button
+            @click="emit('close')"
+            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
 
         <!-- Loading -->
         <div v-if="lotesStore.loadingDetalle" class="p-12 text-center flex-1">
@@ -156,6 +222,7 @@ const formatDateShort = (dateString) => {
             <!-- Tabs -->
             <div class="border-b border-border mb-6">
               <div class="flex gap-4 overflow-x-auto scrollbar-custom">
+                <!-- Tab General -->
                 <button
                   @click="tabActual = 'general'"
                   class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
@@ -166,6 +233,8 @@ const formatDateShort = (dateString) => {
                   <Info class="w-4 h-4" />
                   General
                 </button>
+
+                <!-- Tab Transporte -->
                 <button
                   @click="tabActual = 'transporte'"
                   class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
@@ -175,10 +244,34 @@ const formatDateShort = (dateString) => {
                 >
                   <Truck class="w-4 h-4" />
                   Transporte
-                  <span v-if="lote.camioneAsignados > 0" class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs">
+                  <span 
+                    v-if="lote.camioneAsignados > 0" 
+                    class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs"
+                  >
                     {{ lote.camioneAsignados }}
                   </span>
                 </button>
+
+                <!-- Tab Deducciones (Condicional) -->
+                <button
+                  v-if="mostrarTabDeducciones"
+                  @click="tabActual = 'deducciones'"
+                  class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
+                  :class="tabActual === 'deducciones'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-secondary hover:text-neutral'"
+                >
+                  <DollarSign class="w-4 h-4" />
+                  Deducciones
+                  <span 
+                    v-if="contadorDeducciones > 0" 
+                    class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs"
+                  >
+                    {{ contadorDeducciones }}
+                  </span>
+                </button>
+
+                <!-- Tab Historial -->
                 <button
                   @click="tabActual = 'historial'"
                   class="px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1"
@@ -188,25 +281,46 @@ const formatDateShort = (dateString) => {
                 >
                   <Clock class="w-4 h-4" />
                   Historial
-                  <span v-if="lote.historialCambios?.length > 0" class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs">
+                  <span 
+                    v-if="lote.historialCambios?.length > 0" 
+                    class="ml-1 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs"
+                  >
                     {{ lote.historialCambios.length }}
                   </span>
                 </button>
               </div>
             </div>
 
-            <!-- 🆕 Tabs usando componentes de socio -->
+            <!-- Contenido de Tabs -->
+            
+            <!-- Tab General -->
             <LoteDetalleTabGeneral 
               v-show="tabActual === 'general'" 
               :lote="lote" 
             />
             
+            <!-- Tab Transporte -->
             <LoteDetalleTabTransporte 
               v-show="tabActual === 'transporte'" 
               :lote="lote"
               :lote-id="loteId"
             />
             
+            <!-- Tab Deducciones - Venta Directa (Mineral Complejo) -->
+            <LoteDetalleTabDeducciones 
+              v-if="mostrarTabDeduccionesVentaDirecta"
+              v-show="tabActual === 'deducciones'" 
+              :lote="lote" 
+            />
+            
+            <!-- Tab Deducciones - Concentrados (Mineral Procesado) -->
+            <LoteDetalleTabDeduccionesConcentrados 
+              v-if="mostrarTabDeduccionesConcentrados"
+              v-show="tabActual === 'deducciones'" 
+              :lote="lote" 
+            />
+            
+            <!-- Tab Historial -->
             <LoteDetalleTabHistorial 
               v-show="tabActual === 'historial'" 
               :lote="lote" 

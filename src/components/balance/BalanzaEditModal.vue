@@ -1,4 +1,3 @@
-<!-- src/components/balance/BalanzaEditModal.vue -->
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import { X, Save, AlertCircle } from 'lucide-vue-next'
@@ -34,15 +33,16 @@ const getStore = () => {
 
 const store = getStore()
 
+// ✅ Usar snake_case para que coincida con BalanceConfig
 const formData = reactive({
   nombre: '',
   marca: '',
   modelo: '',
-  numeroSerie: '',
-  capacidadMaxima: 0,
-  precisionMinima: 0,
-  fechaUltimaCalibracion: '',
-  fechaProximaCalibracion: '',
+  numero_serie: '',
+  capacidad_maxima: 0,
+  precision_minima: 0,
+  fecha_ultima_calibracion: '',
+  fecha_proxima_calibracion: '',
   departamento: '',
   provincia: '',
   municipio: '',
@@ -54,17 +54,18 @@ const formData = reactive({
 const saving = ref(false)
 const errorMessage = ref('')
 
+// ✅ Convertir de camelCase a snake_case al cargar
 watch(() => props.balanza, (newBalanza) => {
   if (newBalanza) {
     Object.assign(formData, {
       nombre: newBalanza.nombre || '',
       marca: newBalanza.marca || '',
       modelo: newBalanza.modelo || '',
-      numeroSerie: newBalanza.numeroSerie || '',
-      capacidadMaxima: newBalanza.capacidadMaxima || 0,
-      precisionMinima: newBalanza.precisionMinima || 0,
-      fechaUltimaCalibracion: newBalanza.fechaUltimaCalibracion || '',
-      fechaProximaCalibracion: newBalanza.fechaProximaCalibracion || '',
+      numero_serie: newBalanza.numeroSerie || '',
+      capacidad_maxima: newBalanza.capacidadMaxima || 0,
+      precision_minima: newBalanza.precisionMinima || 0,
+      fecha_ultima_calibracion: newBalanza.fechaUltimaCalibracion || '',
+      fecha_proxima_calibracion: newBalanza.fechaProximaCalibracion || '',
       departamento: newBalanza.departamento || '',
       provincia: newBalanza.provincia || '',
       municipio: newBalanza.municipio || '',
@@ -75,26 +76,38 @@ watch(() => props.balanza, (newBalanza) => {
   }
 }, { immediate: true })
 
+// ✅ Manejar las actualizaciones del formulario
+const handleFormUpdate = (updatedData) => {
+  // Actualizar formData con los nuevos valores
+  Object.assign(formData, updatedData)
+  
+  // 🔍 DEBUG - ver qué se está actualizando
+  console.log('📝 Formulario actualizado:', { ...formData })
+}
+
 const handleSave = async () => {
   errorMessage.value = ''
   
-  if (!formData.nombre || !formData.marca || !formData.modelo || !formData.numeroSerie) {
+  // 🔍 DEBUG - ver qué se va a guardar
+  console.log('💾 Intentando guardar:', { ...formData })
+  
+  if (!formData.nombre || !formData.marca || !formData.modelo || !formData.numero_serie) {
     errorMessage.value = 'Todos los campos básicos son requeridos'
     return
   }
 
-  if (formData.capacidadMaxima <= 0 || formData.precisionMinima <= 0) {
+  if (formData.capacidad_maxima <= 0 || formData.precision_minima <= 0) {
     errorMessage.value = 'Capacidad y precisión deben ser mayores a 0'
     return
   }
 
-  if (!formData.fechaUltimaCalibracion || !formData.fechaProximaCalibracion) {
+  if (!formData.fecha_ultima_calibracion || !formData.fecha_proxima_calibracion) {
     errorMessage.value = 'Las fechas de calibración son requeridas'
     return
   }
 
-  const fechaUltima = new Date(formData.fechaUltimaCalibracion)
-  const fechaProxima = new Date(formData.fechaProximaCalibracion)
+  const fechaUltima = new Date(formData.fecha_ultima_calibracion)
+  const fechaProxima = new Date(formData.fecha_proxima_calibracion)
   
   if (fechaProxima <= fechaUltima) {
     errorMessage.value = 'La fecha de próxima calibración debe ser posterior a la última'
@@ -109,7 +122,27 @@ const handleSave = async () => {
   saving.value = true
 
   try {
-    const result = await store.updateBalanza(formData)
+    // ✅ Convertir de snake_case a camelCase al guardar
+    const dataToSave = {
+      nombre: formData.nombre,
+      marca: formData.marca,
+      modelo: formData.modelo,
+      numeroSerie: formData.numero_serie,
+      capacidadMaxima: formData.capacidad_maxima,
+      precisionMinima: formData.precision_minima,
+      fechaUltimaCalibracion: formData.fecha_ultima_calibracion,
+      fechaProximaCalibracion: formData.fecha_proxima_calibracion,
+      departamento: formData.departamento,
+      provincia: formData.provincia,
+      municipio: formData.municipio,
+      direccion: formData.direccion,
+      latitud: formData.latitud,
+      longitud: formData.longitud
+    }
+
+    console.log('📤 Enviando al backend:', dataToSave)
+
+    const result = await store.updateBalanza(dataToSave)
     
     if (result.success) {
       emit('saved')
@@ -154,17 +187,11 @@ const handleClose = () => {
 
         <!-- Contenido -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-custom">
-          <!-- Mensaje de error -->
-          <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400/60 rounded-lg">
-            <div class="flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 text-red-700 dark:text-red-300 shrink-0 mt-0.5" />
-              <p class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</p>
-            </div>
-          </div>
 
-          <!-- Formulario -->
+          <!-- Formulario - ✅ Usar @update:modelValue en lugar de v-model -->
           <BalanceConfig
-            v-model="formData"
+            :model-value="formData"
+            @update:model-value="handleFormUpdate"
             title=""
             :entity-name="tipoEntidad"
           />

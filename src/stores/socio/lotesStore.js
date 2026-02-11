@@ -16,7 +16,7 @@ export const useLotesStore = defineStore('lotes', () => {
     totalElementos: 0,
     totalPaginas: 0,
     paginaActual: 0,
-    elementosPorPagina: 10,
+    elementosPorPagina: 20,
     tieneSiguiente: false,
     tieneAnterior: false
   })
@@ -29,7 +29,7 @@ export const useLotesStore = defineStore('lotes', () => {
     minaId: null,
     destinoId: null,
     page: 0,
-    size: 10,
+    size: 20,
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
@@ -53,7 +53,7 @@ export const useLotesStore = defineStore('lotes', () => {
   )
 
   const lotesCompletados = computed(() => 
-    lotes.value.filter(l => l.estado === 'Procesado' || l.estado === 'Vendido')
+    lotes.value.filter(l => l.estado === 'Procesado' || l.estado === 'Vendido a comercializadora')
   )
 
   /**
@@ -151,7 +151,7 @@ export const useLotesStore = defineStore('lotes', () => {
       minaId: null,
       destinoId: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
@@ -261,7 +261,7 @@ export const useLotesStore = defineStore('lotes', () => {
       totalElementos: 0,
       totalPaginas: 0,
       paginaActual: 0,
-      elementosPorPagina: 10,
+      elementosPorPagina: 20,
       tieneSiguiente: false,
       tieneAnterior: false
     }
@@ -274,7 +274,7 @@ export const useLotesStore = defineStore('lotes', () => {
       minaId: null,
       destinoId: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }

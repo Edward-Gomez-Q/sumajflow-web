@@ -114,9 +114,9 @@ const getEstadoColorSolido = (estado) => {
                 <Layers class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h3 class="text-xs sm:text-sm font-medium text-secondary">Total Sectores</h3>
+                <h3 class="text-xs sm:text-sm font-medium text-secondary">Total Sectores Activos</h3>
                 <p class="text-xl sm:text-2xl font-bold text-neutral">
-                  {{ sectoresStore.estadisticas.totalSectores }}
+                  {{ sectoresStore.estadisticas.totalSectoresActivos }}
                 </p>
               </div>
             </div>

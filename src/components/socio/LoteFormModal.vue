@@ -1,4 +1,3 @@
-<!-- src/components/socio/LoteFormModal.vue -->
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLotesStore } from '@/stores/socio/lotesStore'
@@ -92,7 +91,6 @@ watch(() => formData.value.tipoOperacion, (newVal, oldVal) => {
   }
 })
 
-
 onMounted(async () => {
   await Promise.all([
     minasStore.fetchMinas(),
@@ -101,6 +99,9 @@ onMounted(async () => {
     publicDataStore.fetchMinerales(),
     cooperativaInfoStore.fetchCooperativaInfo()
   ])
+  
+  // Seleccionar automáticamente todos los minerales
+  formData.value.mineralesIds = publicDataStore.minerales.map(m => m.id)
 })
 
 const validate = () => {
@@ -121,7 +122,6 @@ const validate = () => {
   if (!formData.value.destinoId) {
     errors.value.destinoId = 'Debes seleccionar un destino'
   }
-
 
   return Object.keys(errors.value).length === 0
 }
@@ -145,19 +145,6 @@ const handleSubmit = async () => {
   }
 
   loading.value = false
-}
-
-const toggleMineral = (mineralId) => {
-  const index = formData.value.mineralesIds.indexOf(mineralId)
-  if (index > -1) {
-    formData.value.mineralesIds.splice(index, 1)
-  } else {
-    formData.value.mineralesIds.push(mineralId)
-  }
-}
-
-const isMineralSelected = (mineralId) => {
-  return formData.value.mineralesIds.includes(mineralId)
 }
 </script>
 
@@ -230,25 +217,20 @@ const isMineralSelected = (mineralId) => {
                 <p v-if="errors.minaId" class="input-error">{{ errors.minaId }}</p>
               </div>
 
-              <!-- Minerales -->
+              <!-- Minerales (Solo visualización) -->
               <div class="input-group">
                 <label class="input-label">Minerales a Transportar</label>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <button
+                  <div
                     v-for="mineral in publicDataStore.minerales"
                     :key="mineral.id"
-                    type="button"
-                    @click="toggleMineral(mineral.id)"
-                    class="px-4 py-3 rounded-lg border-2 transition-all text-left"
-                    :class="isMineralSelected(mineral.id)
-                      ? 'border-primary bg-primary/10 text-primary font-medium'
-                      : 'border-border hover:border-primary/50 text-secondary hover:text-neutral'"
+                    class="px-4 py-3 rounded-lg border-2 border-primary bg-primary/10 text-primary"
                   >
                     <div class="text-xs opacity-70">{{ mineral.nomenclatura }}</div>
                     <div class="font-medium text-sm">{{ mineral.nombre }}</div>
-                  </button>
+                  </div>
                 </div>
-                <p v-if="errors.mineralesIds" class="input-error">{{ errors.mineralesIds }}</p>
+                <p class="input-helper text-xs mt-2">Todos los minerales están incluidos automáticamente</p>
               </div>
 
               <!-- Grid: Tipo de Operación y Tipo de Mineral -->

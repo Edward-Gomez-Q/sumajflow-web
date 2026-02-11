@@ -106,9 +106,9 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
         <!-- Header -->
         <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg bg-amber-600 center shrink-0">
-              <Layers class="w-6 h-6 text-white" />
-            </div>
+          <div class="w-12 h-12 rounded-lg bg-hover border border-border center shrink-0">
+            <Layers class="w-6 h-6 text-primary" />
+          </div>
             <div>
               <h2 class="text-xl font-semibold text-neutral">Nueva Venta de Lote Complejo</h2>
               <p class="text-sm text-secondary mt-0.5">Venta directa de mineral sin procesamiento en ingenio</p>
@@ -122,15 +122,14 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
         <!-- Content -->
         <div class="flex-1 overflow-y-auto scrollbar-custom p-4 sm:p-6 space-y-6">
           <!-- Info -->
-          <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
-            <div class="flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <p class="text-sm text-amber-700 dark:text-amber-300">
+          <div class="bg-primary rounded-lg p-4 border border-primary">
+            <div class="flex items-start gap-3">
+              <AlertCircle class="w-5 h-5 text-white shrink-0 mt-0.5" />
+              <p class="text-sm text-white leading-relaxed">
                 El precio se calculará usando la tabla de precios de la comercializadora (no cotizaciones internacionales).
               </p>
             </div>
           </div>
-
           <!-- Paso 1: Comercializadora -->
           <div>
             <label class="block text-sm font-semibold text-neutral mb-3">
@@ -145,7 +144,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                 :class="[
                   'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
                   comercializadoraId === com.id
-                    ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
                     : 'border-border bg-surface hover:bg-hover'
                 ]"
                 @click="comercializadoraId = com.id"
@@ -153,7 +152,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                 <div
                   class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
                   :class="comercializadoraId === com.id
-                    ? 'bg-amber-600 border-amber-600'
+                    ? 'bg-primary border-primary'
                     : 'border-border'"
                 >
                   <div v-if="comercializadoraId === com.id" class="w-2 h-2 bg-white rounded-full"></div>
@@ -173,21 +172,21 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                   <!-- Indicador de configuración -->
                   <div
                     v-if="com.tablaPrecios?.tieneConfiguracion"
-                    class="flex items-center gap-1 px-2 py-1 rounded bg-green-500/10 border border-green-500/20"
+                    class="flex items-center gap-1 px-2 py-1 rounded bg-success/10 border border-success/20"
                     title="Configuración completa"
                   >
-                    <CheckCircle2 class="w-3 h-3 text-green-600 dark:text-green-400" />
-                    <span class="text-xs font-medium text-green-700 dark:text-green-300">
+                    <CheckCircle2 class="w-3 h-3 text-success" />
+                    <span class="text-xs font-medium text-success">
                       Configurado
                     </span>
                   </div>
                   <div
                     v-else
-                    class="flex items-center gap-1 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20"
+                    class="flex items-center gap-1 px-2 py-1 rounded bg-warning/10 border border-warning/20"
                     title="Configuración incompleta"
                   >
-                    <AlertCircle class="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
-                    <span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                    <AlertCircle class="w-3 h-3 text-warning" />
+                    <span class="text-xs font-medium text-warning">
                       Incompleto
                     </span>
                   </div>
@@ -195,7 +194,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                   <!-- Botón ver precios -->
                   <button
                     @click.stop="verPrecios(com)"
-                    class="p-2 hover:bg-amber-500/10 rounded-lg text-amber-600 transition-colors"
+                    class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
                     title="Ver tabla de precios"
                   >
                     <Eye class="w-4 h-4" />
@@ -213,23 +212,23 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
           <!-- Advertencia si comercializadora no tiene configuración completa -->
           <div 
             v-if="comercializadoraId && comercializadoraActual && !comercializadoraActual.tablaPrecios?.tieneConfiguracion"
-            class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800"
+            class="bg-warning rounded-lg p-4 border border-warning"
           >
-            <div class="flex items-start gap-2">
-              <AlertCircle class="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+            <div class="flex items-start gap-3">
+              <AlertCircle class="w-5 h-5 text-white shrink-0 mt-0.5" />
               <div class="flex-1">
-                <p class="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                <p class="text-sm font-semibold text-white">
                   Configuración de precios incompleta
                 </p>
-                <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-0.5">
+                <p class="text-sm text-white mt-1 leading-relaxed">
                   Esta comercializadora no podrá aprobar la venta hasta completar su tabla de precios. 
                   Puedes crear la venta pero quedará en espera.
                 </p>
                 <button
                   @click="verPrecios(comercializadoraActual)"
-                  class="inline-flex items-center gap-1 mt-2 text-xs text-yellow-700 dark:text-yellow-300 hover:text-yellow-900 dark:hover:text-yellow-100 font-medium"
+                  class="inline-flex items-center gap-1.5 mt-3 text-sm text-white hover:text-white/90 font-medium underline underline-offset-2"
                 >
-                  <DollarSign class="w-3 h-3" />
+                  <DollarSign class="w-4 h-4" />
                   Ver detalles de configuración
                 </button>
               </div>
@@ -265,14 +264,14 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                 :key="lote.id"
                 class="flex items-center gap-3 p-4 rounded-lg border transition-all cursor-pointer"
                 :class="seleccionados.includes(lote.id)
-                  ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500'
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
                   : 'border-border bg-surface hover:bg-hover'"
                 @click="toggleLote(lote.id)"
               >
                 <div
                   class="w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors"
                   :class="seleccionados.includes(lote.id)
-                    ? 'bg-amber-600 border-amber-600'
+                    ? 'bg-primary border-primary'
                     : 'border-border'"
                 >
                   <CheckCircle2 v-if="seleccionados.includes(lote.id)" class="w-4 h-4 text-white" />
@@ -283,7 +282,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                     <span class="font-semibold text-neutral">
                       Lote #{{ lote.id }}
                     </span>
-                    <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-full border border-blue-500/20">
+                    <span class="px-2 py-0.5 bg-info/10 text-info text-xs rounded-full border border-info/20">
                       {{ lote.estado }}
                     </span>
                   </div>
@@ -298,7 +297,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
                 </div>
 
                 <div class="text-right shrink-0">
-                  <p class="text-lg font-bold text-amber-600">
+                  <p class="text-lg font-bold text-neutral">
                     {{ formatTon(lote.pesoTotalReal) }} Ton
                   </p>
                   <p class="text-xs text-tertiary">
@@ -309,14 +308,14 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
             </div>
 
             <!-- Resumen selección -->
-            <div v-if="seleccionados.length > 0" class="mt-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+            <div v-if="seleccionados.length > 0" class="mt-3 bg-primary rounded-lg p-4 border border-primary">
               <div class="flex justify-between items-center">
-                <span class="text-sm text-amber-700 dark:text-amber-300 font-medium">Peso total seleccionado:</span>
+                <span class="text-sm text-white font-medium">Peso total seleccionado:</span>
                 <div class="text-right">
-                  <p class="text-xl font-bold text-amber-700 dark:text-amber-300">
+                  <p class="text-xl font-bold text-white">
                     {{ formatTon(pesoTotalSeleccionado) }} Ton
                   </p>
-                  <p class="text-xs text-amber-600 dark:text-amber-400">
+                  <p class="text-xs text-white/80">
                     {{ formatKg(pesoTotalSeleccionado) }} kg
                   </p>
                 </div>
@@ -348,7 +347,7 @@ const formatKg = (kg) => kg ? parseFloat(kg).toFixed(2) : '0.00'
           <button
             @click="crearVenta"
             :disabled="!puedeCrear || ventaStore.loadingCrearLote"
-            class="flex-1 bg-amber-600 text-white py-2.5 px-4 rounded-lg hover:bg-amber-700 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="flex-1 bg-primary text-white py-2.5 px-4 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Layers v-if="!ventaStore.loadingCrearLote" class="w-5 h-5" />
             <div v-else class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

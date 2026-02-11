@@ -127,14 +127,6 @@ const getTipoMineral = (lote) => {
               <p class="text-sm text-secondary">
                 {{ esLoteComplejo ? 'Venta de Lote Complejo' : 'Venta de Concentrado' }}
               </p>
-              <span 
-                class="text-xs px-2 py-1 rounded-lg font-medium border"
-                :class="esLoteComplejo 
-                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                  : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'"
-              >
-                {{ esLoteComplejo ? 'Lote Complejo' : 'Concentrado' }}
-              </span>
             </div>
           </div>
         </div>

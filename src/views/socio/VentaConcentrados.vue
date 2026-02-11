@@ -112,15 +112,15 @@ const getConfig = (venta) => {
   if (esLoteComplejo(venta)) {
     return {
       icon: Layers,
-      iconColor: 'bg-amber-600',
-      tipoBadge: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+      iconColor: 'bg-primary',
+      tipoBadge: 'bg-primary text-white',
       label: 'Lote Complejo'
     }
   }
   return {
     icon: Droplet,
-    iconColor: 'bg-blue-600',
-    tipoBadge: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+    iconColor: 'bg-primary',
+    tipoBadge: 'bg-primary text-white',
     label: 'Concentrado'
   }
 }
@@ -152,7 +152,7 @@ const getTipoMineral = (venta) => {
             />
             <button
               @click="mostrarModalCrearLote = true"
-              class="bg-amber-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2 text-sm font-medium"
+              class="btn flex items-center gap-2"
             >
               <Layers class="w-4 h-4" />
               <span class="hidden sm:inline">Venta Lote</span>
@@ -252,14 +252,14 @@ const getTipoMineral = (venta) => {
               <div class="flex items-start gap-3 flex-1 min-w-0">
                 <div
                   class="w-12 h-12 rounded-lg center shrink-0"
-                  :class="getConfig(venta).iconColor"
+                  :class="getVentaEstadoConfig(venta.estado).color"
                 >
                   <component :is="getConfig(venta).icon" class="w-6 h-6 text-white" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
                     <h3 class="font-semibold text-neutral text-lg">
-                      Liquidación #{{ venta.id }}
+                      #{{ venta.id }}
                     </h3>
                     <span
                       class="text-xs px-2 py-1 rounded-lg font-medium border"

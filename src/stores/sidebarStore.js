@@ -36,7 +36,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
       },
       {
         id: 'socios',
-        label: 'Gestión de Socios',
+        label: 'Socios',
         icon: Users,
         route: '/cooperativa/socios',
         badge: null,
@@ -103,13 +103,6 @@ export const useSidebarStore = defineStore('sidebar', () => {
         label: 'Balanza',
         icon: Scale,
         route: '/cooperativa/balanza',
-        badge: null
-      },
-      {
-        id: 'reportes',
-        label: 'Reportes',
-        icon: BarChart3,
-        route: '/cooperativa/reportes',
         badge: null
       }
     ],

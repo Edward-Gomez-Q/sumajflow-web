@@ -144,7 +144,7 @@ const getEstadoColorSolido = (estado) => {
     return 'bg-yellow-500'
   } else if (estado === 'Rechazado') {
     return 'bg-red-500'
-  } else if (estado === 'Procesado' || estado === 'Vendido') {
+  } else if (estado === 'Procesado' || estado === 'Vendido a comercializadora') {
     return 'bg-green-500'
   } else {
     return 'bg-blue-500'
@@ -251,7 +251,7 @@ const getEstadoColorSolido = (estado) => {
             <!-- Header del Lote -->
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-start gap-3 flex-1 min-w-0">
-                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-500 center shrink-0">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg center shrink-0" :class="getEstadoColorSolido(lote.estado)">
                   <PackageCheck class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div class="flex-1 min-w-0">
@@ -259,9 +259,6 @@ const getEstadoColorSolido = (estado) => {
                     <h3 class="font-semibold text-neutral text-base sm:text-lg">
                       Lote #{{ lote.id }}
                     </h3>
-                    <span class="text-xs px-2 py-1 rounded-lg font-medium bg-indigo-500 text-white">
-                      {{ lote.tipoMineral }}
-                    </span>
                   </div>
                   <div class="flex items-center gap-2 mt-1 text-xs sm:text-sm text-secondary">
                     <MapPin class="w-3 h-3 sm:w-4 sm:h-4" />

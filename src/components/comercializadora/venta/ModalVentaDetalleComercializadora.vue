@@ -220,7 +220,7 @@ const rechazar = async () => {
         <div v-else-if="venta" class="flex-1 overflow-y-auto scrollbar-custom">
           <div class="p-4 sm:p-6">
             <!-- Acciones rápidas - Aprobación -->
-            <div v-if="puedeAprobar" class="bg-yellow-500 rounded-xl p-4 border border-yellow-600 mb-6">
+            <div v-if="puedeAprobar" class="bg-primary rounded-xl p-4 border border-primary mb-6">
               <div class="flex items-start gap-3">
                 <Clock class="w-5 h-5 text-white shrink-0 mt-0.5" />
                 <div class="flex-1">
@@ -249,14 +249,14 @@ const rechazar = async () => {
               </div>
 
               <!-- Form Rechazo -->
-              <div v-if="mostrarRechazo" class="mt-4 p-4 bg-red-600 rounded-lg border border-red-700">
-                <label class="block text-xs text-white/90 mb-2">Motivo del rechazo *</label>
+              <div v-if="mostrarRechazo" class="mt-4 p-4 bg-neutral-700 dark:bg-neutral-600 rounded-lg border border-neutral-600 dark:border-neutral-500">
+                <label class="block text-xs text-white mb-2">Motivo del rechazo *</label>
                 <textarea
                   v-model="motivoRechazo"
                   rows="2"
                   maxlength="500"
                   placeholder="Explica por qué se rechaza esta solicitud..."
-                  class="w-full px-3 py-2 rounded-lg border border-red-700 bg-red-700/50 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:outline-none resize-none mb-3"
+                  class="w-full px-3 py-2 rounded-lg border border-neutral-500 dark:border-neutral-400 bg-neutral-600 dark:bg-neutral-500 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:outline-none resize-none mb-3"
                 ></textarea>
                 <div class="flex gap-2">
                   <button
@@ -268,7 +268,7 @@ const rechazar = async () => {
                   <button
                     @click="rechazar"
                     :disabled="ventaStore.loadingAccion"
-                    class="bg-red-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-900 transition-colors disabled:opacity-50 font-medium"
+                    class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-50 font-medium"
                   >
                     Confirmar Rechazo
                   </button>

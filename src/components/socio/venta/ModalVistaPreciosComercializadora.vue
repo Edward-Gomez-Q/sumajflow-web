@@ -34,26 +34,17 @@ const minerales = [
   { 
     key: 'Pb', 
     label: 'Plomo', 
-    simbolo: 'Pb',
-    color: 'bg-slate-600 dark:bg-slate-700',
-    textColor: 'text-slate-700 dark:text-slate-300',
-    badgeBg: 'bg-slate-100 dark:bg-slate-800'
+    simbolo: 'Pb'
   },
   { 
     key: 'Zn', 
     label: 'Zinc', 
-    simbolo: 'Zn',
-    color: 'bg-slate-700 dark:bg-slate-800',
-    textColor: 'text-slate-700 dark:text-slate-300',
-    badgeBg: 'bg-slate-100 dark:bg-slate-800'
+    simbolo: 'Zn'
   },
   { 
     key: 'Ag', 
     label: 'Plata', 
-    simbolo: 'Ag',
-    color: 'bg-slate-500 dark:bg-slate-600',
-    textColor: 'text-slate-700 dark:text-slate-300',
-    badgeBg: 'bg-slate-100 dark:bg-slate-800'
+    simbolo: 'Ag'
   }
 ]
 
@@ -82,10 +73,10 @@ const formatCurrency = (num) => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-        <div class="flex items-center justify-between p-5 border-b border-border bg-slate-50 dark:bg-slate-800/30 shrink-0">
+        <div class="flex items-center justify-between p-5 border-b border-border bg-hover shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-              <DollarSign class="w-5 h-5 text-slate-700 dark:text-slate-300" />
+            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <DollarSign class="w-5 h-5 text-primary" />
             </div>
             <div>
               <h2 class="text-lg font-semibold text-neutral">Tabla de Precios</h2>
@@ -101,43 +92,30 @@ const formatCurrency = (num) => {
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-5 space-y-4">
+        <div class="flex-1 overflow-y-auto scrollbar-custom p-5 space-y-4">
           <!-- Estado de Configuración -->
           <div
             :class="[
               'rounded-lg p-4 border',
               tieneConfiguracion
-                ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900'
-                : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900'
+                ? 'bg-success border-success'
+                : 'bg-warning border-warning'
             ]"
           >
-            <div class="flex items-start gap-2.5">
+            <div class="flex items-start gap-3">
               <component
                 :is="tieneConfiguracion ? CheckCircle2 : AlertCircle"
-                :class="[
-                  'w-5 h-5 shrink-0 mt-0.5',
-                  tieneConfiguracion ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
-                ]"
+                class="w-5 h-5 text-white shrink-0 mt-0.5"
               />
               <div class="flex-1">
-                <p 
-                  :class="[
-                    'text-sm font-semibold',
-                    tieneConfiguracion 
-                      ? 'text-emerald-900 dark:text-emerald-100' 
-                      : 'text-amber-900 dark:text-amber-100'
-                  ]"
-                >
+                <p class="text-sm font-semibold text-white">
                   {{ tieneConfiguracion
                     ? 'Configuración completa para lotes complejos'
                     : 'Configuración incompleta' }}
                 </p>
                 <p 
                   v-if="!tieneConfiguracion"
-                  :class="[
-                    'text-xs mt-1',
-                    'text-amber-700 dark:text-amber-300'
-                  ]"
+                  class="text-sm text-white mt-1 leading-relaxed"
                 >
                   Esta comercializadora no tiene todos los precios configurados
                 </p>
@@ -150,16 +128,11 @@ const formatCurrency = (num) => {
             <div
               v-for="mineral in minerales"
               :key="mineral.key"
-              class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3.5"
+              class="bg-hover border border-border rounded-lg p-3.5"
             >
               <div class="flex items-center gap-2 mb-2">
-                <div 
-                  :class="[
-                    'w-7 h-7 rounded flex items-center justify-center text-white text-xs font-semibold',
-                    mineral.color
-                  ]"
-                >
-                  {{ mineral.simbolo }}
+                <div class="w-7 h-7 rounded bg-primary/10 border border-primary/30 flex items-center justify-center">
+                  <span class="text-primary text-xs font-semibold">{{ mineral.simbolo }}</span>
                 </div>
                 <span class="text-xs font-medium text-secondary">{{ mineral.label }}</span>
               </div>
@@ -174,35 +147,35 @@ const formatCurrency = (num) => {
             <div
               v-for="mineral in minerales.filter(m => rangos[m.key]?.length > 0)"
               :key="mineral.key"
-              class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden"
+              class="border border-border rounded-lg overflow-hidden"
             >
               <!-- Header del Mineral -->
-              <div :class="['px-4 py-3 flex items-center gap-2.5', mineral.color]">
-                <div class="w-7 h-7 rounded bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                  <span class="text-white text-xs font-bold">{{ mineral.simbolo }}</span>
+              <div class="px-4 py-3 bg-primary/10 border-b border-border flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
+                  <span class="text-primary text-xs font-bold">{{ mineral.simbolo }}</span>
                 </div>
-                <span class="text-sm font-semibold text-white">{{ mineral.label }}</span>
+                <span class="text-sm font-semibold text-neutral">{{ mineral.label }}</span>
               </div>
 
               <!-- Rangos -->
-              <div class="divide-y divide-slate-200 dark:divide-slate-700">
+              <div class="divide-y divide-border">
                 <div
                   v-for="(rango, idx) in rangos[mineral.key]"
                   :key="idx"
-                  class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
+                  class="px-4 py-3 hover:bg-hover transition-colors"
                 >
                   <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-2.5 flex-1">
-                      <TrendingUp :class="['w-4 h-4', mineral.textColor]" />
+                      <TrendingUp class="w-4 h-4 text-primary" />
                       <span class="text-sm font-medium text-neutral">
                         {{ formatNumber(rango.rangoMinimo) }} - {{ formatNumber(rango.rangoMaximo) }}
                       </span>
-                      <span class="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                      <span class="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/30 font-medium">
                         {{ rango.unidadMedida }}
                       </span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                      <DollarSign class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      <DollarSign class="w-3.5 h-3.5 text-secondary" />
                       <span class="text-sm font-semibold text-neutral">
                         {{ formatNumber(rango.precioUsd) }}
                       </span>
@@ -214,8 +187,8 @@ const formatCurrency = (num) => {
           </div>
 
           <!-- Sin Configuración -->
-          <div v-else class="text-center py-10 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/20">
-            <AlertCircle class="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+          <div v-else class="text-center py-10 border border-border rounded-lg bg-hover">
+            <AlertCircle class="w-12 h-12 text-tertiary mx-auto mb-3" />
             <p class="text-sm font-medium text-secondary">No hay rangos de precios configurados</p>
             <p class="text-xs text-tertiary mt-1.5">
               Esta comercializadora aún no ha configurado su tabla de precios
@@ -223,10 +196,10 @@ const formatCurrency = (num) => {
           </div>
 
           <!-- Info adicional -->
-          <div class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-            <div class="flex items-start gap-2.5">
-              <Info class="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0 mt-0.5" />
-              <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          <div class="bg-info rounded-lg p-4 border border-info">
+            <div class="flex items-start gap-3">
+              <Info class="w-5 h-5 text-white shrink-0 mt-0.5" />
+              <p class="text-sm text-white leading-relaxed">
                 Estos precios se aplicarán automáticamente al liquidar <strong class="font-semibold">lotes complejos</strong>. 
                 Para ventas de concentrados, se utilizan las cotizaciones internacionales vigentes.
               </p>
@@ -235,7 +208,7 @@ const formatCurrency = (num) => {
         </div>
 
         <!-- Footer -->
-        <div class="flex justify-end gap-3 p-5 border-t border-border bg-slate-50 dark:bg-slate-800/30 shrink-0">
+        <div class="flex justify-end gap-3 p-5 border-t border-border bg-hover shrink-0">
           <button
             @click="emit('close')"
             class="btn"

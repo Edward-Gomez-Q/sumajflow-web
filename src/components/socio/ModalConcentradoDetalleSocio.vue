@@ -11,14 +11,16 @@ import {
   Kanban,
   AlertCircle,
   History,
-  FileText
+  FileText,
+  ShoppingCart
 } from 'lucide-vue-next'
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from '@/components/ingenio/ConcentradoDetalleTabGeneral.vue'
 import ConcentradoDetalleTabKanbanSocio from '@/components/socio/ConcentradoDetalleTabKanbanSocio.vue'
 import ConcentradoDetalleTabHistorialSocio from '@/components/socio/ConcentradoDetalleTabHistorialSocio.vue'
 import LoteDetalleTabLiquidacionToll from '@/components/socio/LoteDetalleTabLiquidacionToll.vue'
-
+import ConcentradoReportButton from '@/components/shared/ConcentradoReportButton.vue'
+import ConcentradoDetalleTabLiquidacionesVenta from '@/components/comercializadora/ConcentradoDetalleTabLiquidacionesVenta.vue'
 const props = defineProps({
   concentradoId: {
     type: Number,
@@ -78,6 +80,11 @@ const tieneLiquidacionToll = computed(() => {
   return concentrado.value?.liquidacionToll && concentrado.value.liquidacionToll.id
 })
 
+// Verificar si tiene liquidaciones de venta
+const tieneLiquidacionesVenta = computed(() => {
+  return concentrado.value?.liquidacionesVenta && concentrado.value.liquidacionesVenta.length > 0
+})
+
 const tabsDisponibles = computed(() => {
   const tabs = [
     { id: 'general', label: 'General', icon: Info, disponible: true }
@@ -98,6 +105,18 @@ const tabsDisponibles = computed(() => {
              concentrado.value.liquidacionToll.estado === 'pagado' ? 'Pagado' : null
     })
   }
+  // Tab de Liquidaciones de Venta (solo si existen)
+  if (tieneLiquidacionesVenta.value) {
+    const cantidadLiquidaciones = concentrado.value.liquidacionesVenta.length
+    tabs.push({ 
+      id: 'liquidaciones_venta', 
+      label: 'Liquidaciones de Venta', 
+      icon: ShoppingCart, 
+      disponible: true,
+      badge: cantidadLiquidaciones > 0 ? cantidadLiquidaciones : null
+    })
+  }
+
 
   tabs.push({ id: 'historial', label: 'Historial', icon: History, disponible: true })
 
@@ -151,12 +170,24 @@ const handlePagoRegistrado = async (liquidacionActualizada) => {
               </p>
             </div>
           </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-3">
+            
+            <ConcentradoReportButton
+              :concentrado="concentrado"
+              :kanban="kanban"
+              :rol="rol"
+              tipo="both"
+              variant="dropdown"
+              size="md"
+            />
+            
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->
@@ -232,6 +263,14 @@ const handlePagoRegistrado = async (liquidacionActualizada) => {
               :concentrado="concentrado"
               :concentrado-id="concentradoId"
               :tab-actual="tabActual"
+            />
+             <!-- Tab de Liquidaciones de Venta -->
+            <ConcentradoDetalleTabLiquidacionesVenta
+              v-if="tieneLiquidacionesVenta"
+              v-show="tabActual === 'liquidaciones_venta'"
+              :liquidaciones="concentrado.liquidacionesVenta"
+              :concentrado-id="concentradoId"
+              rol="socio"
             />
           </div>
         </div>

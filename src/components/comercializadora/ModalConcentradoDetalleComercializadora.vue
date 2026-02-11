@@ -14,6 +14,7 @@ import {
 import { getEstadoConfig } from '@/utils/concentradoEstados'
 import ConcentradoDetalleTabGeneral from '@/components/ingenio/ConcentradoDetalleTabGeneral.vue'
 import ConcentradoDetalleTabLiquidacionesVenta from '@/components/comercializadora/ConcentradoDetalleTabLiquidacionesVenta.vue'
+import ConcentradoReportButton from '@/components/shared/ConcentradoReportButton.vue'
 
 const props = defineProps({
   concentradoId: {
@@ -106,12 +107,24 @@ const tabsDisponibles = computed(() => {
               </p>
             </div>
           </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-3">
+            
+            <ConcentradoReportButton
+              :concentrado="concentrado"
+              :kanban="kanban"
+              :rol="rol"
+              tipo="both"
+              variant="dropdown"
+              size="md"
+            />
+            
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->
@@ -170,6 +183,7 @@ const tabsDisponibles = computed(() => {
               v-show="tabActual === 'liquidaciones_venta'"
               :liquidaciones="concentrado.liquidacionesVenta"
               :concentrado-id="concentradoId"
+              rol="comercializadora"
             />
           </div>
         </div>

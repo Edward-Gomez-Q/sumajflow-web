@@ -22,6 +22,10 @@ const props = defineProps({
   concentradoId: {
     type: Number,
     required: true
+  },
+  rol: {
+    type: String,
+    required: true
   }
 })
 
@@ -110,9 +114,15 @@ const getEstadoConfig = (estado) => {
 }
 
 const verDetalleLiquidacion = (liquidacionId) => {
+  console.log('Ver detalle de liquidación:', liquidacionId)
+  if(props.rol === 'socio') {
+    router.push({ 
+      name: 'SocioVentaConcentrados'
+    })
+    return
+  }
   router.push({ 
-    name: 'ComercializadoraVentas', 
-    query: { liquidacionId } 
+    name: 'ComercializadoraVentas'
   })
 }
 </script>
@@ -126,22 +136,6 @@ const verDetalleLiquidacion = (liquidacionId) => {
         <p class="text-sm text-secondary mt-1">
           Este concentrado está incluido en {{ liquidaciones.length }} liquidación(es) de venta
         </p>
-      </div>
-    </div>
-
-    <!-- Info Box -->
-    <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-      <div class="flex items-start gap-3">
-        <FileText class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-        <div class="flex-1">
-          <p class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-            Información sobre Liquidaciones
-          </p>
-          <p class="text-sm text-blue-700 dark:text-blue-300">
-            Aquí se muestra un resumen de las liquidaciones de venta. Para ver el detalle completo, 
-            cálculos, reportes químicos y gestionar pagos, haz clic en "Ver Detalles" de cada liquidación.
-          </p>
-        </div>
       </div>
     </div>
 

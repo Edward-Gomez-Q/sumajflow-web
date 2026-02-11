@@ -19,7 +19,7 @@ import LoteDetalleTabHistorial from '@/components/socio/LoteDetalleTabHistorial.
 import LoteDetalleTabLiquidacionToll from '@/components/socio/LoteDetalleTabLiquidacionToll.vue'
 import { useLotesWS } from '@/composables/useLotesWS'
 import { useUIStore } from '@/stores/uiStore'
-
+import ReportButton from '@/components/shared/ReportButton.vue'
 const props = defineProps({
   loteId: {
     type: Number,
@@ -138,36 +138,48 @@ const handleRechazar = () => {
     >
       <div class="bg-surface rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] border border-border flex flex-col">
         <!-- Header -->
-<div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
-  <div class="flex items-center gap-3">
-    <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0" :class="getEstadoColorSolido(lote?.estado)">
-      <PackageCheck class="w-6 h-6 text-white" />
-    </div>
-    <div>
-      <div class="flex items-center gap-2">
-        <h2 class="text-xl font-semibold text-neutral">
-          Detalle del Lote #{{ loteId }}
-        </h2>
-        <span
-          v-if="lote"
-          class="px-3 py-1 rounded-lg text-xs font-medium text-white"
-          :class="getEstadoColorSolido(lote.estado)"
-        >
-          {{ lote.estado }}
-        </span>
-      </div>
-      <p v-if="lote" class="text-sm text-secondary mt-0.5">
-        Creado el {{ formatDateShort(lote.fechaCreacion) }}
-      </p>
-    </div>
-  </div>
-  <button
-    @click="emit('close')"
-    class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-  >
-    <X class="w-5 h-5" />
-  </button>
-</div>
+        <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0" :class="getEstadoColorSolido(lote?.estado)">
+              <PackageCheck class="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-semibold text-neutral">
+                  Detalle del Lote #{{ loteId }}
+                </h2>
+                <span
+                  v-if="lote"
+                  class="px-3 py-1 rounded-lg text-xs font-medium text-white"
+                  :class="getEstadoColorSolido(lote.estado)"
+                >
+                  {{ lote.estado }}
+                </span>
+              </div>
+              <p v-if="lote" class="text-sm text-secondary mt-0.5">
+                Creado el {{ formatDateShort(lote.fechaCreacion) }}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            
+            <ReportButton 
+              v-if="lote"
+              :lote="lote" 
+              rol="socio"
+              tipo="both"
+              variant="dropdown"
+              size="md"
+            />
+            
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
         <!-- Loading -->
         <div v-if="lotesStore.loadingDetalle" class="p-12 text-center flex-1">

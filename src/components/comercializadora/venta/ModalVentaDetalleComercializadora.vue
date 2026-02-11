@@ -13,6 +13,7 @@ import VentaTabLiquidacion from '@/components/shared/VentaTabLiquidacion.vue'
 import VentaTabPago from '@/components/comercializadora/venta/VentaTabPago.vue'
 import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
 import { useUIStore } from '@/stores/uiStore'
+import ReportButtonLiquidacion from '@/components/shared/ReportButtonLiquidacion.vue'
 const props = defineProps({
   ventaId: { type: Number, required: true }
 })
@@ -195,12 +196,22 @@ const rechazar = async () => {
               </p>
             </div>
           </div>
-          <button
-            @click="handleClose"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-3">
+            <ReportButtonLiquidacion
+              v-if="venta"
+              :liquidacion="venta"
+              tipo="both"
+              variant="dropdown"
+              size="sm"
+            />
+            
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->

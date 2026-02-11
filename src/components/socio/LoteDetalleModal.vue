@@ -21,6 +21,7 @@ import LoteDetalleTabLiquidacionToll from './LoteDetalleTabLiquidacionToll.vue'
 import VentaTabGeneral from './venta/VentaTabGeneral.vue'
 import { useLotesWS } from '@/composables/useLotesWS'
 import { useUIStore } from '@/stores/uiStore'
+import ReportButton from '@/components/shared/ReportButton.vue'
 
 const props = defineProps({
   loteId: {
@@ -185,12 +186,22 @@ const formatCurrency = (value, currency = 'BOB') => {
               </p>
             </div>
           </div>
-          <button
-            @click="emit('close')"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-3">
+            <ReportButton 
+              v-if="lote"
+              :lote="lote" 
+              rol="socio"
+              tipo="both"
+              variant="dropdown"
+              size="md"
+            />
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->

@@ -15,6 +15,7 @@ import VentaTabCierreLote from '@/components/socio/venta/VentaTabCierreLote.vue'
 import VentaTabCierreVenta from '@/components/socio/venta/VentaTabCierreVenta.vue'
 import { useUIStore } from '@/stores/uiStore'
 import { useLiquidacionesWS } from '@/composables/useLiquidacionesWS'
+import ReportButtonLiquidacion from '@/components/shared/ReportButtonLiquidacion.vue'
 
 const props = defineProps({
   ventaId: { type: Number, required: true }
@@ -224,12 +225,22 @@ const formatDate = (date) => {
               </p>
             </div>
           </div>
-          <button
-            @click="handleClose"
-            class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
-          >
-            <X class="w-5 h-5" />
-          </button>
+          <div class="flex items-center gap-3">
+            <ReportButtonLiquidacion
+              v-if="venta"
+              :liquidacion="venta"
+              tipo="both"
+              variant="dropdown"
+              size="sm"
+            />
+            
+            <button
+              @click="emit('close')"
+              class="w-10 h-10 rounded-lg hover:bg-surface transition-colors flex items-center justify-center text-secondary hover:text-neutral"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->

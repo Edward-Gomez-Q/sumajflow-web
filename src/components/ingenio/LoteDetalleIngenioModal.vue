@@ -103,7 +103,7 @@ const getEstadoColorSolido = (estado) => {
     return 'bg-yellow-500'
   } else if (estado === 'Rechazado') {
     return 'bg-red-500'
-  } else if (estado === 'Completado') {
+  } else if (estado === 'Procesado') {
     return 'bg-green-500'
   } else {
     return 'bg-blue-500'
@@ -140,7 +140,7 @@ const handleRechazar = () => {
         <!-- Header -->
 <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-hover shrink-0">
   <div class="flex items-center gap-3">
-    <div class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+    <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0" :class="getEstadoColorSolido(lote?.estado)">
       <PackageCheck class="w-6 h-6 text-white" />
     </div>
     <div>

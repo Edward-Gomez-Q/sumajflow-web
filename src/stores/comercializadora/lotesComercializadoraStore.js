@@ -17,7 +17,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     totalElementos: 0,
     totalPaginas: 0,
     paginaActual: 0,
-    elementosPorPagina: 10,
+    elementosPorPagina: 20,
     tieneSiguiente: false,
     tieneAnterior: false
   })
@@ -28,7 +28,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
     fechaDesde: null,
     fechaHasta: null,
     page: 0,
-    size: 10,
+    size: 20,
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
@@ -42,13 +42,13 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
   const lotesEnProceso = computed(() => 
     lotes.value.filter(l => 
       !l.estado.includes('Pendiente') && 
-      l.estado !== 'Completado' &&
+      l.estado !== 'Vendido a comercializadora' &&
       l.estado !== 'Rechazado'
     )
   )
 
   const lotesCompletados = computed(() => 
-    lotes.value.filter(l => l.estado === 'Completado')
+    lotes.value.filter(l => l.estado === 'Vendido a comercializadora' || l.estado === 'Completado')
   )
 
   const fetchLotes = async (nuevosFiltros = {}) => {
@@ -127,7 +127,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
@@ -275,7 +275,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       totalElementos: 0,
       totalPaginas: 0,
       paginaActual: 0,
-      elementosPorPagina: 10,
+      elementosPorPagina: 20,
       tieneSiguiente: false,
       tieneAnterior: false
     }
@@ -286,7 +286,7 @@ export const useLotesComercializadoraStore = defineStore('lotesComercializadora'
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }

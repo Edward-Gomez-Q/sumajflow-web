@@ -17,7 +17,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
     totalElementos: 0,
     totalPaginas: 0,
     paginaActual: 0,
-    elementosPorPagina: 10,
+    elementosPorPagina: 20,
     tieneSiguiente: false,
     tieneAnterior: false
   })
@@ -28,7 +28,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
     fechaDesde: null,
     fechaHasta: null,
     page: 0,
-    size: 10,
+    size: 20,
     sortBy: 'fechaCreacion',
     sortDir: 'desc'
   })
@@ -42,13 +42,13 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
   const lotesEnProceso = computed(() => 
     lotes.value.filter(l => 
       !l.estado.includes('Pendiente') && 
-      l.estado !== 'Completado' &&
+      l.estado !== 'Procesado' &&
       l.estado !== 'Rechazado'
     )
   )
 
   const lotesCompletados = computed(() => 
-    lotes.value.filter(l => l.estado === 'Completado')
+    lotes.value.filter(l => l.estado === 'Procesado')
   )
 
   /**
@@ -142,7 +142,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }
@@ -307,7 +307,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
       totalElementos: 0,
       totalPaginas: 0,
       paginaActual: 0,
-      elementosPorPagina: 10,
+      elementosPorPagina: 20,
       tieneSiguiente: false,
       tieneAnterior: false
     }
@@ -318,7 +318,7 @@ export const useLotesIngenioStore = defineStore('lotesIngenio', () => {
       fechaDesde: null,
       fechaHasta: null,
       page: 0,
-      size: 10,
+      size: 20,
       sortBy: 'fechaCreacion',
       sortDir: 'desc'
     }

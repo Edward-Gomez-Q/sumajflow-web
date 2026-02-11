@@ -148,7 +148,7 @@ const getEstadoColorSolido = (estado) => {
     return 'bg-yellow-500'
   } else if (estado === 'Rechazado') {
     return 'bg-red-500'
-  } else if (estado == 'Vendido' || estado === 'Completado') {
+  } else if (estado == 'Vendido a comercializadora' || estado === 'Completado') {
     return 'bg-green-500'
   } else {
     return 'bg-blue-500'
@@ -278,9 +278,6 @@ const esPendienteAprobacion = (lote) => {
                     <h3 class="font-semibold text-neutral text-base sm:text-lg">
                       Lote #{{ lote.id }}
                     </h3>
-                    <span class="text-xs px-2 py-1 rounded-lg font-medium bg-indigo-500 text-white">
-                      {{ lote.tipoMineral }}
-                    </span>
                   </div>
                   <div class="flex items-center gap-2 mt-1 text-xs sm:text-sm text-secondary">
                     <Building2 class="w-3 h-3 sm:w-4 sm:h-4" />

@@ -80,6 +80,51 @@ const getEstadoBadge = (estado) => {
     class: 'bg-gray-500 text-white'      
   }
 }
+const parseObservaciones = (observaciones) => {
+  try {
+    // Si ya es un array, retornarlo
+    if (Array.isArray(observaciones)) {
+      return observaciones.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    }
+    // Si es string JSON, parsearlo
+    const parsed = JSON.parse(observaciones)
+    return Array.isArray(parsed) 
+      ? parsed.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      : [parsed]
+  } catch (e) {
+    // Si no es JSON válido, retornar array vacío
+    return []
+  }
+}
+
+const formatFechaCorta = (timestamp) => {
+  if (!timestamp) return '-'
+  const fecha = new Date(timestamp)
+  const ahora = new Date()
+  const diff = ahora - fecha
+  const dias = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (dias === 0) {
+    return fecha.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })
+  } else if (dias === 1) {
+    return 'Ayer'
+  } else if (dias < 7) {
+    return `Hace ${dias} días`
+  } else {
+    return fecha.toLocaleDateString('es-BO', { day: 'numeric', month: 'short' })
+  }
+}
+
+const formatKey = (key) => {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const formatValue = (value) => {
+  if (typeof value === 'number') {
+    return value.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  return value
+}
 
 const formatCurrency = (value, currency = 'BOB') => {
   if (!value) return '-'
@@ -724,8 +769,49 @@ const formatFileSize = (bytes) => {
 
     <!-- Observaciones -->
     <div v-if="liquidacion.observaciones" class="bg-base rounded-xl p-4 border border-border shadow-sm">
-      <h3 class="text-sm font-medium text-secondary mb-2">Observaciones</h3>
-      <p class="text-sm text-neutral whitespace-pre-wrap">{{ liquidacion.observaciones }}</p>
+  <h3 class="text-sm font-medium text-secondary mb-3">Historial de Observaciones</h3>
+  
+  <!-- Timeline de observaciones -->
+  <div class="space-y-3">
+    <div
+      v-for="(obs, index) in parseObservaciones(liquidacion.observaciones)"
+      :key="index"
+      class="flex gap-3 pb-3"
+      :class="{ 'border-b border-border': index < parseObservaciones(liquidacion.observaciones).length - 1 }"
+    >
+      <!-- Indicador de estado -->
+      <div class="shrink-0">
+        <div 
+          class="w-2 h-2 rounded-full mt-1.5"
+          :class="{
+            'bg-yellow-500': obs.estado === 'pendiente_procesamiento',
+            'bg-blue-500': obs.estado === 'esperando_pago',
+            'bg-green-500': obs.estado === 'pagado',
+            'bg-red-500': obs.estado === 'cancelado' || obs.estado === 'rechazado',
+            'bg-gray-500': !obs.estado
+          }"
+        ></div>
+      </div>
+
+      <!-- Contenido -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <p class="text-sm font-medium text-neutral">{{ obs.descripcion }}</p>
+          <span class="text-xs text-secondary whitespace-nowrap">
+            {{ formatFechaCorta(obs.timestamp) }}
+          </span>
+        </div>
+        <p v-if="obs.observaciones" class="text-xs text-secondary mb-1">
+          {{ obs.observaciones }}
+        </p>
+        <div v-if="obs.metadata" class="text-xs text-tertiary">
+          <span v-for="(value, key) in obs.metadata" :key="key" class="mr-3">
+            {{ formatKey(key) }}: <strong>{{ formatValue(value) }}</strong>
+          </span>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
   </div>
 </template>

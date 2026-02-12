@@ -1,6 +1,7 @@
 <!-- src/views/cooperativa/Dashboard.vue -->
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import {
   Users,
@@ -35,7 +36,7 @@ const sociosData = computed(() => dashboardStore.dashboardData?.sociosData || {
   minasRegistradas: 0,
   minasPorSector: []
 })
-
+const router = useRouter()
 const lotesData = computed(() => dashboardStore.dashboardData?.lotesData || {
   pendienteAprobacion: 0,
   aprobadosHoy: 0,
@@ -51,6 +52,10 @@ const transportistasData = computed(() => dashboardStore.dashboardData?.transpor
   calificacionPromedio: 0,
   viajesCompletadosMes: 0
 })
+
+const irALotes = () => {
+  router.push({ name: 'CooperativaLotesAprobacion' })
+}
 
 const volumetriaData = computed(() => dashboardStore.dashboardData?.volumetriaData || {
   pesoTotalDespachadoMes: 0,
@@ -96,9 +101,9 @@ const getPrioridadColor = (prioridad) => {
 
 const getPrioridadBadgeColor = (prioridad) => {
   const colors = {
-    alta: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    media: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    baja: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+    alta: 'bg-red-100 text-white dark:bg-red-900 dark:text-red-400',
+    media: 'bg-yellow-100 text-white dark:bg-yellow-900 dark:text-yellow-400',
+    baja: 'bg-blue-100 text-white dark:bg-blue-900 dark:text-blue-400'
   }
   return colors[prioridad] || colors.baja
 }
@@ -273,9 +278,9 @@ onMounted(async () => {
                   <p class="text-sm text-secondary">{{ lotesPendientes.length }} lotes esperando</p>
                 </div>
               </div>
-              <button class="btn-ghost text-sm py-2 px-3 flex items-center gap-2">
-                <Settings class="w-4 h-4" />
-                <span class="hidden sm:inline">Config</span>
+              <button class="btn-outline text-sm py-2 px-3 flex items-center gap-2" @click="irALotes">
+                <Package class="w-4 h-4" />
+                <span class="hidden sm:inline">Ir a mis solicitudes de lotes</span>
               </button>
             </div>
           </div>
@@ -284,30 +289,31 @@ onMounted(async () => {
             <div
               v-for="lote in lotesPendientes"
               :key="lote.id"
-              :class="[getPrioridadColor(lote.prioridad), 'border-l-4 border border-border rounded-lg p-4 hover:shadow-md transition-all']"
+              class="bg-hover border border-border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer"
             >
               <!-- Header -->
               <div class="flex items-start justify-between mb-3">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-1 flex-wrap">
-                    <h4 class="font-semibold text-neutral">{{ lote.id }}</h4>
-                    <span 
-                      :class="[getPrioridadBadgeColor(lote.prioridad), 'px-2 py-0.5 rounded text-xs font-medium']"
-                    >
-                      {{ (lote.prioridad || 'baja').toUpperCase() }}
-                    </span>
+                <div class="flex items-start gap-3 flex-1">
+                  <div class="w-10 h-10 rounded-lg bg-primary/10 center shrink-0">
+                    <Package class="w-5 h-5 text-primary" />
                   </div>
-                  <p class="text-sm text-neutral font-medium">{{ lote.socioNombre }}</p>
-                  <p class="text-xs text-secondary">{{ lote.minaNombre }}</p>
-                </div>
-                <div class="text-right ml-3">
-                  <p class="text-xs text-secondary mb-0.5">Esperando</p>
-                  <p class="text-xl font-bold text-neutral">{{ formatHours(lote.horasEspera / 60) }}</p>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <h4 class="font-semibold text-neutral">{{ lote.id }}</h4>
+                      <span 
+                        :class="[getPrioridadBadgeColor(lote.prioridad), 'px-2 py-0.5 rounded text-xs font-medium']"
+                      >
+                        {{ (lote.prioridad || 'baja').toUpperCase() }}
+                      </span>
+                    </div>
+                    <p class="text-sm text-neutral font-medium">{{ lote.socioNombre }}</p>
+                    <p class="text-xs text-secondary">{{ lote.minaNombre }}</p>
+                  </div>
                 </div>
               </div>
 
               <!-- Detalles -->
-              <div class="grid grid-cols-2 gap-3 mb-3 p-3 bg-background/50 rounded-lg">
+              <div class="grid grid-cols-2 gap-3 mb-3 pt-3 border-t border-border">
                 <div>
                   <p class="text-xs text-tertiary mb-0.5">Tipo Operación</p>
                   <p class="text-sm text-neutral font-medium">{{ getTipoOperacionTexto(lote.tipoOperacion) }}</p>
@@ -325,58 +331,16 @@ onMounted(async () => {
                   <p class="text-sm text-neutral font-medium">{{ formatFecha(lote.fechaCreacion) }}</p>
                 </div>
               </div>
-
-              <!-- Validaciones -->
-              <div class="mb-3">
-                <p class="text-xs font-medium text-secondary mb-2">Validaciones:</p>
-                <div class="space-y-1.5">
-                  <div 
-                    v-for="validacion in lote.validaciones" 
-                    :key="validacion.nombre"
-                    class="flex items-center gap-2"
-                  >
-                    <component 
-                      :is="getValidacionIcon(validacion.estado)" 
-                      :class="getValidacionColor(validacion.estado)"
-                      class="w-4 h-4 shrink-0"
-                    />
-                    <span class="text-xs text-neutral">{{ validacion.nombre }}</span>
-                    <span v-if="validacion.mensaje" class="text-xs text-tertiary">
-                      - {{ validacion.mensaje }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Razón de prioridad -->
-              <div class="mb-3 p-2 bg-background/30 rounded border border-border">
-                <p class="text-xs text-secondary"><strong>Prioridad:</strong> {{ lote.razonPrioridad }}</p>
-              </div>
-
-              <!-- Acciones -->
-              <div class="flex gap-2">
-                <button class="flex-1 bg-success hover:bg-success/90 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
-                  <CheckCircle class="w-4 h-4" />
-                  Aprobar
-                </button>
-                <button class="flex-1 bg-error hover:bg-error/90 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
-                  <XCircle class="w-4 h-4" />
-                  Rechazar
-                </button>
-                <button class="btn-outline px-4 py-2 text-sm">
-                  <Eye class="w-4 h-4" />
-                </button>
-              </div>
             </div>
 
-            <!-- Estado vacío -->
-            <div v-if="lotesPendientes.length === 0" class="text-center py-12">
-              <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle class="w-8 h-8 text-primary" />
-              </div>
-              <p class="text-secondary text-sm">No hay lotes pendientes de aprobación</p>
-            </div>
-          </div>
+  <!-- Estado vacío -->
+  <div v-if="lotesPendientes.length === 0" class="text-center py-12">
+    <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+      <CheckCircle class="w-8 h-8 text-primary" />
+    </div>
+    <p class="text-secondary text-sm">No hay lotes pendientes de aprobación</p>
+  </div>
+</div>
         </div>
 
         <!-- Monitores (1/3) -->
@@ -622,7 +586,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="p-5">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-hover border border-border rounded-lg p-4">
               <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -660,19 +624,6 @@ onMounted(async () => {
                 </div>
               </div>
               <p class="text-sm text-secondary">Viajes completados</p>
-            </div>
-
-            <div class="bg-hover border border-border rounded-lg p-4">
-              <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp class="w-5 h-5 text-warning" />
-                </div>
-                <div>
-                  <p class="text-2xl font-bold text-neutral">{{ (transportistasData.calificacionPromedio || 0).toFixed(1) }}</p>
-                  <p class="text-xs text-secondary">Promedio</p>
-                </div>
-              </div>
-              <p class="text-sm text-secondary">Calificación general</p>
             </div>
           </div>
         </div>

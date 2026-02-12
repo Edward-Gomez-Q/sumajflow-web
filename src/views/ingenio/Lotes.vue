@@ -319,12 +319,6 @@ const esPendienteAprobacion = (lote) => {
                 </p>
               </div>
               <div>
-                <p class="text-xs text-secondary">Operación</p>
-                <p class="text-sm font-medium text-neutral mt-0.5">
-                  {{ getTipoOperacionLabel(lote.tipoOperacion) }}
-                </p>
-              </div>
-              <div>
                 <p class="text-xs text-secondary">Camiones</p>
                 <p class="text-sm font-medium text-neutral mt-0.5 flex items-center gap-1">
                   <Truck class="w-3 h-3" />

@@ -19,7 +19,8 @@ import {
   Eye,
   FileText,
   RefreshCw,
-  Loader
+  Loader,
+  TrendingDown
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -41,7 +42,30 @@ const ingresosPorMineral = computed(() => dashboardStore.dashboardData?.ingresos
 
 const maxIngreso = computed(() => {
   if (!ingresosMensuales.value.length) return 1
-  return Math.max(...ingresosMensuales.value.map(m => m.total))
+  return Math.max(...ingresosMensuales.value.map(m => 
+    (m.pagoToll || 0) + (m.ingresoVentaConcentrado || 0) + (m.ingresoVentaComplejo || 0)
+  ))
+})
+
+const totalIngresoGeneral = computed(() => {
+  return ingresosMensuales.value.reduce((sum, m) => 
+    sum + (m.pagoToll || 0) + (m.ingresoVentaConcentrado || 0) + (m.ingresoVentaComplejo || 0), 0
+  )
+})
+
+const porcentajesPorTipo = computed(() => {
+  const total = totalIngresoGeneral.value
+  if (total === 0) return { toll: 0, concentrado: 0, complejo: 0 }
+  
+  const totalToll = ingresosMensuales.value.reduce((sum, m) => sum + (m.pagoToll || 0), 0)
+  const totalConcentrado = ingresosMensuales.value.reduce((sum, m) => sum + (m.ingresoVentaConcentrado || 0), 0)
+  const totalComplejo = ingresosMensuales.value.reduce((sum, m) => sum + (m.ingresoVentaComplejo || 0), 0)
+  
+  return {
+    toll: (totalToll / total) * 100,
+    concentrado: (totalConcentrado / total) * 100,
+    complejo: (totalComplejo / total) * 100
+  }
 })
 
 const formatCurrency = (value) => {
@@ -59,9 +83,9 @@ const formatNumber = (value) => {
 
 const getAlertColor = (tipo) => {
   const colors = {
-    critico: 'bg-red-100 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-400',
+    critico: 'bg-red-100 dark:bg-red-900 border-red-500 text-red-700 dark:text-red-400',
     advertencia: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 text-yellow-700 dark:text-yellow-400',
-    info: 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400'
+    info: 'bg-blue-100 dark:bg-blue-900 border-blue-500 text-white dark:text-white'
   }
   return colors[tipo] || colors.info
 }
@@ -161,9 +185,6 @@ const tiempoDesdeActualizacion = computed(() => {
                 <p class="text-xl sm:text-2xl font-bold text-neutral truncate">
                   {{ formatCurrency(financialData.totalPendienteCobro) }}
                 </p>
-                <p class="text-xs text-tertiary">
-                  {{ liquidacionesPendientes.tollPendientePago + liquidacionesPendientes.ventasPendientesCierre }} liquidaciones
-                </p>
               </div>
             </div>
           </div>
@@ -258,7 +279,7 @@ const tiempoDesdeActualizacion = computed(() => {
                   <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-4 mb-2">
                       <div>
-                        <p class="font-semibold text-neutral">{{ camion.id }}</p>
+                        <p class="font-semibold text-neutral">{{ camion.lotecodigo }}</p>
                         <p class="text-sm text-secondary">Camión #{{ camion.numeroCamion }} - {{ camion.placaVehiculo }}</p>
                       </div>
                       <span class="px-2 py-1 rounded-lg bg-blue-500 text-white text-xs font-medium shrink-0">
@@ -330,14 +351,9 @@ const tiempoDesdeActualizacion = computed(() => {
                 <div class="flex items-start gap-3">
                   <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-semibold text-sm mb-1">{{ alerta.titulo }}</h4>
+                    <h4 class="font-semibold text-sm mb-1 text-white">{{ alerta.titulo }}</h4>
                     <p class="text-xs opacity-90 mb-2">{{ alerta.descripcion }}</p>
-                    <button
-                      v-if="alerta.accionRecomendada"
-                      class="text-xs font-medium underline hover:no-underline"
-                    >
-                      {{ alerta.accionRecomendada }}
-                    </button>
+
                   </div>
                 </div>
               </div>
@@ -403,103 +419,92 @@ const tiempoDesdeActualizacion = computed(() => {
       </div>
 
       <!-- Gráficos Financieros -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- Ingresos Mensuales -->
-        <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Gráfico de Ventas de Concentrado (Principal) - Ocupa 2 columnas -->
+        <div class="lg:col-span-2 bg-base border border-border rounded-xl overflow-hidden shadow-sm">
           <div class="p-4 border-b border-border">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg center shrink-0">
-                <BarChart3 class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg center shrink-0">
+                  <BarChart3 class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-neutral text-base sm:text-lg">Venta de Concentrado</h3>
+                  <p class="text-xs sm:text-sm text-secondary">Últimos 6 meses</p>
+                </div>
               </div>
-              <div>
-                <h3 class="font-bold text-neutral text-base sm:text-lg">Ingresos Mensuales</h3>
-                <p class="text-xs sm:text-sm text-secondary">Últimos 6 meses</p>
+              <div class="text-right">
+                <p class="text-xs text-secondary">Total período</p>
+                <p class="text-sm font-bold text-green-600 dark:text-green-400">
+                  {{ formatCurrency(ingresosMensuales.reduce((sum, m) => sum + (m.ingresoVentaConcentrado || 0), 0)) }}
+                </p>
               </div>
             </div>
           </div>
           <div class="p-4 sm:p-6">
-            <div v-if="ingresosMensuales.length > 0" class="space-y-4">
+            <div v-if="ingresosMensuales.length > 0" class="space-y-3">
               <div v-for="item in ingresosMensuales" :key="item.mes" class="space-y-2">
                 <div class="flex items-center justify-between text-sm">
                   <span class="font-medium text-neutral">{{ item.mes }}</span>
-                  <span class="font-bold text-neutral">{{ formatCurrency(item.total) }}</span>
+                  <span class="font-bold text-neutral">{{ formatCurrency(item.ingresoVentaConcentrado || 0) }}</span>
                 </div>
-                <div class="relative h-10 bg-hover rounded-lg overflow-hidden">
+                <div class="relative h-8 bg-hover rounded-lg overflow-hidden">
                   <div 
-                    class="absolute inset-y-0 left-0 bg-green-500 rounded-lg transition-all duration-500"
-                    :style="{ width: `${(item.ingresoVentaConcentrado / maxIngreso) * 100}%` }"
+                    class="absolute inset-y-0 left-0 bg-linear-to-r from-green-500 to-green-600 rounded-lg transition-all duration-500 flex items-center justify-end pr-2"
+                    :style="{ width: `${((item.ingresoVentaConcentrado || 0) / maxIngreso) * 100}%` }"
                   >
-                    <span v-if="item.ingresoVentaConcentrado > 0" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white font-medium">
-                      {{ formatNumber(item.ingresoVentaConcentrado) }}
+                    <span v-if="item.ingresoVentaConcentrado > 0" class="text-xs text-white font-medium">
+                      {{ ((item.ingresoVentaConcentrado / maxIngreso) * 100).toFixed(0) }}%
                     </span>
                   </div>
-                  <div 
-                    class="absolute inset-y-0 left-0 bg-blue-500 rounded-lg transition-all duration-500"
-                    :style="{ width: `${(item.ingresoToll / maxIngreso) * 100}%` }"
-                  >
-                    <span v-if="item.ingresoToll > 0" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-white font-medium">
-                      {{ formatNumber(item.ingresoToll) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-6 mt-6 pt-6 border-t border-border">
-                <div class="flex items-center gap-2">
-                  <div class="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span class="text-xs text-secondary">Toll</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-4 h-4 bg-green-500 rounded"></div>
-                  <span class="text-xs text-secondary">Venta Concentrado</span>
                 </div>
               </div>
             </div>
-
             <div v-else class="text-center py-8">
               <p class="text-secondary">No hay datos de ingresos</p>
             </div>
           </div>
         </div>
 
-        <!-- Distribución por Mineral -->
-        <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
-          <div class="p-4 border-b border-border">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg center shrink-0">
-                <PieChart class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div>
-                <h3 class="font-bold text-neutral text-base sm:text-lg">Ingreso por Mineral</h3>
-                <p class="text-xs sm:text-sm text-secondary">Distribución actual</p>
+        <!-- Distribución por Mineral + Tipo de Ingreso (compacto) -->
+        <div class="space-y-4">
+          <!-- Ingreso por Mineral -->
+          <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-border">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-purple-500 rounded-lg center shrink-0">
+                  <PieChart class="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-neutral text-sm">Por Mineral</h3>
+                  <p class="text-xs text-secondary">Concentrados</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="p-4 sm:p-6">
-            <div v-if="ingresosPorMineral.length > 0" class="space-y-4">
-              <div
-                v-for="item in ingresosPorMineral"
-                :key="item.mineral"
-                class="flex items-center justify-between p-3 bg-hover rounded-xl"
-              >
-                <div class="flex items-center gap-3">
-                  <div 
-                    class="w-10 h-10 rounded-lg center font-bold text-white"
-                    :class="{
-                      'bg-blue-500': item.mineral === 'Pb',
-                      'bg-green-500': item.mineral === 'Zn',
-                      'bg-yellow-500': item.mineral === 'Ag'
-                    }"
-                  >
-                    {{ item.mineral }}
+            <div class="p-4">
+              <div v-if="ingresosPorMineral.length > 0" class="space-y-3">
+                <div
+                  v-for="item in ingresosPorMineral"
+                  :key="item.mineral"
+                  class="space-y-2"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <div 
+                        class="w-8 h-8 rounded-lg center font-bold text-white text-xs"
+                        :class="{
+                          'bg-blue-500': item.mineral === 'Pb',
+                          'bg-green-500': item.mineral === 'Zn',
+                          'bg-yellow-500': item.mineral === 'Ag'
+                        }"
+                      >
+                        {{ item.mineral }}
+                      </div>
+                      <span class="text-xs font-medium text-neutral">{{ item.porcentaje.toFixed(1) }}%</span>
+                    </div>
+                    <p class="text-xs font-semibold text-neutral">{{ formatCurrency(item.ingreso) }}</p>
                   </div>
-                  <div>
-                    <p class="text-sm font-semibold text-neutral">{{ formatCurrency(item.ingreso) }}</p>
-                    <p class="text-xs text-secondary">{{ item.porcentaje.toFixed(1) }}% del total</p>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="w-20 h-2 bg-border rounded-full overflow-hidden">
+                  <div class="h-2 bg-border rounded-full overflow-hidden">
                     <div 
                       class="h-full rounded-full transition-all duration-500"
                       :class="{
@@ -512,10 +517,189 @@ const tiempoDesdeActualizacion = computed(() => {
                   </div>
                 </div>
               </div>
+              <div v-else class="text-center py-4">
+                <p class="text-xs text-secondary">Sin datos</p>
+              </div>
             </div>
+          </div>
 
+          <!-- Distribución por Tipo de Ingreso -->
+          <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
+            <div class="p-4 border-b border-border">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-lg center shrink-0">
+                  <TrendingUp class="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-neutral text-sm">Tipo de Ingreso</h3>
+                  <p class="text-xs text-secondary">Distribución</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="space-y-3">
+                <!-- Venta Concentrado -->
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 bg-green-500 rounded"></div>
+                      <span class="font-medium text-neutral">Concentrado</span>
+                    </div>
+                    <span class="font-bold text-neutral">{{ porcentajesPorTipo.concentrado.toFixed(1) }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-border rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-green-500 rounded-full transition-all duration-500"
+                      :style="{ width: `${porcentajesPorTipo.concentrado}%` }"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Venta Complejo -->
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 bg-purple-500 rounded"></div>
+                      <span class="font-medium text-neutral">Complejo</span>
+                    </div>
+                    <span class="font-bold text-neutral">{{ porcentajesPorTipo.complejo.toFixed(1) }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-border rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-purple-500 rounded-full transition-all duration-500"
+                      :style="{ width: `${porcentajesPorTipo.complejo}%` }"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Pago Toll (egreso mostrado como negativo visualmente) -->
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 bg-red-500 rounded"></div>
+                      <span class="font-medium text-neutral">Pago Toll</span>
+                    </div>
+                    <span class="font-bold text-red-600 dark:text-red-400">-{{ porcentajesPorTipo.toll.toFixed(1) }}%</span>
+                  </div>
+                  <div class="h-1.5 bg-border rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-red-500 rounded-full transition-all duration-500"
+                      :style="{ width: `${porcentajesPorTipo.toll}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico de Venta Complejo y Pago Toll -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Venta de Complejo -->
+        <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
+          <div class="p-4 border-b border-border">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg center shrink-0">
+                  <Package class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-neutral text-base sm:text-lg">Venta de Complejo</h3>
+                  <p class="text-xs sm:text-sm text-secondary">Ingresos secundarios</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-secondary">Total</p>
+                <p class="text-sm font-bold text-purple-600 dark:text-purple-400">
+                  {{ formatCurrency(ingresosMensuales.reduce((sum, m) => sum + (m.ingresoVentaComplejo || 0), 0)) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div v-if="ingresosMensuales.length > 0" class="space-y-4">
+              <div 
+                v-for="item in ingresosMensuales" 
+                :key="`complejo-${item.mes}`"
+                class="flex items-center gap-3"
+              >
+                <div class="w-12 text-xs font-medium text-secondary">{{ item.mes }}</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 h-6 bg-hover rounded-lg overflow-hidden">
+                      <div 
+                        class="h-full bg-linear-to-r from-purple-500 to-purple-600 rounded-lg transition-all duration-500 flex items-center justify-end pr-2"
+                        :style="{ width: `${((item.ingresoVentaComplejo || 0) / maxIngreso) * 100}%` }"
+                      >
+                        <span v-if="(item.ingresoVentaComplejo || 0) > 0" class="text-xs text-white font-medium">
+                          {{ formatNumber(item.ingresoVentaComplejo) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="w-24 text-right text-xs font-semibold text-neutral">
+                      {{ formatCurrency(item.ingresoVentaComplejo || 0) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div v-else class="text-center py-8">
-              <p class="text-secondary">No hay datos de ingresos</p>
+              <p class="text-secondary">No hay datos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pago Toll (Egresos) -->
+        <div class="bg-base border border-border rounded-xl overflow-hidden shadow-sm">
+          <div class="p-4 border-b border-border">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 rounded-lg center shrink-0">
+                  <TrendingDown class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-neutral text-base sm:text-lg">Pago de Toll</h3>
+                  <p class="text-xs sm:text-sm text-secondary">Costos de procesamiento</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-secondary">Total</p>
+                <p class="text-sm font-bold text-red-600 dark:text-red-400">
+                  -{{ formatCurrency(ingresosMensuales.reduce((sum, m) => sum + (m.pagoToll || 0), 0)) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 sm:p-6">
+            <div v-if="ingresosMensuales.length > 0" class="space-y-4">
+              <div 
+                v-for="item in ingresosMensuales" 
+                :key="`toll-${item.mes}`"
+                class="flex items-center gap-3"
+              >
+                <div class="w-12 text-xs font-medium text-secondary">{{ item.mes }}</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 h-6 bg-hover rounded-lg overflow-hidden">
+                      <div 
+                        class="h-full bg-linear-to-r from-red-500 to-red-600 rounded-lg transition-all duration-500 flex items-center justify-end pr-2"
+                        :style="{ width: `${((item.pagoToll || 0) / maxIngreso) * 100}%` }"
+                      >
+                        <span v-if="(item.pagoToll || 0) > 0" class="text-xs text-white font-medium">
+                          {{ formatNumber(item.pagoToll) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="w-24 text-right text-xs font-semibold text-red-600 dark:text-red-400">
+                      -{{ formatCurrency(item.pagoToll || 0) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-8">
+              <p class="text-secondary">No hay datos</p>
             </div>
           </div>
         </div>
@@ -545,7 +729,7 @@ const tiempoDesdeActualizacion = computed(() => {
               <div class="space-y-3">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <p class="font-semibold text-neutral">{{ concentrado.id }}</p>
+                    <p class="font-semibold text-neutral">{{ concentrado.codigo }}</p>
                     <p class="text-xs text-secondary">{{ concentrado.mineralPrincipal }}</p>
                   </div>
                   <span 
@@ -559,7 +743,7 @@ const tiempoDesdeActualizacion = computed(() => {
                 <div class="mb-3">
                   <div class="flex items-center justify-between text-xs mb-1">
                     <span class="text-secondary">{{ concentrado.progreso.etapaActual }}</span>
-                    <span class="font-medium text-neutral">{{ concentrado.pesoFinal }} kg</span>
+                    <span v-if="concentrado.pesoFinal" class="font-medium text-neutral">{{ concentrado.pesoFinal }} kg</span>
                   </div>
                   <div class="h-2 bg-border rounded-full overflow-hidden">
                     <div 
@@ -578,11 +762,6 @@ const tiempoDesdeActualizacion = computed(() => {
                     {{ concentrado.liquidacionToll.diasPendiente }} días sin pagar
                   </p>
                 </div>
-
-                <button class="w-full mt-3 btn-outline text-xs py-2 flex items-center justify-center gap-2">
-                  <Eye class="w-3 h-3" />
-                  Ver Detalle
-                </button>
               </div>
             </div>
           </div>
@@ -662,12 +841,7 @@ const tiempoDesdeActualizacion = computed(() => {
                 </div>
               </div>
               <p class="text-sm text-secondary mb-3">Ventas cerradas pendientes</p>
-              <button 
-                @click="router.push({ name: 'SocioVentaConcentrados' })"
-                class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
-              >
-                Ver Detalle
-              </button>
+
             </div>
           </div>
         </div>

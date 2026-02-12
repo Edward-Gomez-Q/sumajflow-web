@@ -1,3 +1,4 @@
+<!-- src/components/ingenio/ConcentradoDetalleTabHistorial.vue -->
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useConcentradosIngenioStore } from '@/stores/ingenio/concentradosIngenioStore'

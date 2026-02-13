@@ -52,6 +52,17 @@ const formatDate = (dateString) => {
   })
 }
 
+const formatDateShort = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-BO', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 const historial = computed(() => {
   if (!props.concentrado.observaciones) return []
   
@@ -124,16 +135,32 @@ const getIconoAccion = (accion) => {
 const getColorAccion = (accion) => {
   switch (accion) {
     case 'CREAR_CONCENTRADO':
-      return 'bg-sky-600 dark:bg-sky-700'
+      return 'bg-primary'
     case 'INICIAR_PROCESAMIENTO':
-      return 'bg-emerald-600 dark:bg-emerald-700'
+      return 'bg-success'
     case 'AVANZAR_PROCESO':
     case 'MOVER_PROCESO':
-      return 'bg-amber-600 dark:bg-amber-700'
+      return 'bg-warning'
     case 'FINALIZAR_PROCESAMIENTO':
-      return 'bg-violet-600 dark:bg-violet-700'
+      return 'bg-info'
     default:
-      return 'bg-slate-500'
+      return 'bg-secondary'
+  }
+}
+
+const getBorderColorAccion = (accion) => {
+  switch (accion) {
+    case 'CREAR_CONCENTRADO':
+      return 'border-l-primary'
+    case 'INICIAR_PROCESAMIENTO':
+      return 'border-l-success'
+    case 'AVANZAR_PROCESO':
+    case 'MOVER_PROCESO':
+      return 'border-l-warning'
+    case 'FINALIZAR_PROCESAMIENTO':
+      return 'border-l-info'
+    default:
+      return 'border-l-secondary'
   }
 }
 
@@ -172,8 +199,8 @@ const getTituloAccion = (registro) => {
           Registro completo de todas las acciones realizadas sobre el concentrado
         </p>
       </div>
-      <div class="bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-700">
-        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">
+      <div class="bg-surface rounded-lg px-4 py-2 border border-border">
+        <p class="text-sm font-medium text-neutral">
           {{ historial.length }} registro(s)
         </p>
       </div>
@@ -181,249 +208,266 @@ const getTituloAccion = (registro) => {
 
     <!-- Timeline -->
     <div class="relative">
-      <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700"></div>
+      <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-border"></div>
 
       <!-- Registros -->
       <div class="space-y-6">
         <div
           v-for="registro in historial"
           :key="registro.index"
-          class="relative pl-16"
+          class="relative pl-14"
         >
           <!-- Icono timeline -->
           <div 
-            class="absolute left-0 w-12 h-12 rounded-full center shadow-md ring-4 ring-background"
+            class="absolute left-2.5 w-6 h-6 rounded-full center ring-4 ring-background"
             :class="getColorAccion(registro.accion)"
           >
             <component 
               :is="getIconoAccion(registro.accion)" 
-              class="w-6 h-6 text-white" 
+              class="w-3.5 h-3.5 text-white" 
             />
           </div>
 
           <!-- Contenido -->
-          <div class="bg-surface rounded-xl p-5 border border-border hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200">
-            <!-- Header -->
-            <div class="flex items-start justify-between gap-4 mb-4">
-              <div class="flex-1">
-                <h4 class="font-semibold text-neutral text-base mb-2">
-                  {{ getTituloAccion(registro) }}
-                </h4>
-                <div class="flex items-center gap-4 flex-wrap text-xs text-tertiary">
-                  <div class="flex items-center gap-1.5">
-                    <Clock class="w-3.5 h-3.5" />
-                    <span>{{ formatDate(registro.timestamp) }}</span>
-                  </div>
-                  <div v-if="registro.usuario_id" class="flex items-center gap-1.5">
-                    <User class="w-3.5 h-3.5" />
-                    <span>Usuario #{{ registro.usuario_id }}</span>
-                  </div>
-                  <div v-if="registro.ip_origen" class="flex items-center gap-1.5">
-                    <MapPin class="w-3.5 h-3.5" />
-                    <span>{{ registro.ip_origen }}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Badge -->
-              <span 
-                v-if="registro.accion"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium text-white whitespace-nowrap shadow-sm"
-                :class="getColorAccion(registro.accion)"
-              >
-                {{ registro.accion.replace(/_/g, ' ') }}
-              </span>
-            </div>
-
-            <!-- CREAR_CONCENTRADO -->
-            <div v-if="registro.accion === 'CREAR_CONCENTRADO'" class="space-y-4">
-              <div v-if="registro.descripcion" class="text-sm text-neutral">
-                {{ registro.descripcion }}
-              </div>
-              
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div v-if="registro.lotes_ids" class="bg-sky-50 dark:bg-sky-950/30 rounded-lg p-3 border border-sky-200 dark:border-sky-800">
-                  <p class="text-xs font-medium text-sky-900 dark:text-sky-100 mb-2">Lotes procesados:</p>
-                  <div class="flex flex-wrap gap-1.5">
-                    <span 
-                      v-for="loteId in registro.lotes_ids" 
-                      :key="loteId"
-                      class="px-2 py-1 rounded-md bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 text-xs font-medium border border-sky-200 dark:border-sky-700"
-                    >
-                      #{{ loteId }}
-                    </span>
+          <div 
+            class="bg-surface rounded-lg border-l-4 border-t border-r border-b border-border hover:shadow-md transition-shadow"
+            :class="getBorderColorAccion(registro.accion)"
+          >
+            <div class="p-4">
+              <!-- Header -->
+              <div class="flex items-start justify-between gap-4 mb-3">
+                <div class="flex-1">
+                  <h4 class="font-semibold text-neutral mb-2">
+                    {{ getTituloAccion(registro) }}
+                  </h4>
+                  <div class="flex items-center gap-2 flex-wrap text-xs text-tertiary">
+                    <div class="flex items-center gap-1">
+                      <Clock class="w-3 h-3" />
+                      <span>{{ formatDateShort(registro.timestamp) }}</span>
+                    </div>
+                    <div v-if="registro.usuario_id" class="flex items-center gap-1">
+                      <User class="w-3 h-3" />
+                      <span>Usuario #{{ registro.usuario_id }}</span>
+                    </div>
+                    <div v-if="registro.ip_origen" class="flex items-center gap-1">
+                      <MapPin class="w-3 h-3" />
+                      <span>{{ registro.ip_origen }}</span>
+                    </div>
                   </div>
                 </div>
-
-                <div v-if="registro.cantidad_lotes" class="bg-slate-50 dark:bg-slate-900/30 rounded-lg p-3 border border-slate-200 dark:border-slate-800">
-                  <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Cantidad de lotes:</p>
-                  <p class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ registro.cantidad_lotes }}</p>
-                </div>
-
-                <div v-if="registro.concentrados_hermanos && registro.concentrados_hermanos.length > 1" class="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-3 border border-violet-200 dark:border-violet-800">
-                  <p class="text-xs font-medium text-violet-900 dark:text-violet-100 mb-2">Concentrados hermanos:</p>
-                  <div class="flex flex-wrap gap-1.5">
-                    <span 
-                      v-for="hermanoId in registro.concentrados_hermanos" 
-                      :key="hermanoId"
-                      class="px-2 py-1 rounded-md bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-xs font-medium border border-violet-200 dark:border-violet-700"
-                    >
-                      #{{ hermanoId }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="registro.estado_anterior" class="flex items-center gap-2 text-sm">
-                <span class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
-                  {{ registro.estado_anterior }}
-                </span>
-                <ArrowRight class="w-5 h-5 text-slate-400" />
-                <span class="px-3 py-1.5 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-medium border border-sky-200 dark:border-sky-700">
-                  {{ registro.estado }}
+                
+                <!-- Badge -->
+                <span 
+                  v-if="registro.accion"
+                  class="px-2.5 py-1 rounded-md text-xs font-medium border whitespace-nowrap"
+                  :class="[
+                    registro.accion === 'CREAR_CONCENTRADO' ? 'bg-primary/10 text-primary border-primary/20' :
+                    registro.accion === 'INICIAR_PROCESAMIENTO' ? 'bg-success/10 text-success border-success/20' :
+                    registro.accion === 'AVANZAR_PROCESO' || registro.accion === 'MOVER_PROCESO' ? 'bg-warning/10 text-warning border-warning/20' :
+                    registro.accion === 'FINALIZAR_PROCESAMIENTO' ? 'bg-info/10 text-info border-info/20' :
+                    'bg-hover text-secondary border-border'
+                  ]"
+                >
+                  {{ registro.accion.replace(/_/g, ' ') }}
                 </span>
               </div>
 
-              <div v-if="registro.observaciones" class="mt-3 bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Observaciones:</p>
-                <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">"{{ registro.observaciones }}"</p>
-              </div>
-            </div>
-
-            <!-- INICIAR_PROCESAMIENTO -->
-            <div v-else-if="registro.accion === 'INICIAR_PROCESAMIENTO' && registro.detalles" class="space-y-3">
-              <div class="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
-                <div class="flex items-start gap-3">
-                  <PlayCircle class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <div class="flex-1">
-                    <h5 class="font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
-                      Proceso: {{ registro.detalles.proceso_nombre }}
-                    </h5>
-                    
-                    <div v-if="registro.detalles.observaciones_inicio" class="mt-3">
-                      <p class="text-xs font-medium text-emerald-700 dark:text-emerald-300 mb-1">Observaciones iniciales:</p>
-                      <p class="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">"{{ registro.detalles.observaciones_inicio }}"</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- MOVER_PROCESO -->
-            <div v-else-if="(registro.accion === 'MOVER_PROCESO' || registro.accion === 'AVANZAR_PROCESO') && registro.detalles" class="space-y-4">
-              <!-- Movimiento -->
-              <div class="flex items-center justify-center gap-3 text-sm">
-                <div class="flex-1 bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 text-center border border-slate-200 dark:border-slate-700">
-                  <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Desde</p>
-                  <p class="font-semibold text-slate-900 dark:text-slate-100">{{ registro.detalles.proceso_origen.nombre }}</p>
-                  <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">#{{ registro.detalles.proceso_origen.id }}</p>
+              <!-- CREAR_CONCENTRADO -->
+              <div v-if="registro.accion === 'CREAR_CONCENTRADO'" class="space-y-3">
+                <div v-if="registro.descripcion" class="text-sm text-secondary">
+                  {{ registro.descripcion }}
                 </div>
                 
-                <ArrowRight class="w-6 h-6 text-amber-600 dark:text-amber-500 shrink-0" />
-                
-                <div class="flex-1 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 text-center border border-amber-200 dark:border-amber-800">
-                  <p class="text-xs font-medium text-amber-700 dark:text-amber-300 mb-1">Hacia</p>
-                  <p class="font-semibold text-amber-900 dark:text-amber-100">{{ registro.detalles.proceso_destino.nombre }}</p>
-                  <p class="text-xs text-amber-700 dark:text-amber-300 mt-1">#{{ registro.detalles.proceso_destino.id }}</p>
-                </div>
-              </div>
-
-              <!-- Observaciones -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div v-if="registro.detalles.observaciones_fin_proceso || registro.detalles.obs_fin" class="bg-rose-50 dark:bg-rose-950/30 rounded-lg p-4 border border-rose-200 dark:border-rose-800">
-                  <div class="flex items-start gap-3">
-                    <CheckCircle2 class="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                    <div class="flex-1">
-                      <h5 class="text-xs font-semibold text-rose-900 dark:text-rose-100 mb-2">
-                        Observaciones finales ({{ registro.detalles.proceso_origen.nombre }})
-                      </h5>
-                      <p class="text-sm text-rose-800 dark:text-rose-200 leading-relaxed">"{{ registro.detalles.observaciones_fin_proceso || registro.detalles.obs_fin }}"</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-if="registro.detalles.observaciones_inicio_proceso || registro.detalles.obs_inicio" class="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
-                  <div class="flex items-start gap-3">
-                    <PlayCircle class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                    <div class="flex-1">
-                      <h5 class="text-xs font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
-                        Observaciones iniciales ({{ registro.detalles.proceso_destino.nombre }})
-                      </h5>
-                      <p class="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">"{{ registro.detalles.observaciones_inicio_proceso || registro.detalles.obs_inicio }}"</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Procesos auto-completados -->
-              <div v-if="registro.detalles.procesos_auto_completados && registro.detalles.procesos_auto_completados.length > 0" 
-                   class="bg-indigo-50 dark:bg-indigo-950/30 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800">
-                <div class="flex items-start gap-3">
-                  <Sparkles class="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-                  <div class="flex-1">
-                    <h5 class="text-xs font-semibold text-indigo-900 dark:text-indigo-100 mb-3">
-                      Procesos completados automáticamente:
-                    </h5>
-                    <div class="flex flex-wrap gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div v-if="registro.lotes_ids" class="bg-hover/50 rounded-lg p-3 border border-border">
+                    <p class="text-xs font-medium text-secondary mb-2">Lotes procesados:</p>
+                    <div class="flex flex-wrap gap-1.5">
                       <span 
-                        v-for="(proceso, idx) in registro.detalles.procesos_auto_completados" 
-                        :key="idx"
-                        class="px-3 py-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-medium border border-indigo-200 dark:border-indigo-700"
+                        v-for="loteId in registro.lotes_ids" 
+                        :key="loteId"
+                        class="px-2 py-1 rounded-md bg-surface text-neutral text-xs font-medium border border-border"
                       >
-                        {{ proceso }}
+                        #{{ loteId }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div v-if="registro.cantidad_lotes" class="bg-hover/50 rounded-lg p-3 border border-border">
+                    <p class="text-xs font-medium text-secondary mb-1">Cantidad de lotes:</p>
+                    <p class="text-lg font-bold text-neutral">{{ registro.cantidad_lotes }}</p>
+                  </div>
+
+                  <div v-if="registro.concentrados_hermanos && registro.concentrados_hermanos.length > 1" class="bg-hover/50 rounded-lg p-3 border border-border">
+                    <p class="text-xs font-medium text-secondary mb-2">Concentrados hermanos:</p>
+                    <div class="flex flex-wrap gap-1.5">
+                      <span 
+                        v-for="hermanoId in registro.concentrados_hermanos" 
+                        :key="hermanoId"
+                        class="px-2 py-1 rounded-md bg-surface text-neutral text-xs font-medium border border-border"
+                      >
+                        #{{ hermanoId }}
                       </span>
                     </div>
                   </div>
                 </div>
+
+                <div v-if="registro.estado_anterior" class="flex items-center gap-2 text-sm flex-wrap">
+                  <span class="px-3 py-1.5 rounded-md bg-hover text-secondary font-medium border border-border">
+                    {{ registro.estado_anterior }}
+                  </span>
+                  <ArrowRight class="w-4 h-4 text-tertiary" />
+                  <span class="px-3 py-1.5 rounded-md bg-primary/10 text-primary font-medium border border-primary/20">
+                    {{ registro.estado }}
+                  </span>
+                </div>
+
+                <div v-if="registro.observaciones" class="mt-3 bg-hover/50 rounded-lg p-3 border border-border">
+                  <p class="text-xs font-medium text-secondary mb-2">Observaciones:</p>
+                  <p class="text-sm text-neutral leading-relaxed">"{{ registro.observaciones }}"</p>
+                </div>
               </div>
-            </div>
 
-            <!-- FINALIZAR_PROCESAMIENTO -->
-            <div v-else-if="registro.accion === 'FINALIZAR_PROCESAMIENTO' && registro.detalles" class="space-y-3">
-              <div class="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-4 border border-violet-200 dark:border-violet-800">
-                <div class="flex items-start gap-3">
-                  <CheckCircle2 class="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
-                  <div class="flex-1 space-y-3">
-                    <h5 class="font-semibold text-violet-900 dark:text-violet-100">
-                      Último proceso: {{ typeof registro.detalles.ultimo_proceso === 'object' ? registro.detalles.ultimo_proceso.nombre : registro.detalles.ultimo_proceso }}
-                    </h5>
-                    
-                    <div v-if="registro.detalles.observaciones_fin_proceso" class="border-t border-violet-200 dark:border-violet-700 pt-3">
-                      <p class="text-xs font-medium text-violet-700 dark:text-violet-300 mb-1">Observaciones finales del proceso:</p>
-                      <p class="text-sm text-violet-800 dark:text-violet-200 leading-relaxed">"{{ registro.detalles.observaciones_fin_proceso }}"</p>
-                    </div>
-
-                    <div v-if="registro.detalles.observaciones_generales" class="border-t border-violet-200 dark:border-violet-700 pt-3">
-                      <p class="text-xs font-medium text-violet-700 dark:text-violet-300 mb-1">Observaciones generales del procesamiento:</p>
-                      <p class="text-sm text-violet-900 dark:text-violet-100 font-medium leading-relaxed">"{{ registro.detalles.observaciones_generales }}"</p>
-                    </div>
-
-                    <div v-if="registro.detalles.total_procesos_completados" class="border-t border-violet-200 dark:border-violet-700 pt-3">
-                      <p class="text-sm text-violet-700 dark:text-violet-300">
-                        Total de procesos completados: 
-                        <span class="font-bold text-violet-900 dark:text-violet-100">{{ registro.detalles.total_procesos_completados }}</span>
-                      </p>
+              <!-- INICIAR_PROCESAMIENTO -->
+              <div v-else-if="registro.accion === 'INICIAR_PROCESAMIENTO' && registro.detalles" class="space-y-3">
+                <div class="bg-hover/50 rounded-lg p-3 border border-border">
+                  <div class="flex items-start gap-3">
+                    <PlayCircle class="w-5 h-5 text-success shrink-0 mt-0.5" />
+                    <div class="flex-1">
+                      <h5 class="font-semibold text-neutral mb-2">
+                        Proceso: {{ registro.detalles.proceso_nombre }}
+                      </h5>
+                      
+                      <div v-if="registro.detalles.observaciones_inicio" class="mt-2">
+                        <p class="text-xs font-medium text-secondary mb-1">Observaciones iniciales:</p>
+                        <p class="text-sm text-neutral leading-relaxed">"{{ registro.detalles.observaciones_inicio }}"</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Transición genérica -->
-            <div v-else-if="registro.estado_anterior && registro.estado" class="flex items-center gap-2 text-sm">
-              <span class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-200 dark:border-slate-700">
-                {{ registro.estado_anterior }}
-              </span>
-              <ArrowRight class="w-5 h-5 text-slate-400" />
-              <span class="px-3 py-1.5 rounded-lg bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 font-medium border border-sky-200 dark:border-sky-700">
-                {{ registro.estado }}
-              </span>
-            </div>
+              <!-- MOVER_PROCESO -->
+              <div v-else-if="(registro.accion === 'MOVER_PROCESO' || registro.accion === 'AVANZAR_PROCESO') && registro.detalles" class="space-y-3">
+                <!-- Movimiento -->
+                <div class="flex items-center justify-center gap-3 text-sm">
+                  <div class="flex-1 bg-hover/50 rounded-lg p-3 text-center border border-border">
+                    <p class="text-xs font-medium text-secondary mb-1">Desde</p>
+                    <p class="font-semibold text-neutral">{{ registro.detalles.proceso_origen.nombre }}</p>
+                    <p class="text-xs text-tertiary mt-1">#{{ registro.detalles.proceso_origen.id }}</p>
+                  </div>
+                  
+                  <ArrowRight class="w-5 h-5 text-warning shrink-0" />
+                  
+                  <div class="flex-1 bg-hover/50 rounded-lg p-3 text-center border border-border">
+                    <p class="text-xs font-medium text-secondary mb-1">Hacia</p>
+                    <p class="font-semibold text-neutral">{{ registro.detalles.proceso_destino.nombre }}</p>
+                    <p class="text-xs text-tertiary mt-1">#{{ registro.detalles.proceso_destino.id }}</p>
+                  </div>
+                </div>
 
-            <!-- Observaciones generales -->
-            <div v-if="registro.observaciones && !registro.detalles && registro.accion !== 'CREAR_CONCENTRADO'" class="mt-3 bg-slate-50 dark:bg-slate-900/30 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-              <p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Observaciones:</p>
-              <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">"{{ registro.observaciones }}"</p>
+                <!-- Observaciones -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div v-if="registro.detalles.observaciones_fin_proceso || registro.detalles.obs_fin" class="bg-hover/50 rounded-lg p-3 border border-border">
+                    <div class="flex items-start gap-2">
+                      <CheckCircle2 class="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                      <div class="flex-1">
+                        <h5 class="text-xs font-semibold text-neutral mb-2">
+                          Observaciones finales ({{ registro.detalles.proceso_origen.nombre }})
+                        </h5>
+                        <p class="text-sm text-secondary leading-relaxed">"{{ registro.detalles.observaciones_fin_proceso || registro.detalles.obs_fin }}"</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="registro.detalles.observaciones_inicio_proceso || registro.detalles.obs_inicio" class="bg-hover/50 rounded-lg p-3 border border-border">
+                    <div class="flex items-start gap-2">
+                      <PlayCircle class="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                      <div class="flex-1">
+                        <h5 class="text-xs font-semibold text-neutral mb-2">
+                          Observaciones iniciales ({{ registro.detalles.proceso_destino.nombre }})
+                        </h5>
+                        <p class="text-sm text-secondary leading-relaxed">"{{ registro.detalles.observaciones_inicio_proceso || registro.detalles.obs_inicio }}"</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Procesos auto-completados -->
+                <div v-if="registro.detalles.procesos_auto_completados && registro.detalles.procesos_auto_completados.length > 0" 
+                     class="bg-hover/50 rounded-lg p-3 border border-border">
+                  <div class="flex items-start gap-2">
+                    <Sparkles class="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+                    <div class="flex-1">
+                      <h5 class="text-xs font-semibold text-neutral mb-2">
+                        Procesos completados automáticamente:
+                      </h5>
+                      <div class="flex flex-wrap gap-2">
+                        <span 
+                          v-for="(proceso, idx) in registro.detalles.procesos_auto_completados" 
+                          :key="idx"
+                          class="px-2.5 py-1 rounded-md bg-surface text-neutral text-xs font-medium border border-border"
+                        >
+                          {{ proceso }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FINALIZAR_PROCESAMIENTO -->
+              <div v-else-if="registro.accion === 'FINALIZAR_PROCESAMIENTO' && registro.detalles" class="space-y-3">
+                <div class="bg-hover/50 rounded-lg p-3 border border-border">
+                  <div class="flex items-start gap-3">
+                    <CheckCircle2 class="w-5 h-5 text-info shrink-0 mt-0.5" />
+                    <div class="flex-1 space-y-3">
+                      <h5 class="font-semibold text-neutral">
+                        Último proceso: {{ typeof registro.detalles.ultimo_proceso === 'object' ? registro.detalles.ultimo_proceso.nombre : registro.detalles.ultimo_proceso }}
+                      </h5>
+                      
+                      <div v-if="registro.detalles.observaciones_fin_proceso" class="border-t border-border pt-3">
+                        <p class="text-xs font-medium text-secondary mb-1">Observaciones finales del proceso:</p>
+                        <p class="text-sm text-neutral leading-relaxed">"{{ registro.detalles.observaciones_fin_proceso }}"</p>
+                      </div>
+
+                      <div v-if="registro.detalles.observaciones_generales" class="border-t border-border pt-3">
+                        <p class="text-xs font-medium text-secondary mb-1">Observaciones generales del procesamiento:</p>
+                        <p class="text-sm text-neutral font-medium leading-relaxed">"{{ registro.detalles.observaciones_generales }}"</p>
+                      </div>
+
+                      <div v-if="registro.detalles.total_procesos_completados" class="border-t border-border pt-3">
+                        <p class="text-sm text-secondary">
+                          Total de procesos completados: 
+                          <span class="font-bold text-neutral">{{ registro.detalles.total_procesos_completados }}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transición genérica -->
+              <div v-else-if="registro.estado_anterior && registro.estado" class="flex items-center gap-2 text-sm flex-wrap">
+                <span class="px-3 py-1.5 rounded-md bg-hover text-secondary font-medium border border-border">
+                  {{ registro.estado_anterior }}
+                </span>
+                <ArrowRight class="w-4 h-4 text-tertiary" />
+                <span class="px-3 py-1.5 rounded-md bg-primary/10 text-primary font-medium border border-primary/20">
+                  {{ registro.estado }}
+                </span>
+              </div>
+
+              <!-- Observaciones generales -->
+              <div v-if="registro.observaciones && !registro.detalles && registro.accion !== 'CREAR_CONCENTRADO'" class="mt-3 bg-hover/50 rounded-lg p-3 border border-border">
+                <p class="text-xs font-medium text-secondary mb-2">Observaciones:</p>
+                <p class="text-sm text-neutral leading-relaxed">"{{ registro.observaciones }}"</p>
+              </div>
+
+              <!-- Fecha completa al pie -->
+              <div class="text-xs text-tertiary mt-3 pt-3 border-t border-border flex items-center gap-1">
+                <Clock class="w-3 h-3" />
+                {{ formatDate(registro.timestamp) }}
+              </div>
             </div>
           </div>
         </div>
@@ -431,11 +475,20 @@ const getTituloAccion = (registro) => {
 
       <!-- Estado vacío -->
       <div v-if="historial.length === 0" class="text-center py-16">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
-          <FileText class="w-10 h-10 text-slate-400 dark:text-slate-500" />
+        <div class="w-20 h-20 rounded-full bg-hover center mx-auto mb-4 border border-border">
+          <FileText class="w-10 h-10 text-secondary" />
         </div>
-        <p class="text-slate-600 dark:text-slate-400 font-medium">No hay registros de historial disponibles</p>
+        <h3 class="text-xl font-semibold text-neutral mb-2">Sin historial registrado</h3>
+        <p class="text-sm text-secondary max-w-md mx-auto">
+          No hay registros de historial disponibles para este concentrado.
+        </p>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.bg-surface {
+  transition: box-shadow 0.2s ease-in-out;
+}
+</style>

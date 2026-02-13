@@ -262,10 +262,10 @@ const crearSegmentoLinea = (puntos, esOffline) => {
   if (puntos.length < 2) return
 
   const linea = L.polyline(puntos, {
-    color: esOffline ? '#F59E0B' : '#3B82F6', // 🔥 Naranja brillante para offline
-    weight: esOffline ? 4 : 4, // 🔥 Mismo grosor para ambos
-    opacity: esOffline ? 0.75 : 0.75, // 🔥 Misma opacidad para ambos
-    dashArray: null, // 🔥 Sin punteado, línea sólida para ambos
+    color: esOffline ? '#FF0000 ' : '#005FF9',
+    weight: esOffline ? 6 : 6, 
+    opacity: esOffline ? 0.8 : 0.8, 
+    dashArray: null, 
     smoothFactor: 1.5,
     lineCap: 'round',
     lineJoin: 'round'

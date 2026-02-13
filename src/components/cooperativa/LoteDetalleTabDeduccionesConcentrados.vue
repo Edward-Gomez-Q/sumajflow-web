@@ -349,7 +349,7 @@ const getMineralBadgeColor = (mineral) => {
                 <Package class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p class="font-medium text-neutral">{{ concentrado.codigoConcentrado }}</p>
+                <p class="font-medium text-neutral">#{{ concentrado.concentradoId }}</p>
                 <p class="text-sm text-secondary flex items-center gap-2">
                   <span class="px-2 py-0.5 rounded-md text-xs font-medium" 
                         :class="getMineralBadgeColor(concentrado.mineralPrincipal)">

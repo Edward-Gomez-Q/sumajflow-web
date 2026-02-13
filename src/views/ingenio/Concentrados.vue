@@ -158,41 +158,13 @@ const formatPeso = (peso) => {
 
           <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
             <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500 center shrink-0">
-                <Clock class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div>
-                <h3 class="text-xs sm:text-sm font-medium text-secondary">Esperando Reporte</h3>
-                <p class="text-xl sm:text-2xl font-bold text-neutral">
-                  {{ concentradosStore.estadisticas.esperandoReporte }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
-            <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500 center shrink-0">
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-800 center shrink-0">
                 <CheckCircle2 class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h3 class="text-xs sm:text-sm font-medium text-secondary">Listo Liquidación</h3>
+                <h3 class="text-xs sm:text-sm font-medium text-secondary">Vendido a comercializadora</h3>
                 <p class="text-xl sm:text-2xl font-bold text-neutral">
-                  {{ concentradosStore.estadisticas.listoLiquidacion }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-base rounded-xl p-4 border border-border shadow-sm">
-            <div class="flex items-center gap-2 sm:gap-3">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-500 center shrink-0">
-                <CheckCircle2 class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div>
-                <h3 class="text-xs sm:text-sm font-medium text-secondary">Vendidos</h3>
-                <p class="text-xl sm:text-2xl font-bold text-neutral">
-                  {{ concentradosStore.estadisticas.vendidos }}
+                  {{ concentradosStore.estadisticas.vendidoAComercializadora }}
                 </p>
               </div>
             </div>

@@ -279,7 +279,7 @@ const tiempoDesdeActualizacion = computed(() => {
                   <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-4 mb-2">
                       <div>
-                        <p class="font-semibold text-neutral">{{ camion.lotecodigo }}</p>
+                        <p class="font-semibold text-neutral">#{{ camion.loteId }}</p>
                         <p class="text-sm text-secondary">Camión #{{ camion.numeroCamion }} - {{ camion.placaVehiculo }}</p>
                       </div>
                       <span class="px-2 py-1 rounded-lg bg-blue-500 text-white text-xs font-medium shrink-0">

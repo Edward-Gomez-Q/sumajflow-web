@@ -266,9 +266,6 @@ const getTipoOperacionIcon = (tipo) => {
                     <h3 class="font-semibold text-neutral text-base sm:text-lg">
                       Lote #{{ lote.id }}
                     </h3>
-                    <span class="text-xs px-2 py-1 rounded-lg font-medium bg-indigo-500 text-white">
-                      {{ lote.tipoMineral }}
-                    </span>
                     <component 
                       :is="getTipoOperacionIcon(lote.tipoOperacion)"
                       class="w-4 h-4 text-primary"

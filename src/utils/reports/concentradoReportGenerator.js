@@ -109,14 +109,9 @@ class ConcentradoExcelReportGenerator {
     row++
     
     row = this.addDataRow(ws, row, 'Peso Inicial:', `${this.formatNumber(this.concentrado.pesoInicial)} Ton`)
-    row = this.addDataRow(ws, row, 'Peso Final:', this.concentrado.pesoFinal ? `${this.formatNumber(this.concentrado.pesoFinal)} Kg` : 'Pendiente')
-    row = this.addDataRow(ws, row, 'Merma:', this.concentrado.merma ? `${this.formatNumber(this.concentrado.merma)} Kg` : '-')
+    row = this.addDataRow(ws, row, 'Peso Final:', this.concentrado.pesoFinal ? `${this.formatNumber(this.concentrado.pesoFinal)} Ton` : 'Pendiente')
+    row = this.addDataRow(ws, row, 'Merma:', this.concentrado.merma ? `${this.formatNumber(this.concentrado.merma)} Ton` : '-')
     
-    // Calcular porcentaje de merma si hay datos
-    if (this.concentrado.merma && this.concentrado.pesoInicial) {
-      const porcentajeMerma = (this.concentrado.merma / (this.concentrado.pesoInicial * 1000)) * 100
-      row = this.addDataRow(ws, row, 'Porcentaje de Merma:', `${this.formatNumber(porcentajeMerma, 2)}%`)
-    }
     
     row = this.addDataRow(ws, row, 'Número de Sacos:', this.concentrado.numeroSacos || 0)
     row++
@@ -179,17 +174,6 @@ class ConcentradoExcelReportGenerator {
           cell.border = this.allBorders()
         })
         row++
-      })
-      row++
-    }
-
-    // SECCIÓN: MINERALES DISPONIBLES
-    if (this.concentrado.minerales?.length > 0) {
-      this.addSectionHeader(ws, row, 'MINERALES IDENTIFICADOS')
-      row++
-
-      this.concentrado.minerales.forEach(mineral => {
-        row = this.addDataRow(ws, row, `${mineral.nomenclatura}:`, mineral.nombre)
       })
       row++
     }
@@ -377,7 +361,7 @@ class ConcentradoExcelReportGenerator {
   // HOJA 3: HISTORIAL COMPLETO DE TRAZABILIDAD
   // ========================================================================
   createHistorialSheet() {
-    const ws = this.workbook.addWorksheet('Historial de Trazabilidad', {
+    const ws = this.workbook.addWorksheet('Historial Kanban', {
       views: [{ showGridLines: true }]
     })
     
@@ -385,7 +369,7 @@ class ConcentradoExcelReportGenerator {
 
     // ENCABEZADO
     ws.mergeCells(`A${row}:F${row}`)
-    this.setHeaderCell(ws, `A${row}`, 'HISTORIAL COMPLETO DE TRAZABILIDAD', COLORS.headerPrimary, 16)
+    this.setHeaderCell(ws, `A${row}`, 'HISTORIAL COMPLETO DE KANBAN', COLORS.headerPrimary, 16)
     ws.getRow(row).height = 30
     row += 2
 
@@ -713,7 +697,7 @@ class ConcentradoExcelReportGenerator {
         this.addSectionHeaderWide(ws, row, `CONCENTRADOS INCLUIDOS (${liq.concentrados.length})`, 6)
         row++
 
-        const concHeaders = ['ID', 'Código', 'Mineral', 'Peso Final (Kg)', 'Sacos', 'Estado']
+        const concHeaders = ['ID', 'Código', 'Mineral', 'Peso Final (Ton)', 'Sacos', 'Estado']
         concHeaders.forEach((header, idx) => {
           const cell = ws.getCell(row, idx + 1)
           cell.value = header

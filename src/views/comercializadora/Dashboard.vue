@@ -97,7 +97,7 @@ const maxCompras = computed(() => {
   return Math.max(...compras.map(m => Number(m.inversionTotal) || 0))
 })
 
-const formatCurrency = (value, currency = 'USD') => {
+const formatCurrency = (value, currency = 'BOB') => {
   if (value === null || value === undefined) return '$0.00'
   return new Intl.NumberFormat('es-BO', {
     style: 'currency',
@@ -402,69 +402,9 @@ onMounted(async () => {
                       <p class="text-xs text-tertiary">{{ cot.unidad }}</p>
                     </div>
                   </div>
-                  <component 
-                    :is="getTendenciaIcon(cot.tendencia)" 
-                    :class="getTendenciaColor(cot.tendencia)"
-                    class="w-5 h-5"
-                  />
-                </div>
-
-                <!-- Variaciones en una sola línea -->
-                <div class="flex items-center gap-2 mb-2">
-                  <div class="flex-1 text-center p-1.5 bg-surface rounded-lg border border-border">
-                    <p :class="getVariacionColor(cot.variacion24h)" class="text-xs font-bold">
-                      {{ Number(cot.variacion24h) > 0 ? '+' : '' }}{{ cot.variacion24h }}%
-                    </p>
-                    <p class="text-xs text-tertiary">24h</p>
-                  </div>
-                  <div class="flex-1 text-center p-1.5 bg-surface rounded-lg border border-border">
-                    <p :class="getVariacionColor(cot.variacion7d)" class="text-xs font-bold">
-                      {{ Number(cot.variacion7d) > 0 ? '+' : '' }}{{ cot.variacion7d }}%
-                    </p>
-                    <p class="text-xs text-tertiary">7d</p>
-                  </div>
-                  <div class="flex-1 text-center p-1.5 bg-surface rounded-lg border border-border">
-                    <p :class="getVariacionColor(cot.variacion30d)" class="text-xs font-bold">
-                      {{ Number(cot.variacion30d) > 0 ? '+' : '' }}{{ cot.variacion30d }}%
-                    </p>
-                    <p class="text-xs text-tertiary">30d</p>
-                  </div>
-                </div>
-
-                <!-- Rango compacto -->
-                <div class="flex items-center justify-between text-xs border-t border-border pt-2">
-                  <div>
-                    <p class="text-tertiary">Mín</p>
-                    <p class="font-medium text-neutral">{{ formatCurrency(cot.minimo30d) }}</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="text-tertiary">Prom</p>
-                    <p class="font-medium text-neutral">{{ formatCurrency(cot.promedioMovil) }}</p>
-                  </div>
-                  <div class="text-right">
-                    <p class="text-tertiary">Máx</p>
-                    <p class="font-medium text-neutral">{{ formatCurrency(cot.maximo30d) }}</p>
-                  </div>
                 </div>
               </div>
 
-              <!-- Alertas de Cotización - COMPACTAS -->
-              <div v-if="alertasCotizacion.length > 0" class="space-y-2">
-                <h4 class="font-semibold text-neutral text-xs">Alertas de Mercado</h4>
-                <div
-                  v-for="alerta in alertasCotizacion"
-                  :key="alerta.mineral"
-                  class="border-l-4 border-l-warning bg-yellow-50 dark:bg-yellow-900/10 rounded-lg p-2"
-                >
-                  <div class="flex items-start gap-2">
-                    <AlertTriangle class="w-3 h-3 text-warning shrink-0 mt-0.5" />
-                    <div class="text-xs">
-                      <p class="font-semibold text-neutral">{{ alerta.mineral }}: {{ alerta.mensaje }}</p>
-                      <p class="text-secondary text-xs mt-0.5">{{ alerta.recomendacion }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -502,7 +442,7 @@ onMounted(async () => {
               </div>
               <div class="bg-hover border border-border rounded-xl p-4">
                 <p class="text-xs text-secondary mb-1">Peso Total</p>
-                <p class="text-xl sm:text-2xl font-bold text-neutral">{{ formatNumber(resumenCartera.pesoTotal / 1000) }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-neutral">{{ formatNumber(resumenCartera.pesoTotal) }}</p>
                 <p class="text-xs text-tertiary">toneladas</p>
               </div>
               <div class="bg-hover border border-border rounded-xl p-4">
@@ -524,7 +464,7 @@ onMounted(async () => {
                     <th class="px-4 py-3 text-left text-xs font-semibold text-neutral">Ganancia</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-neutral">ROI</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-neutral">Días</th>
-                </tr>
+                  </tr>
                 </thead>
                 <tbody>
                   <tr
@@ -537,19 +477,29 @@ onMounted(async () => {
                       <span 
                         class="px-2 py-1 rounded-lg text-xs font-medium"
                         :class="{
-                          'bg-success/10 text-success border border-success': conc.mineralPrincipal === 'Zinc',
-                          'bg-accent/10 text-accent border border-accent': conc.mineralPrincipal === 'Plomo',
-                          'bg-warning/10 text-warning border border-warning': conc.mineralPrincipal === 'Plata'
+                          'bg-success/10 text-success border border-success': conc.mineralPrincipal === 'Zn',
+                          'bg-accent/10 text-accent border border-accent': conc.mineralPrincipal === 'Pb',
+                          'bg-warning/10 text-warning border border-warning': conc.mineralPrincipal === 'Ag'
                         }"
                       >
                         {{ conc.mineralPrincipal }}
                       </span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-neutral">{{ formatNumber(conc.pesoFinal) }} kg</td>
+                    <td class="px-4 py-3 text-sm text-neutral">{{ formatNumber(conc.pesoFinal) }} Ton</td>
                     <td class="px-4 py-3 text-sm text-neutral">{{ formatCurrency(conc.valorCompra) }}</td>
                     <td class="px-4 py-3 text-sm font-semibold text-neutral">{{ formatCurrency(conc.valorizacionActual) }}</td>
-                    <td class="px-4 py-3 text-sm font-semibold text-success">+{{ formatCurrency(conc.ganancia) }}</td>
-                    <td class="px-4 py-3 text-sm font-bold text-success">+{{ conc.rentabilidad }}%</td>
+                    <td 
+                      class="px-4 py-3 text-sm font-semibold"
+                      :class="conc.ganancia >= 0 ? 'text-success' : 'text-error'"
+                    >
+                      {{ conc.ganancia >= 0 ? '+' : '' }}{{ formatCurrency(conc.ganancia) }}
+                    </td>
+                    <td 
+                      class="px-4 py-3 text-sm font-bold"
+                      :class="conc.rentabilidad >= 0 ? 'text-success' : 'text-error'"
+                    >
+                      {{ conc.rentabilidad >= 0 ? '+' : '' }}{{ conc.rentabilidad }}%
+                    </td>
                     <td class="px-4 py-3 text-sm text-secondary">{{ conc.diasEnCartera }}</td>
                   </tr>
                 </tbody>
@@ -588,7 +538,7 @@ onMounted(async () => {
                       class="absolute inset-y-0 left-0 bg-primary rounded-lg transition-all duration-500 flex items-center justify-end pr-2"
                       :style="{ width: `${(Number(item.inversionTotal) / maxCompras) * 100}%` }"
                     >
-                      <span v-if="item.inversionTotal > 0" class="text-xs text-white font-medium">{{ formatNumber(item.pesoTotal / 1000) }} ton</span>
+                      <span v-if="item.inversionTotal > 0" class="text-xs text-white font-medium">{{ formatNumber(item.pesoTotal) }} ton</span>
                     </div>
                   </div>
                 </div>

@@ -311,269 +311,175 @@ onMounted(() => {
             </div>
           </div>
         </div>
+        <!-- Kanban de Procesamiento + Cola de Entrada -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Kanban de Procesamiento (2/3) -->
+  <div class="lg:col-span-2 bg-surface border border-border rounded-xl overflow-hidden">
+    <div class="p-4 border-b border-border">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Package class="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h3 class="font-semibold text-neutral">Kanban de Procesamiento</h3>
+            <p class="text-xs text-secondary">
+              {{ kanbanData.porIniciar + kanbanData.enProceso + kanbanData.esperandoReporte + kanbanData.listoLiquidacion }} concentrados totales
+            </p>
+          </div>
+        </div>
+        <button class="btn-outline text-xs py-1.5 px-3 flex items-center gap-2" @click="irAConcentrados">
+          <Package class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">Ver concentrados</span>
+        </button>
+      </div>
+    </div>
 
-        <!-- Kanban de Procesamiento - MÁS COMPACTO -->
-        <div class="bg-surface border border-border rounded-xl overflow-hidden">
-          <div class="p-4 border-b border-border">
+    <!-- Tablero Kanban -->
+    <div class="p-4 overflow-x-auto">
+      <div class="flex gap-3 min-w-max">
+        <div
+          v-for="columna in kanbanColumnas"
+          :key="columna.id"
+          class="shrink-0 w-64"
+        >
+          <!-- Header Columna -->
+          <div class="bg-hover border border-border rounded-t-xl p-3">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Package class="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h3 class="font-semibold text-neutral">Kanban de Procesamiento</h3>
-                  <p class="text-xs text-secondary">
-                    {{ kanbanData.porIniciar + kanbanData.enProceso + kanbanData.esperandoReporte + kanbanData.listoLiquidacion }} concentrados totales
-                  </p>
-                </div>
+              <div class="flex items-center gap-2">
+                <div 
+                  :class="getKanbanColor(columna.id)"
+                  class="w-2.5 h-2.5 rounded-full"
+                ></div>
+                <h4 class="font-semibold text-sm text-neutral">{{ columna.titulo }}</h4>
               </div>
-              <button class="btn-outline text-xs py-1.5 px-3 flex items-center gap-2" @click="irAConcentrados">
-                <Package class="w-3.5 h-3.5" />
-                <span class="hidden sm:inline">Ver concentrados</span>
-              </button>
+              <span class="bg-surface border border-border px-2 py-0.5 rounded text-xs font-bold text-neutral">
+                {{ columna.concentrados.length }}
+              </span>
             </div>
           </div>
 
-          <!-- Tablero Kanban - COLUMNAS MÁS PEQUEÑAS -->
-          <div class="p-4 overflow-x-auto">
-            <div class="flex gap-3 min-w-max">
-              <div
-                v-for="columna in kanbanColumnas"
-                :key="columna.id"
-                class="shrink-0 w-64"
-              >
-                <!-- Header Columna - MÁS COMPACTO -->
-                <div class="bg-hover border border-border rounded-t-xl p-3">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <div 
-                        :class="getKanbanColor(columna.id)"
-                        class="w-2.5 h-2.5 rounded-full"
-                      ></div>
-                      <h4 class="font-semibold text-sm text-neutral">{{ columna.titulo }}</h4>
-                    </div>
-                    <span class="bg-surface border border-border px-2 py-0.5 rounded text-xs font-bold text-neutral">
-                      {{ columna.concentrados.length }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Cards de Concentrados - MÁS COMPACTOS -->
-                <div class="bg-background border border-border border-t-0 rounded-b-xl p-2 space-y-2 min-h-[280px] max-h-[400px] overflow-y-auto scrollbar-thin">
-                  <div
-                    v-for="concentrado in columna.concentrados"
-                    :key="concentrado.id"
-                    class="bg-surface border border-border rounded-lg p-3 hover:shadow-md transition-all cursor-pointer"
-                  >
-                    <!-- Header Card - MÁS COMPACTO -->
-                    <div class="flex items-start justify-between mb-2">
-                      <div>
-                        <p class="font-semibold text-neutral text-xs">{{ concentrado.id }}</p>
-                        <p class="text-xs text-secondary">{{ concentrado.mineralPrincipal }}</p>
-                      </div>
-                      <span 
-                        :class="[getKanbanColor(columna.id), 'px-1.5 py-0.5 rounded text-xs font-medium text-white']"
-                      >
-                        {{ concentrado.progreso.porcentaje }}%
-                      </span>
-                    </div>
-
-                    <!-- Info - MÁS COMPACTA -->
-                    <div class="space-y-1.5 mb-2">
-                      <div class="flex items-center justify-between text-xs">
-                        <span class="text-tertiary">Socio:</span>
-                        <span class="font-medium text-neutral truncate ml-2">{{ concentrado.socioNombre }}</span>
-                      </div>
-                      <div class="flex items-center justify-between text-xs">
-                        <span class="text-tertiary">Peso:</span>
-                        <span class="font-medium text-neutral">{{ formatNumber(concentrado.pesoInicial) }} kg</span>
-                      </div>
-                      <div class="flex items-center justify-between text-xs">
-                        <span class="text-tertiary">Ingreso:</span>
-                        <span class="font-medium text-neutral">{{ formatDate(concentrado.fechaCreacion) }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Estado vacío -->
-                  <div v-if="columna.concentrados.length === 0" class="flex items-center justify-center py-8">
-                    <p class="text-xs text-tertiary">Sin concentrados</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Control de Planta + Cola de Entrada -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Control de Planta (2/3) -->
-          <div class="lg:col-span-2 bg-surface border border-border rounded-xl overflow-hidden">
-            <div class="p-5 border-b border-border">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Activity class="w-5 h-5 text-primary" />
-                </div>
+          <!-- Cards de Concentrados -->
+          <div class="bg-background border border-border border-t-0 rounded-b-xl p-2 space-y-2 min-h-[280px] max-h-[400px] overflow-y-auto scrollbar-thin">
+            <div
+              v-for="concentrado in columna.concentrados"
+              :key="concentrado.id"
+              class="bg-surface border border-border rounded-lg p-3 hover:shadow-md transition-all cursor-pointer"
+            >
+              <!-- Header Card -->
+              <div class="flex items-start justify-between mb-2">
                 <div>
-                  <h3 class="font-semibold text-neutral text-lg">Control de Planta</h3>
-                  <p class="text-sm text-secondary">Estado de procesos en tiempo real</p>
+                  <p class="font-semibold text-neutral text-xs">{{ concentrado.id }}</p>
+                  <p class="text-xs text-secondary">{{ concentrado.mineralPrincipal }}</p>
                 </div>
-              </div>
-            </div>
-
-            <div class="p-5 space-y-4 max-h-[600px] overflow-y-auto scrollbar-custom">
-              <!-- Turno Actual -->
-              <div class="bg-hover border border-border rounded-xl p-4">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-accent/10 rounded-lg flex items-center justify-center">
-                      <Clock class="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p class="font-semibold text-neutral">Turno {{ turnoActual.turno.charAt(0).toUpperCase() + turnoActual.turno.slice(1) }}</p>
-                      <p class="text-sm text-secondary">
-                        {{ formatTime(turnoActual.horaInicio) }} - {{ formatTime(turnoActual.horaFin) }}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="text-right">
-                    <p class="text-2xl font-bold text-neutral">{{ turnoActual.operadores }}</p>
-                    <p class="text-xs text-secondary">Operadores</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Procesos -->
-              <div class="space-y-3">
-                <div
-                  v-for="proceso in procesosPlanta"
-                  :key="proceso.nombre"
-                  class="bg-hover border border-border rounded-xl p-4"
+                <span 
+                  :class="[getKanbanColor(columna.id), 'px-1.5 py-0.5 rounded text-xs font-medium text-white']"
                 >
-                  <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center gap-3">
-                      <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <component :is="getProcesoIcon(proceso.nombre)" class="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 class="font-semibold text-neutral">{{ proceso.nombre }}</h4>
-                        <p class="text-xs text-secondary">{{ proceso.concentradosEnEtapa }} concentrados</p>
-                      </div>
-                    </div>
-                    <div class="text-right">
-                      <p class="text-lg font-bold text-neutral">{{ Number(proceso.eficiencia).toFixed(0) }}%</p>
-                      <p class="text-xs text-secondary">Eficiencia</p>
-                    </div>
-                  </div>
-
-                  <!-- Barra de Utilización -->
-                  <div class="mb-3">
-                    <div class="flex items-center justify-between text-xs mb-1">
-                      <span class="text-secondary">Utilización</span>
-                      <span class="font-medium text-neutral">
-                        {{ Number(proceso.utilizado).toFixed(0) }} / {{ Number(proceso.capacidadMaxima).toFixed(0) }} ton/h
-                      </span>
-                    </div>
-                    <div class="h-2 bg-background rounded-full overflow-hidden">
-                      <div 
-                        class="h-full bg-primary rounded-full transition-all duration-500"
-                        :style="{ width: `${(Number(proceso.utilizado) / Number(proceso.capacidadMaxima)) * 100}%` }"
-                      ></div>
-                    </div>
-                  </div>
-
-                  <!-- Detalles -->
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <p class="text-xs text-tertiary mb-0.5">Tiempo promedio</p>
-                      <p class="text-sm text-neutral font-medium">{{ Number(proceso.tiempoPromedioEtapa).toFixed(1) }} hrs</p>
-                    </div>
-                    <div>
-                      <p class="text-xs text-tertiary mb-0.5">Próx. mantenimiento</p>
-                      <p class="text-sm text-neutral font-medium">{{ formatDate(proceso.proximoMantenimiento) }}</p>
-                    </div>
-                  </div>
-                </div>
+                  {{ concentrado.progreso.porcentaje }}%
+                </span>
               </div>
 
-            </div>
-          </div>
-
-          <!-- Cola de Entrada (1/3) -->
-          <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <div class="p-4 border-b border-border">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <Package class="w-5 h-5 text-primary" />
-                  <h3 class="font-semibold text-neutral">Cola de Entrada</h3>
+              <!-- Info -->
+              <div class="space-y-1.5 mb-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-tertiary">Socio:</span>
+                  <span class="font-medium text-neutral truncate ml-2">{{ concentrado.socioNombre }}</span>
                 </div>
-                <button class="btn-outline text-sm py-2 px-3 flex items-center gap-2" @click="irALotes">
-                  <Package class="w-4 h-4" />
-                  <span class="hidden sm:inline">Ir a mis concentrados</span>
-                </button>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-tertiary">Peso:</span>
+                  <span class="font-medium text-neutral">{{ formatNumber(concentrado.pesoInicial) }} kg</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-tertiary">Ingreso:</span>
+                  <span class="font-medium text-neutral">{{ formatDate(concentrado.fechaCreacion) }}</span>
+                </div>
               </div>
-
-
             </div>
 
-            <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto scrollbar-custom">
-              <div
-                v-for="lote in lotesDisponibles"
-                :key="lote.id"
-                class="bg-hover border border-border rounded-lg p-3"
-              >
-                <div class="flex items-start justify-between mb-2">
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium text-sm text-neutral">{{ lote.id }}</p>
-                    <p class="text-xs text-secondary truncate">{{ lote.socioNombre }}</p>
-                  </div>
-                  <span 
-                    :class="[getPrioridadColor(lote.prioridad), 'px-2 py-0.5 rounded text-xs font-medium ml-2']"
-                  >
-                    {{ lote.prioridad.toUpperCase() }}
-                  </span>
-                </div>
-
-                <div class="space-y-1.5 mb-3">
-                  <div class="flex items-center justify-between text-xs">
-                    <span class="text-tertiary">Mineral:</span>
-                    <div class="flex items-center gap-1">
-                      <span 
-                        v-for="mineral in lote.minerales" 
-                        :key="mineral"
-                        class="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium"
-                      >
-                        {{ mineral }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex items-center justify-between text-xs">
-                    <span class="text-tertiary">Peso:</span>
-                    <span class="font-medium text-neutral">{{ formatNumber(lote.pesoReal) }} kg</span>
-                  </div>
-                  <div class="flex items-center justify-between text-xs">
-                    <span class="text-tertiary">Esperando:</span>
-                    <span class="font-medium text-neutral">{{ lote.diasEspera }} días</span>
-                  </div>
-                </div>
-
-                <div class="p-2 bg-surface rounded-lg border border-border mb-3">
-                  <p class="text-xs text-secondary">
-                    <strong>Est.:</strong> {{ lote.concentradosEstimados }} concentrados en {{ Number(lote.tiempoProcesamientoEstimado).toFixed(0) }}h
-                  </p>
-                </div>
-              </div>
-
-              <!-- Estado vacío -->
-              <div v-if="lotesDisponibles.length === 0" class="text-center py-12">
-                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle class="w-8 h-8 text-primary" />
-                </div>
-                <p class="text-sm text-secondary">No hay lotes en espera</p>
-              </div>
+            <!-- Estado vacío -->
+            <div v-if="columna.concentrados.length === 0" class="flex items-center justify-center py-8">
+              <p class="text-xs text-tertiary">Sin concentrados</p>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cola de Entrada (1/3) -->
+  <div class="bg-surface border border-border rounded-xl overflow-hidden">
+    <div class="p-4 border-b border-border">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Package class="w-5 h-5 text-primary" />
+          <h3 class="font-semibold text-neutral">Cola de Entrada</h3>
+        </div>
+        <button class="btn-outline text-sm py-2 px-3 flex items-center gap-2" @click="irALotes">
+          <Package class="w-4 h-4" />
+          <span class="hidden sm:inline">Ir a mis concentrados</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto scrollbar-custom">
+      <div
+        v-for="lote in lotesDisponibles"
+        :key="lote.id"
+        class="bg-hover border border-border rounded-lg p-3"
+      >
+        <div class="flex items-start justify-between mb-2">
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-sm text-neutral">{{ lote.id }}</p>
+            <p class="text-xs text-secondary truncate">{{ lote.socioNombre }}</p>
+          </div>
+          <span 
+            :class="[getPrioridadColor(lote.prioridad), 'px-2 py-0.5 rounded text-xs font-medium ml-2']"
+          >
+            {{ lote.prioridad.toUpperCase() }}
+          </span>
+        </div>
+
+        <div class="space-y-1.5 mb-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-tertiary">Mineral:</span>
+            <div class="flex items-center gap-1">
+              <span 
+                v-for="mineral in lote.minerales" 
+                :key="mineral"
+                class="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium"
+              >
+                {{ mineral }}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-tertiary">Peso:</span>
+            <span class="font-medium text-neutral">{{ formatNumber(lote.pesoReal) }} kg</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-tertiary">Esperando:</span>
+            <span class="font-medium text-neutral">{{ lote.diasEspera }} días</span>
+          </div>
+        </div>
+
+        <div class="p-2 bg-surface rounded-lg border border-border mb-3">
+          <p class="text-xs text-secondary">
+            <strong>Est.:</strong> {{ lote.concentradosEstimados }} concentrados en {{ Number(lote.tiempoProcesamientoEstimado).toFixed(0) }}h
+          </p>
+        </div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div v-if="lotesDisponibles.length === 0" class="text-center py-12">
+        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+          <CheckCircle class="w-8 h-8 text-primary" />
+        </div>
+        <p class="text-sm text-secondary">No hay lotes en espera</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         <!-- Análisis de Producción - PRODUCCIÓN POR MINERAL MÁS COMPACTA -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -190,9 +190,8 @@ generate() {
     
     const datosPesos = [
       ['Peso Inicial', `${this.formatNumber(this.concentrado.pesoInicial)} Ton`],
-      ['Peso Final', this.concentrado.pesoFinal ? `${this.formatNumber(this.concentrado.pesoFinal)} Kg` : 'Pendiente'],
-      ['Merma', this.concentrado.merma ? `${this.formatNumber(this.concentrado.merma)} Kg` : '-'],
-      ['Porcentaje de Merma', porcentajeMerma],
+      ['Peso Final', this.concentrado.pesoFinal ? `${this.formatNumber(this.concentrado.pesoFinal)} Ton` : 'Pendiente'],
+      ['Merma', this.concentrado.merma ? `${this.formatNumber(this.concentrado.merma)} Ton` : '-'],
       ['Número de Sacos', (this.concentrado.numeroSacos || 0).toString()]
     ]
     
@@ -415,7 +414,7 @@ generate() {
   // ==========================================================================
   addHistorial() {
     this.checkPageBreak(80)
-    this.addSectionTitle('HISTORIAL DE TRAZABILIDAD', COLORS.primaryLight)
+    this.addSectionTitle('HISTORIAL KANBAN', COLORS.primaryLight)
     
     const historial = this.procesarHistorial()
     
@@ -493,7 +492,7 @@ generate() {
       }
       
       if (det.pesos_finales) {
-        detalles.push(`Peso final: ${det.pesos_finales.peso_final} kg, Merma: ${det.pesos_finales.porcentaje_merma}%`)
+        detalles.push(`Peso final: ${det.pesos_finales.peso_final} Ton, Merma: ${det.pesos_finales.porcentaje_merma}%`)
       }
       
       if (det.estado_anterior) {

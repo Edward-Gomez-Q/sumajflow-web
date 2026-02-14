@@ -729,7 +729,7 @@ const tiempoDesdeActualizacion = computed(() => {
               <div class="space-y-3">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <p class="font-semibold text-neutral">{{ concentrado.codigo }}</p>
+                    <p class="font-semibold text-neutral">00{{ concentrado.id }}</p>
                     <p class="text-xs text-secondary">{{ concentrado.mineralPrincipal }}</p>
                   </div>
                   <span 

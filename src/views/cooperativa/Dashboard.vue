@@ -388,61 +388,6 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-
-          <!-- Monitor de Balanzas -->
-          <div class="bg-surface border border-border rounded-xl overflow-hidden">
-            <div class="p-4 border-b border-border">
-              <div class="flex items-center gap-2">
-                <Scale class="w-5 h-5 text-primary" />
-                <h3 class="font-semibold text-neutral">Balanzas</h3>
-              </div>
-            </div>
-            <div class="p-4 space-y-3 max-h-[280px] overflow-y-auto scrollbar-custom">
-              <div
-                v-for="balanza in balanzasMonitor"
-                :key="balanza.id"
-                class="bg-hover border border-border rounded-lg p-3"
-              >
-                <div class="flex items-start justify-between mb-2">
-                  <div class="flex-1">
-                    <p class="font-medium text-sm text-neutral">{{ balanza.nombre }}</p>
-                    <p class="text-xs text-secondary">{{ balanza.pesajesHoy || 0 }} pesajes hoy</p>
-                  </div>
-                  <span 
-                    :class="[getEstadoBalanzaColor(balanza.estado), 'px-2 py-0.5 rounded text-xs font-medium text-white']"
-                  >
-                    {{ getEstadoBalanzaTexto(balanza.estado) }}
-                  </span>
-                </div>
-                
-                <div v-if="balanza.estado === 'en_uso' && balanza.pesajeActual" class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
-                  <p class="text-xs text-blue-700 dark:text-blue-400">
-                    <strong>Pesando:</strong> {{ balanza.pesajeActual.placaVehiculo }}
-                  </p>
-                  <p class="text-xs text-blue-600 dark:text-blue-500">
-                    Lote #{{ balanza.pesajeActual.loteId }} - {{ balanza.pesajeActual.tipoPesaje }}
-                  </p>
-                </div>
-
-                <div v-if="balanza.estado === 'disponible'" class="mt-2">
-                  <p class="text-xs text-success">
-                    <strong>Disponible</strong> - Espera: {{ balanza.tiempoPromedioEspera || 0 }} min
-                  </p>
-                </div>
-
-                <div v-if="balanza.estado === 'mantenimiento'" class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-                  <p class="text-xs text-error">
-                    <strong>Fuera de servicio</strong>
-                  </p>
-                </div>
-              </div>
-
-              <!-- Estado vacío -->
-              <div v-if="balanzasMonitor.length === 0" class="text-center py-6">
-                <p class="text-sm text-secondary">No hay balanzas registradas</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

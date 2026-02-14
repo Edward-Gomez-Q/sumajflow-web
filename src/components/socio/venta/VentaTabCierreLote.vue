@@ -65,7 +65,6 @@ const cargarPrecios = async () => {
 }
 
 // ========== DATOS DEL REPORTE ACORDADO ==========
-// Corregir la ruta de acceso a reporteAcordado
 const leyPb = computed(() => {
   return props.venta.reportesQuimicos?.reporteAcordado?.leyPb || 0
 })
@@ -78,15 +77,12 @@ const leyAgDm = computed(() => {
 
 // ========== PESO ==========
 const pesoToneladas = computed(() => {
-  // Primero intentar con pesos.pesoTmh
   if (props.venta.pesos?.pesoTmh && props.venta.pesos.pesoTmh > 0) {
     return props.venta.pesos.pesoTmh
   }
-  // Luego intentar con pesos.pesoTms
   if (props.venta.pesos?.pesoTms && props.venta.pesos.pesoTms > 0) {
     return props.venta.pesos.pesoTms
   }
-  // Fallback: peso en kg → ton
   const pesoKg = props.venta.pesos?.pesoTotalEntrada || 0
   return pesoKg > 0 ? pesoKg / 1000 : 0
 })
@@ -132,45 +128,125 @@ const valorBrutoPb = computed(() => precioPorTonPb.value * pesoToneladas.value)
 const valorBrutoZn = computed(() => precioPorTonZn.value * pesoToneladas.value)
 const valorBrutoAg = computed(() => precioPorTonAg.value * pesoToneladas.value)
 const valorBrutoTotal = computed(() => valorBrutoPb.value + valorBrutoZn.value + valorBrutoAg.value)
-const valorBrutoPrincipal = computed(() => valorBrutoPb.value + valorBrutoZn.value)
 
-// ========== DEDUCCIONES ==========
+// ========== DEDUCCIONES CORREGIDAS ==========
+// ✅ CAMBIO PRINCIPAL: Cada mineral tiene su propia regalía
 const deducciones = computed(() => {
   if (!deduccionesConfig.value || deduccionesConfig.value.length === 0) return []
 
-  const mineralPrincipal = valorBrutoPb.value >= valorBrutoZn.value ? 'Pb' : 'Zn'
   const deds = []
 
   for (const config of deduccionesConfig.value) {
-    if (config.aplicaAMineral && config.aplicaAMineral !== 'todos') {
-      if (config.aplicaAMineral === 'Ag' && valorBrutoAg.value <= 0) continue
-      if (config.aplicaAMineral !== 'Ag' && config.aplicaAMineral !== mineralPrincipal) continue
+    const aplicaA = config.aplicaAMineral
+
+    // ========== FILTRADO POR MINERAL ==========
+    if (aplicaA && aplicaA !== 'todos') {
+      
+      // Regalía de Pb
+      if (aplicaA === 'Pb') {
+        if (valorBrutoPb.value > 0) {
+          deds.push({
+            concepto: config.concepto,
+            porcentaje: config.porcentaje,
+            monto: valorBrutoPb.value * (config.porcentaje / 100),
+            tipo: config.tipoDeduccion,
+            baseCalculo: 'valor_bruto_pb', // ✅ Base específica
+            orden: config.orden,
+            mineral: 'Pb' // Para identificación visual
+          })
+        }
+        continue // ✅ No aplicar lógica adicional
+      }
+      
+      // Regalía de Zn
+      if (aplicaA === 'Zn') {
+        if (valorBrutoZn.value > 0) {
+          deds.push({
+            concepto: config.concepto,
+            porcentaje: config.porcentaje,
+            monto: valorBrutoZn.value * (config.porcentaje / 100),
+            tipo: config.tipoDeduccion,
+            baseCalculo: 'valor_bruto_zn', // ✅ Base específica
+            orden: config.orden,
+            mineral: 'Zn'
+          })
+        }
+        continue
+      }
+      
+      // Regalía de Ag
+      if (aplicaA === 'Ag') {
+        if (valorBrutoAg.value > 0) {
+          deds.push({
+            concepto: config.concepto,
+            porcentaje: config.porcentaje,
+            monto: valorBrutoAg.value * (config.porcentaje / 100),
+            tipo: config.tipoDeduccion,
+            baseCalculo: 'valor_bruto_ag', // ✅ Base ya existente
+            orden: config.orden,
+            mineral: 'Ag'
+          })
+        }
+        continue
+      }
     }
 
+    // ========== DEDUCCIONES GENERALES (aplican a todos) ==========
+    // Ej: transporte, maquila, etc.
     let baseValor = valorBrutoTotal.value
-    if (config.baseCalculo === 'valor_bruto_principal') baseValor = valorBrutoPrincipal.value
-    else if (config.baseCalculo === 'valor_bruto_ag') baseValor = valorBrutoAg.value
+    
+    // Si tiene base de cálculo específica, usarla
+    if (config.baseCalculo === 'valor_bruto_pb') {
+      baseValor = valorBrutoPb.value
+    } else if (config.baseCalculo === 'valor_bruto_zn') {
+      baseValor = valorBrutoZn.value
+    } else if (config.baseCalculo === 'valor_bruto_ag') {
+      baseValor = valorBrutoAg.value
+    }
+    // De lo contrario, usar valor_bruto_total (default)
 
     deds.push({
       concepto: config.concepto,
       porcentaje: config.porcentaje,
       monto: baseValor * (config.porcentaje / 100),
       tipo: config.tipoDeduccion,
-      baseCalculo: config.baseCalculo,
-      orden: config.orden
+      baseCalculo: config.baseCalculo || 'valor_bruto_total',
+      orden: config.orden,
+      mineral: null // Deducción general
     })
   }
 
   return deds.sort((a, b) => a.orden - b.orden)
 })
 
+// ========== AGRUPACIÓN POR TIPO ==========
 const deduccionesPorTipo = computed(() => {
   const regalias = deducciones.value.filter(d => d.tipo === 'regalia')
   const aportes = deducciones.value.filter(d => d.tipo === 'aporte')
+  
   return {
-    regalias, aportes,
+    regalias, 
+    aportes,
     totalRegalias: regalias.reduce((s, d) => s + d.monto, 0),
     totalAportes: aportes.reduce((s, d) => s + d.monto, 0)
+  }
+})
+
+// ========== AGRUPACIÓN POR MINERAL (para mejor visualización) ==========
+const deduccionesPorMineral = computed(() => {
+  const porMineral = {
+    Pb: deducciones.value.filter(d => d.mineral === 'Pb'),
+    Zn: deducciones.value.filter(d => d.mineral === 'Zn'),
+    Ag: deducciones.value.filter(d => d.mineral === 'Ag'),
+    general: deducciones.value.filter(d => !d.mineral)
+  }
+  
+  return {
+    ...porMineral,
+    totalPb: porMineral.Pb.reduce((s, d) => s + d.monto, 0),
+    totalZn: porMineral.Zn.reduce((s, d) => s + d.monto, 0),
+    totalAg: porMineral.Ag.reduce((s, d) => s + d.monto, 0),
+    totalGeneral: porMineral.general.reduce((s, d) => s + d.monto, 0)
   }
 })
 
@@ -189,7 +265,7 @@ const cerrarVenta = async () => {
   const resultado = await ventaStore.cerrarVenta(props.venta.id, {
     observaciones: form.value.observaciones
   })
-  if (resultado.success) emit('cerrado') // ✅ Esto está bien
+  if (resultado.success) emit('cerrado')
 }
 
 // ========== FORMATO ==========
@@ -389,36 +465,100 @@ const formatNumber = (v, d = 4) => (v === null || v === undefined) ? '0.00' : pa
           </div>
         </div>
 
-        <!-- Deducciones -->
+        <!-- ========== DEDUCCIONES MEJORADAS ========== -->
         <div>
           <h4 class="text-sm font-semibold text-neutral mb-3 flex items-center gap-2">
-            <TrendingDown class="w-4 h-4" /> Deducciones por Ley
+            <TrendingDown class="w-4 h-4" /> Deducciones por Mineral
           </h4>
 
+          <!-- Regalías por Mineral -->
           <div v-if="deduccionesPorTipo.regalias.length > 0" class="mb-4">
             <div class="flex items-center justify-between mb-2">
               <h5 class="text-xs font-semibold text-neutral uppercase">Regalías Mineras</h5>
-              <span class="text-xs font-bold text-red-600 dark:text-red-400">-{{ formatCurrency(deduccionesPorTipo.totalRegalias, 'USD') }}</span>
+              <span class="text-xs font-bold text-red-600 dark:text-red-400">
+                -{{ formatCurrency(deduccionesPorTipo.totalRegalias, 'USD') }}
+              </span>
             </div>
+            
             <div class="space-y-2">
-              <div v-for="(ded, idx) in deduccionesPorTipo.regalias" :key="'r-'+idx" class="grid grid-cols-3 gap-2 items-center p-3 bg-red-500/10 rounded-lg border border-red-500/30 text-sm">
-                <span class="font-medium text-neutral">{{ ded.concepto }}</span>
-                <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
-                <span class="text-right font-medium text-red-600 dark:text-red-400">{{ formatCurrency(ded.monto, 'USD') }}</span>
+              <!-- Regalías de Pb -->
+              <div v-if="deduccionesPorMineral.Pb.length > 0" class="space-y-1">
+                <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+                  Plomo (Pb) - Base: {{ formatCurrency(valorBrutoPb, 'USD') }}
+                </p>
+                <div 
+                  v-for="(ded, idx) in deduccionesPorMineral.Pb" 
+                  :key="'pb-'+idx" 
+                  class="grid grid-cols-3 gap-2 items-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/30 text-sm ml-4"
+                >
+                  <span class="font-medium text-neutral">{{ ded.concepto }}</span>
+                  <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
+                  <span class="text-right font-medium text-blue-600 dark:text-blue-400">
+                    {{ formatCurrency(ded.monto, 'USD') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Regalías de Zn -->
+              <div v-if="deduccionesPorMineral.Zn.length > 0" class="space-y-1">
+                <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-1">
+                  Zinc (Zn) - Base: {{ formatCurrency(valorBrutoZn, 'USD') }}
+                </p>
+                <div 
+                  v-for="(ded, idx) in deduccionesPorMineral.Zn" 
+                  :key="'zn-'+idx" 
+                  class="grid grid-cols-3 gap-2 items-center p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/30 text-sm ml-4"
+                >
+                  <span class="font-medium text-neutral">{{ ded.concepto }}</span>
+                  <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
+                  <span class="text-right font-medium text-indigo-600 dark:text-indigo-400">
+                    {{ formatCurrency(ded.monto, 'USD') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Regalías de Ag -->
+              <div v-if="deduccionesPorMineral.Ag.length > 0" class="space-y-1">
+                <p class="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">
+                   Plata (Ag) - Base: {{ formatCurrency(valorBrutoAg, 'USD') }}
+                </p>
+                <div 
+                  v-for="(ded, idx) in deduccionesPorMineral.Ag" 
+                  :key="'ag-'+idx" 
+                  class="grid grid-cols-3 gap-2 items-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30 text-sm ml-4"
+                >
+                  <span class="font-medium text-neutral">{{ ded.concepto }}</span>
+                  <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
+                  <span class="text-right font-medium text-yellow-600 dark:text-yellow-400">
+                    {{ formatCurrency(ded.monto, 'USD') }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- Aportes Obligatorios -->
           <div v-if="deduccionesPorTipo.aportes.length > 0">
             <div class="flex items-center justify-between mb-2">
               <h5 class="text-xs font-semibold text-neutral uppercase">Aportes Obligatorios</h5>
-              <span class="text-xs font-bold text-orange-600 dark:text-orange-400">-{{ formatCurrency(deduccionesPorTipo.totalAportes, 'USD') }}</span>
+              <span class="text-xs font-bold text-orange-600 dark:text-orange-400">
+                -{{ formatCurrency(deduccionesPorTipo.totalAportes, 'USD') }}
+              </span>
             </div>
             <div class="space-y-2">
-              <div v-for="(ded, idx) in deduccionesPorTipo.aportes" :key="'a-'+idx" class="grid grid-cols-3 gap-2 items-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/30 text-sm">
-                <span class="font-medium text-neutral">{{ ded.concepto }}</span>
+              <div 
+                v-for="(ded, idx) in deduccionesPorTipo.aportes" 
+                :key="'a-'+idx" 
+                class="grid grid-cols-3 gap-2 items-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/30 text-sm"
+              >
+                <span class="font-medium text-neutral">
+                  {{ ded.concepto }}
+                  <span v-if="ded.mineral" class="text-xs text-secondary ml-1">({{ ded.mineral }})</span>
+                </span>
                 <span class="text-center text-secondary">{{ formatNumber(ded.porcentaje) }}%</span>
-                <span class="text-right font-medium text-orange-600 dark:text-orange-400">{{ formatCurrency(ded.monto, 'USD') }}</span>
+                <span class="text-right font-medium text-orange-600 dark:text-orange-400">
+                  {{ formatCurrency(ded.monto, 'USD') }}
+                </span>
               </div>
             </div>
           </div>

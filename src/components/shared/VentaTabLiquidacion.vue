@@ -277,55 +277,106 @@ const valoracionPlata = computed(() => {
     </div>
 
     <!-- Valoración Detallada - LOTE COMPLEJO -->
-    <div v-if="esLoteComplejo && reporteAcordado" class="bg-surface rounded-xl p-4 border border-border">
+    <div v-if="esLoteComplejo && (valoracion.valoracionPb || valoracion.valoracionZn || valoracion.valoracionAgDm)" class="bg-surface rounded-xl p-4 border border-border">
       <h4 class="text-sm font-semibold text-neutral mb-4 flex items-center gap-2">
         <Calculator class="w-4 h-4" />
-        Valoración por Mineral (Lote Complejo)
+        Desglose de Valoración por Mineral
       </h4>
 
-      <div class="space-y-3">
-        <!-- Información basada en tabla de precios -->
-        <div class="p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
-          <p class="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
-            <Info class="w-4 h-4" />
-            Los precios provienen de la tabla de precios de la comercializadora según las leyes del reporte acordado
-          </p>
+      <div class="space-y-4">
+        <!-- Plomo (Pb) -->
+        <div v-if="valoracion.valoracionPb" class="bg-blue-500/5 rounded-lg p-4 border border-blue-500/20">
+          <h5 class="text-xs font-semibold text-blue-600 uppercase mb-3">🔵 Plomo (Pb)</h5>
+          <div class="grid md:grid-cols-2 gap-4 mb-3">
+            <div>
+              <p class="text-xs text-secondary mb-1">Ley</p>
+              <p class="text-lg font-bold text-neutral">{{ formatNumber(valoracion.valoracionPb.ley, 2) }}%</p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary mb-1">Precio Unitario (Tabla)</p>
+              <p class="text-lg font-bold text-neutral">{{ formatCurrency(valoracion.valoracionPb.cotizacionInternacional, 'USD') }}</p>
+            </div>
+          </div>
+          <div class="p-3 bg-surface rounded-lg border border-border mb-2">
+            <p class="text-xs text-secondary mb-1">Precio por Tonelada</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionPb.cotizacionInternacional, 'USD') }} × {{ formatNumber(valoracion.valoracionPb.ley, 2) }}% = 
+              <span class="font-bold text-blue-600">{{ formatCurrency(valoracion.valoracionPb.valorUsdPorTon, 'USD') }}/ton</span>
+            </p>
+          </div>
+          <div class="p-3 bg-blue-600/10 rounded-lg border border-blue-600/30">
+            <p class="text-xs text-secondary mb-1">Valor Bruto</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionPb.valorUsdPorTon, 'USD') }}/ton × {{ formatNumber(valoracion.valoracionPb.pesoToneladas, 4) }} ton = 
+              <span class="font-bold text-green-600">{{ formatCurrency(valoracion.valoracionPb.valorBrutoUsd, 'USD') }}</span>
+            </p>
+          </div>
         </div>
 
-        <!-- Leyes del reporte acordado -->
-        <div class="grid md:grid-cols-3 gap-4">
-          <div v-if="reporteAcordado.leyPb" class="bg-blue-500/5 rounded-lg p-3 border border-blue-500/20">
-            <p class="text-xs text-secondary mb-1">Plomo (Pb)</p>
-            <p class="text-2xl font-bold text-blue-600">{{ formatNumber(reporteAcordado.leyPb, 2) }}%</p>
+        <!-- Zinc (Zn) -->
+        <div v-if="valoracion.valoracionZn" class="bg-indigo-500/5 rounded-lg p-4 border border-indigo-500/20">
+          <h5 class="text-xs font-semibold text-indigo-600 uppercase mb-3">🟣 Zinc (Zn)</h5>
+          <div class="grid md:grid-cols-2 gap-4 mb-3">
+            <div>
+              <p class="text-xs text-secondary mb-1">Ley</p>
+              <p class="text-lg font-bold text-neutral">{{ formatNumber(valoracion.valoracionZn.ley, 2) }}%</p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary mb-1">Precio Unitario (Tabla)</p>
+              <p class="text-lg font-bold text-neutral">{{ formatCurrency(valoracion.valoracionZn.cotizacionInternacional, 'USD') }}</p>
+            </div>
           </div>
-
-          <div v-if="reporteAcordado.leyZn" class="bg-indigo-500/5 rounded-lg p-3 border border-indigo-500/20">
-            <p class="text-xs text-secondary mb-1">Zinc (Zn)</p>
-            <p class="text-2xl font-bold text-indigo-600">{{ formatNumber(reporteAcordado.leyZn, 2) }}%</p>
+          <div class="p-3 bg-surface rounded-lg border border-border mb-2">
+            <p class="text-xs text-secondary mb-1">Precio por Tonelada</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionZn.cotizacionInternacional, 'USD') }} × {{ formatNumber(valoracion.valoracionZn.ley, 2) }}% = 
+              <span class="font-bold text-indigo-600">{{ formatCurrency(valoracion.valoracionZn.valorUsdPorTon, 'USD') }}/ton</span>
+            </p>
           </div>
-
-          <div v-if="reporteAcordado.leyAgDm" class="bg-yellow-500/5 rounded-lg p-3 border border-yellow-500/20">
-            <p class="text-xs text-secondary mb-1">Plata (Ag DM)</p>
-            <p class="text-2xl font-bold text-yellow-600">{{ formatNumber(reporteAcordado.leyAgDm, 2) }}</p>
+          <div class="p-3 bg-indigo-600/10 rounded-lg border border-indigo-600/30">
+            <p class="text-xs text-secondary mb-1">Valor Bruto</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionZn.valorUsdPorTon, 'USD') }}/ton × {{ formatNumber(valoracion.valoracionZn.pesoToneladas, 4) }} ton = 
+              <span class="font-bold text-green-600">{{ formatCurrency(valoracion.valoracionZn.valorBrutoUsd, 'USD') }}</span>
+            </p>
           </div>
         </div>
 
-        <!-- Peso usado -->
-        <div class="p-3 bg-surface rounded-lg border border-border">
-          <p class="text-xs text-secondary mb-1">Peso Total (TMH)</p>
-          <p class="text-xl font-bold text-neutral">{{ formatNumber(pesos.pesoTmh, 4) }} Toneladas</p>
+        <!-- Plata (Ag) -->
+        <div v-if="valoracion.valoracionAgDm" class="bg-yellow-500/5 rounded-lg p-4 border border-yellow-500/20">
+          <h5 class="text-xs font-semibold text-yellow-600 uppercase mb-3">🟡 Plata (Ag)</h5>
+          <div class="grid md:grid-cols-2 gap-4 mb-3">
+            <div>
+              <p class="text-xs text-secondary mb-1">Ley Ag (DM)</p>
+              <p class="text-lg font-bold text-neutral">{{ formatNumber(valoracion.valoracionAgDm.leyAg, 2) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary mb-1">Precio Unitario (Tabla)</p>
+              <p class="text-lg font-bold text-neutral">{{ formatCurrency(valoracion.valoracionAgDm.cotizacionUsdPorDm, 'USD') }}/DM</p>
+            </div>
+          </div>
+          <div class="p-3 bg-surface rounded-lg border border-border mb-2">
+            <p class="text-xs text-secondary mb-1">Precio por Tonelada</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionAgDm.cotizacionUsdPorDm, 'USD') }}/DM × {{ formatNumber(valoracion.valoracionAgDm.leyAg, 2) }} DM = 
+              <span class="font-bold text-yellow-600">{{ formatCurrency(valoracion.valoracionAgDm.valorUsdPorTon, 'USD') }}/ton</span>
+            </p>
+          </div>
+          <div class="p-3 bg-yellow-600/10 rounded-lg border border-yellow-600/30">
+            <p class="text-xs text-secondary mb-1">Valor Bruto</p>
+            <p class="text-sm font-mono text-neutral">
+              {{ formatCurrency(valoracion.valoracionAgDm.valorUsdPorTon, 'USD') }}/ton × {{ formatNumber(valoracion.valoracionAgDm.pesoToneladas, 4) }} ton = 
+              <span class="font-bold text-green-600">{{ formatCurrency(valoracion.valoracionAgDm.valorBrutoUsd, 'USD') }}</span>
+            </p>
+          </div>
         </div>
+      </div>
 
-        <!-- Valor total por tonelada -->
-        <div class="p-4 bg-linear-to-br from-green-500/10 to-emerald-500/5 rounded-lg border-2 border-green-500/30">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold text-neutral">Valor por Tonelada</span>
-            <span class="text-2xl font-bold text-green-600">{{ formatCurrency(valoracion.valorTotalUsdPorTon, 'USD') }}</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-neutral">VALOR BRUTO TOTAL</span>
-            <span class="text-2xl font-bold text-green-600">{{ formatCurrency(valoracion.valorBrutoTotalUsd, 'USD') }}</span>
-          </div>
+      <!-- Total -->
+      <div class="mt-4 p-4 bg-linear-to-br from-green-500/10 to-emerald-500/5 rounded-lg border-2 border-green-500/30">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-neutral">VALOR BRUTO TOTAL</span>
+          <span class="text-2xl font-bold text-green-600">{{ formatCurrency(valoracion.valorBrutoTotalUsd, 'USD') }}</span>
         </div>
       </div>
     </div>
